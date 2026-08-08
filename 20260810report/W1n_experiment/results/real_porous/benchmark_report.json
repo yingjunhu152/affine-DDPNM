@@ -1,0 +1,75 @@
+{
+  "partition": "grid",
+  "mesh_size": 0.12,
+  "mesh_cells": 32611,
+  "n_interfaces": 144,
+  "n_regions": 64,
+  "methods": {
+    "Classic-DDPNM": {
+      "global_unknowns": 144,
+      "velocity_relative_l2": 0.9253627114245424,
+      "velocity_relative_broken_h1": 1.0627154101690286,
+      "pressure_relative_l2": 0.07756815665294477,
+      "outlet_flux_relative_error": 1.1199274273492292,
+      "schur_symmetry_error": 0.0,
+      "max_mass_residual": 6.364266752489911e-17
+    },
+    "Affine-DDPNM": {
+      "global_unknowns": 1296,
+      "velocity_relative_l2": 0.19977631665236023,
+      "velocity_relative_broken_h1": 0.35937793688725506,
+      "pressure_relative_l2": 0.02356526197455443,
+      "outlet_flux_relative_error": 0.12441421403031652,
+      "schur_symmetry_error": 0.0,
+      "max_mass_residual": 1.454999315475547e-16
+    },
+    "NormalLinear-DDPNM-3": {
+      "global_unknowns": 432,
+      "velocity_relative_l2": 0.47377397268762156,
+      "velocity_relative_broken_h1": 0.5129345627415055,
+      "pressure_relative_l2": 0.029907817373480118,
+      "outlet_flux_relative_error": 0.25949530793876724,
+      "schur_symmetry_error": 0.0,
+      "max_mass_residual": 1.0495077029659683e-16
+    },
+    "Monolithic-FEM": {
+      "global_unknowns": "-",
+      "velocity_relative_l2": 0.0,
+      "velocity_relative_broken_h1": 0.0,
+      "pressure_relative_l2": 0.0,
+      "outlet_flux_relative_error": 0.0
+    }
+  },
+  "timings": {
+    "mesh_seconds": 37.260211499989964,
+    "Classic-DDPNM": {
+      "offline_s": 29.5,
+      "online_s": 0.0639,
+      "first_solve_seconds": 29.529200799996033,
+      "peak_memory_mib": 45.038978576660156
+    },
+    "Affine-DDPNM": {
+      "offline_s": 33.0,
+      "online_s": 1.4135,
+      "first_solve_seconds": 34.46234269998968,
+      "peak_memory_mib": 246.35176467895508
+    },
+    "NormalLinear-DDPNM-3": {
+      "offline_s": 28.4,
+      "online_s": 0.238,
+      "first_solve_seconds": 28.680998699972406,
+      "peak_memory_mib": 78.8315258026123
+    },
+    "Monolithic-FEM": {
+      "first_solve_seconds": 16.175048600067385,
+      "peak_memory_mib": 299.7832956314087
+    }
+  },
+  "parameters": {
+    "sphere_count": 100,
+    "porosity": 0.8555170335175117,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0
+  }
+}
