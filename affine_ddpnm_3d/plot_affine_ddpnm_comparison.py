@@ -61,12 +61,14 @@ def main() -> None:
     old = read_rows(args.uniform_csv)
 
     classic = new["Classic-DDPNM-1"]
+    normal_linear = new["NormalLinear-DDPNM-3"]
     affine = new["Affine-DDPNM-9"]
     fem = new["Monolithic-FEM"]
     uniform = old["Uniform-DDPNMT"]
 
     colors = {
         "classic": "#7A7F87",
+        "w1n": "#7B1FA2",
         "affine": "#1565C0",
         "uniform": "#2E9D65",
         "fem": "#B23A48",
@@ -98,14 +100,18 @@ def main() -> None:
         "outlet_flux_relative_error",
     ]
     positions = np.arange(len(error_labels))
-    width = 0.25
+    width = 0.18
     classic_errors = 100.0 * np.asarray([value(classic, key) for key in error_keys_new])
+    normal_linear_errors = 100.0 * np.asarray(
+        [value(normal_linear, key) for key in error_keys_new]
+    )
     affine_errors = 100.0 * np.asarray([value(affine, key) for key in error_keys_new])
     uniform_errors = 100.0 * np.asarray([value(uniform, key) for key in error_keys_old])
     ax = axes[0, 0]
-    ax.bar(positions - width, classic_errors, width, color=colors["classic"], label="Classic DDPNM")
-    ax.bar(positions, affine_errors, width, color=colors["affine"], label="Affine DDPNM (new)")
-    ax.bar(positions + width, uniform_errors, width, color=colors["uniform"], hatch="//", label="Uniform DDPNMT (kept)")
+    ax.bar(positions - 1.5 * width, classic_errors, width, color=colors["classic"], label="Classic DDPNM")
+    ax.bar(positions - 0.5 * width, normal_linear_errors, width, color=colors["w1n"], label=r"$W_{1n}$ normal-linear")
+    ax.bar(positions + 0.5 * width, affine_errors, width, color=colors["affine"], label="Affine DDPNM (new)")
+    ax.bar(positions + 1.5 * width, uniform_errors, width, color=colors["uniform"], hatch="//", label="Uniform DDPNMT (kept)")
     ax.set_xticks(positions, error_labels)
     ax.set_ylabel("Relative error (%)")
     ax.set_title("(a) Same-mesh errors")
@@ -114,20 +120,33 @@ def main() -> None:
 
     # (b) Global unknown counts.
     ax = axes[0, 1]
-    dof_labels = ["Classic\nDDPNM", "Affine\nDDPNM", "Uniform\nDDPNMT", "Monolithic\nFEM"]
+    dof_labels = [
+        "Classic\nDDPNM",
+        r"$W_{1n}$\nDDPNM",
+        "Affine\nDDPNM",
+        "Uniform\nDDPNMT",
+        "Monolithic\nFEM",
+    ]
     dofs = [
         int(classic["global_unknowns"]),
+        int(normal_linear["global_unknowns"]),
         int(affine["global_unknowns"]),
         int(uniform["interface_unknowns"]),
         int(fem["global_unknowns"]),
     ]
     bars = ax.bar(
-        np.arange(4),
+        np.arange(5),
         dofs,
-        color=[colors["classic"], colors["affine"], colors["uniform"], colors["fem"]],
+        color=[
+            colors["classic"],
+            colors["w1n"],
+            colors["affine"],
+            colors["uniform"],
+            colors["fem"],
+        ],
     )
     ax.set_yscale("log")
-    ax.set_xticks(np.arange(4), dof_labels)
+    ax.set_xticks(np.arange(5), dof_labels)
     ax.set_ylabel("Global unknowns (log scale)")
     ax.set_title("(b) Reduced-system size")
     ax.grid(axis="y", which="both", alpha=0.25)
@@ -137,11 +156,11 @@ def main() -> None:
     # (c) Independently measured first-solve cost.  The old uniform timing
     # bundled six solves, so it is intentionally not shown as a comparable bar.
     ax = axes[1, 0]
-    cost_labels = ["Classic DDPNM", "Affine DDPNM", "Monolithic FEM"]
-    rows = [classic, affine, fem]
+    cost_labels = ["Classic DDPNM", r"$W_{1n}$ DDPNM", "Affine DDPNM", "Monolithic FEM"]
+    rows = [classic, normal_linear, affine, fem]
     offline = np.asarray([value(row, "offline_seconds") for row in rows])
     online = np.asarray([value(row, "online_seconds") for row in rows])
-    x = np.arange(3)
+    x = np.arange(4)
     ax.bar(x, offline, color="#8DB7E8", label="offline local library")
     ax.bar(x, online, bottom=offline, color="#174A7E", label="online solve")
     ax.set_xticks(x, cost_labels, rotation=8)
@@ -154,12 +173,15 @@ def main() -> None:
 
     # (d) Accuracy versus interface/global unknowns.
     ax = axes[1, 1]
-    reduced_dofs = np.asarray([dofs[0], dofs[1], dofs[2]], dtype=float)
-    velocity_errors = np.asarray(
-        [classic_errors[0], affine_errors[0], uniform_errors[0]], dtype=float
+    reduced_dofs = np.asarray(
+        [dofs[0], dofs[1], dofs[2], dofs[3]], dtype=float
     )
-    labels = ["Classic", "Affine (new)", "Uniform (kept)"]
-    point_colors = [colors["classic"], colors["affine"], colors["uniform"]]
+    velocity_errors = np.asarray(
+        [classic_errors[0], normal_linear_errors[0], affine_errors[0], uniform_errors[0]],
+        dtype=float,
+    )
+    labels = ["Classic", r"$W_{1n}$", "Affine (new)", "Uniform (kept)"]
+    point_colors = [colors["classic"], colors["w1n"], colors["affine"], colors["uniform"]]
     for x_value, y_value, label, color in zip(
         reduced_dofs, velocity_errors, labels, point_colors, strict=True
     ):

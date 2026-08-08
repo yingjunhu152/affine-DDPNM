@@ -42,11 +42,16 @@ from ddpnm_core.validation import finite_element_error_analysis
 from ddpnm3d.geometry import build_partition
 from ddpnm3d.solver import DdpnmSolution, LocalResponse, build_modes
 
-from affine_face_basis import AffineFaceBasis, CompatibleClassicP0Basis
+from affine_face_basis import (
+    AffineFaceBasis,
+    CompatibleClassicP0Basis,
+    NormalLinearFaceBasis,
+)
 
 
 METHODS = (
     "Classic-DDPNM-1",
+    "NormalLinear-DDPNM-3",
     "Affine-DDPNM-9",
     "Monolithic-FEM",
 )
@@ -149,7 +154,7 @@ def main() -> None:
     timings: dict[str, dict[str, float]] = {}
     method_data: dict[str, dict] = {}
 
-    print("[1/4] Building one common mesh ...")
+    print("[1/5] Building one common mesh ...")
     started = time.perf_counter()
     partition = build_partition(
         mesh_size=args.mesh_size,
@@ -167,7 +172,7 @@ def main() -> None:
     n_interfaces = len(partition.interface_pairs)
     print(f"      tetrahedra={len(tetrahedra)}, interfaces={n_interfaces}")
 
-    print("[2/4] Solving the monolithic Taylor--Hood FEM reference ...")
+    print("[2/5] Solving the monolithic Taylor--Hood FEM reference ...")
     started = time.perf_counter()
     reference = solve_reference(
         partition.mesh,
@@ -198,7 +203,7 @@ def main() -> None:
     }
     print(f"      dofs={reference.ndofs}, solve={fem_seconds:.3f} s")
 
-    print("[3/4] Classic DDPNM: one P0 normal coefficient per face ...")
+    print("[3/5] Classic DDPNM: one P0 normal coefficient per face ...")
     started = time.perf_counter()
     classic_basis = CompatibleClassicP0Basis()
     classic_library = build_response_library(
@@ -246,7 +251,59 @@ def main() -> None:
     del classic_value, classic_system, classic_library
     gc.collect()
 
-    print("[4/4] Affine DDPNM: one face entity carrying nine modes ...")
+    print("[4/5] Normal-linear DDPNM: three normal modes per face ...")
+    started = time.perf_counter()
+    normal_linear_basis = NormalLinearFaceBasis(partition)
+    normal_linear_library = build_response_library(
+        partition,
+        normal_linear_basis,
+        viscosity=args.viscosity,
+        inlet_pressure=args.inlet_pressure,
+        outlet_pressure=args.outlet_pressure,
+        pressure_stabilization=args.pressure_stabilization,
+    )
+    normal_linear_offline = time.perf_counter() - started
+    normal_linear_primitive_count = sum(
+        len(entry.primitive_modes) for entry in normal_linear_library.entries
+    )
+    started = time.perf_counter()
+    normal_linear_system = InterfaceAssembler(normal_linear_library).assemble(
+        np.zeros(n_interfaces, dtype=np.int8)
+    )
+    normal_linear_solution = classic_solution(
+        partition, normal_linear_library, normal_linear_system
+    )
+    normal_linear_online = time.perf_counter() - started
+    normal_linear_metric = error_metrics(
+        partition, normal_linear_solution, reference, volumes
+    )
+    timings["NormalLinear-DDPNM-3"] = {
+        "offline_seconds": normal_linear_offline,
+        "online_seconds": normal_linear_online,
+        "first_solve_seconds": normal_linear_offline + normal_linear_online,
+    }
+    method_data["NormalLinear-DDPNM-3"] = {
+        "global_unknowns": len(normal_linear_system.global_keys),
+        "modes_per_interface": 3,
+        "primitive_rhs_columns": normal_linear_primitive_count,
+        "velocity_relative_l2": normal_linear_metric["velocity_relative_l2"],
+        "velocity_relative_broken_h1": normal_linear_metric[
+            "velocity_relative_broken_h1_seminorm"
+        ],
+        "pressure_relative_l2": normal_linear_metric["pressure_raw_relative_l2"],
+        "outlet_flux_relative_error": normal_linear_metric[
+            "outlet_flux_relative_error"
+        ],
+    }
+    print(
+        f"      dofs={len(normal_linear_system.global_keys)}, "
+        f"offline={normal_linear_offline:.3f} s, online={normal_linear_online:.3f} s, "
+        f"L2(u)={normal_linear_metric['velocity_relative_l2']:.3%}"
+    )
+    del normal_linear_solution, normal_linear_system, normal_linear_library
+    gc.collect()
+
+    print("[5/5] Affine DDPNM: one face entity carrying nine modes ...")
     started = time.perf_counter()
     affine_basis = AffineFaceBasis(partition)
     affine_library = build_response_library(
@@ -331,6 +388,7 @@ def main() -> None:
         "benchmark": "single-point classic DDPNM vs single-point nine-mode affine DDPNM vs FEM",
         "interface_space": {
             "classic": "span{1*n}",
+            "normal_linear": "span{1,s,t} tensor n",
             "affine": "span{1,s,t} tensor span{n,t1,t2}",
             "uniform_surface_points_used": False,
         },

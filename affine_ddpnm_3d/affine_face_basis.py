@@ -158,6 +158,156 @@ class AffineFaceBasis(HierarchyBasis):
         return tuple(specs)
 
 
+class NormalLinearFaceBasis(HierarchyBasis):
+    """Three normal-only generalized modes attached to one representative
+    face entity.  On interface ``f`` the three unknown coefficients
+    multiply
+
+        {1, s_f, t_f} x {n_f}.
+
+    The representative point is the interface center, where ``s_f=t_f=0``.
+    This is the W_{1n} control space: it isolates the effect of adding
+    linear-in-s/t variation to the classical constant-normal mode, with
+    no tangential traction components.
+    """
+
+    name = "3D-single-entity-normal-linear-DDPNM"
+
+    def active_transform(self, primitive_modes, port_index, level):
+        return None
+
+    def primitive_specs(self, partition, operator):
+        specs: list[PrimitiveSpec] = []
+        pore_id = operator.pore_id
+        ports = operator.ports
+        submesh = operator.submesh
+
+        interface_data: dict[int, dict] = {}
+        for port in ports:
+            if port.kind != "interface":
+                continue
+            interface_id = int(port.global_interface)
+            if interface_id in interface_data:
+                continue
+            pair = partition.interface_pairs[interface_id]
+            side_sign = 1.0 if pore_id == pair[0] else -1.0
+            tangent_1 = self.interface_tangents[interface_id, 0]
+            tangent_2 = self.interface_tangents[interface_id, 1]
+            center = partition.interface_centers[interface_id]
+            scale_s, scale_t = self.interface_scales[interface_id]
+            interface_data[interface_id] = {
+                "scalar": {
+                    "P0": np.asarray([1.0, 0.0, 0.0, 0.0]),
+                    "P1_s": np.concatenate(
+                        ([-float(center @ tangent_1) / scale_s], tangent_1 / scale_s)
+                    ),
+                    "P1_t": np.concatenate(
+                        ([-float(center @ tangent_2) / scale_t], tangent_2 / scale_t)
+                    ),
+                },
+                "directions": {
+                    "normal": (np.zeros(3), -1.0),
+                },
+            }
+
+        for port_index, port in enumerate(ports):
+            tag = PORT_TAG_BASE + port_index
+            scalar_constant = fem.Constant(submesh, np.zeros(4))
+            direction_constant = fem.Constant(submesh, np.zeros(3))
+            normal_constant = fem.Constant(submesh, 0.0)
+            x = ufl.SpatialCoordinate(submesh)
+            local_normal = ufl.FacetNormal(submesh)
+            scalar_shape = (
+                scalar_constant[0]
+                + scalar_constant[1] * x[0]
+                + scalar_constant[2] * x[1]
+                + scalar_constant[3] * x[2]
+            )
+            direction = direction_constant + normal_constant * local_normal
+            velocity_test, _ = ufl.split(ufl.TestFunction(operator.W))
+            load_form = fem.form(
+                scalar_shape
+                * ufl.dot(direction, velocity_test)
+                * ufl.ds(
+                    tag,
+                    domain=submesh,
+                    subdomain_data=operator.facet_tags,
+                )
+            )
+
+            if port.kind != "interface":
+                mode = PrimitiveMode(
+                    port_index=port_index,
+                    component="normal",
+                    polynomial="P0",
+                    interface_id=None,
+                    node_index=None,
+                    known_coefficient=float(port.pressure),
+                )
+                specs.append(
+                    PrimitiveSpec(
+                        mode=mode,
+                        load=_runtime_load(
+                            operator,
+                            load_form,
+                            scalar_constant,
+                            direction_constant,
+                            normal_constant,
+                            np.asarray([1.0, 0.0, 0.0, 0.0]),
+                            np.zeros(3),
+                            -1.0,
+                        ),
+                    )
+                )
+                continue
+
+            interface_id = int(port.global_interface)
+            data = interface_data[interface_id]
+            for component, (direction_vector, normal_coefficient) in data["directions"].items():
+                for polynomial in POLYNOMIALS:
+                    mode = PrimitiveMode(
+                        port_index=port_index,
+                        component=component,
+                        polynomial=polynomial,
+                        interface_id=interface_id,
+                        node_index=None,
+                        known_coefficient=None,
+                    )
+                    specs.append(
+                        PrimitiveSpec(
+                            mode=mode,
+                            load=_runtime_load(
+                                operator,
+                                load_form,
+                                scalar_constant,
+                                direction_constant,
+                                normal_constant,
+                                data["scalar"][polynomial],
+                                direction_vector,
+                                normal_coefficient,
+                            ),
+                        )
+                    )
+        return tuple(specs)
+
+    def active_indices(self, primitive_modes, port_index, level):
+        # All primitives are active: this basis emits exactly the W_{1n}
+        # target space (3 modes per interface + 1 known boundary mode).
+        del level
+        return tuple(
+            i
+            for i, m in enumerate(primitive_modes)
+            if m.port_index == port_index
+        )
+
+    def global_keys(self, level, interface_id):
+        del level
+        return tuple(
+            (interface_id, "normal", polynomial)
+            for polynomial in POLYNOMIALS
+        )
+
+
 def _runtime_load(
     operator,
     load_form,
