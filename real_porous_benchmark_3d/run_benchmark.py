@@ -38,7 +38,7 @@ from ddpnm3d.solver import DdpnmSolution, LocalResponse
 from ddpnm3d.visualization import evaluate_fem_ddpnm_slice
 
 from affine_ddpnm_3d_random_porous.affine_face_basis import (
-    AffineFaceBasis, CompatibleClassicP0Basis,
+    AffineFaceBasis, CompatibleClassicP0Basis, NormalLinearFaceBasis,
 )
 from geometry import (
     build_partition_voronoi, build_partition_watershed, build_partition_grid,
@@ -231,8 +231,35 @@ def run_all(args):
     classic_uk = len(classic_sys.global_keys)
     print(f"  Classic: offline={classic_offline:.1f}s  online={classic_online:.3f}s  "
           f"mem={classic_mem:.1f}MiB  unknowns={classic_uk}")
+    del classic_lib
+    gc.collect()
 
-    # ── 4. Affine-DDPNM ─────────────────────────────────────────
+    # ── 4. NormalLinear-DDPNM (W1n) ─────────────────────────────
+    print("NormalLinear-DDPNM (W1n, 3 modes)...")
+    w1n_basis = NormalLinearFaceBasis(partition)
+    gc.collect(); tracemalloc.start()
+    t0 = time.perf_counter()
+    w1n_lib = build_response_library(
+        partition, w1n_basis, viscosity=args.viscosity,
+        inlet_pressure=args.inlet_pressure,
+        outlet_pressure=args.outlet_pressure,
+    )
+    w1n_offline = time.perf_counter() - t0
+    t1 = time.perf_counter()
+    w1n_sys = InterfaceAssembler(w1n_lib).assemble(
+        np.zeros(n_ifaces, dtype=np.int8))
+    w1n_sol = reduced_solution(partition, w1n_lib, w1n_sys)
+    w1n_online = time.perf_counter() - t1
+    w1n_time = w1n_offline + w1n_online
+    _, w1n_peak = tracemalloc.get_traced_memory(); tracemalloc.stop()
+    w1n_mem = w1n_peak / 1024**2
+    w1n_uk = len(w1n_sys.global_keys)
+    print(f"  W1n:     offline={w1n_offline:.1f}s  online={w1n_online:.3f}s  "
+          f"mem={w1n_mem:.1f}MiB  unknowns={w1n_uk}")
+    del w1n_lib
+    gc.collect()
+
+    # ── 5. Affine-DDPNM ─────────────────────────────────────────
     print("Affine-DDPNM (9 modes)...")
     affine_basis = AffineFaceBasis(partition)
     gc.collect(); tracemalloc.start()
@@ -255,7 +282,7 @@ def run_all(args):
     print(f"  Affine:  offline={affine_offline:.1f}s  online={affine_online:.3f}s  "
           f"mem={affine_mem:.1f}MiB  unknowns={affine_uk}")
 
-    # ── 5. HODDPNM (adaptive hierarchy) ─────────────────────────
+    # ── 6. HODDPNM (adaptive hierarchy) ─────────────────────────
     hoddpnm_data = None
     hoddpnm_time = hoddpnm_mem = float("nan")
     if not args.skip_hoddpnm:
@@ -292,7 +319,7 @@ def run_all(args):
         else:
             print(f"  HODDPNM: FAILED ({hoddpnm_time:.1f}s)")
 
-    # ── 6. Error analysis ───────────────────────────────────────
+    # ── 7. Error analysis ───────────────────────────────────────
     timings = {"mesh_seconds": mesh_time}
     method_data: dict = {}
 
@@ -327,6 +354,24 @@ def run_all(args):
             "first_solve_seconds": affine_time,
             "peak_memory_mib": affine_mem,
         }
+        w1n_metric = error_metrics(partition, w1n_sol, reference, volumes)
+        method_data["NormalLinear-DDPNM-3"] = {
+            "global_unknowns": w1n_uk,
+            **_metric_entry(w1n_metric),
+            **_algebraic_diagnostics(w1n_sol),
+        }
+        timings["NormalLinear-DDPNM-3"] = {
+            "offline_s": round(w1n_offline, 1),
+            "online_s": round(w1n_online, 4),
+            "first_solve_seconds": w1n_time,
+            "peak_memory_mib": w1n_mem,
+        }
+        we = _metric_entry(w1n_metric)
+        print(f"  W1n errors:    L2={we['velocity_relative_l2']:.3%}  "
+              f"H1={we['velocity_relative_broken_h1']:.3%}  "
+              f"p={we['pressure_relative_l2']:.3%}  "
+              f"flux={we['outlet_flux_relative_error']:.3%}")
+
         ae = _metric_entry(affine_metric)
         print(f"  Affine errors:  L2={ae['velocity_relative_l2']:.3%}  "
               f"H1={ae['velocity_relative_broken_h1']:.3%}  "
@@ -362,7 +407,7 @@ def run_all(args):
         "peak_memory_mib": fem_mem,
     }
 
-    # ── 7. Save outputs ─────────────────────────────────────────
+    # ── 8. Save outputs ─────────────────────────────────────────
     report = {
         "partition": args.partition,
         "mesh_size": args.mesh_size,
@@ -384,7 +429,7 @@ def run_all(args):
 
     # CSV
     csv_rows = []
-    for name in ["Classic-DDPNM", "Affine-DDPNM", "HODDPNM-adaptive", "Monolithic-FEM"]:
+    for name in ["Classic-DDPNM", "NormalLinear-DDPNM-3", "Affine-DDPNM", "HODDPNM-adaptive", "Monolithic-FEM"]:
         if name in method_data:
             row = {"method": name}
             row.update({k: v for k, v in method_data[name].items()
@@ -400,24 +445,25 @@ def run_all(args):
             w = csv.DictWriter(fh, fieldnames=csv_rows[0].keys())
             w.writeheader(); w.writerows(csv_rows)
 
-    # ── 8. Slice fields for contours ────────────────────────────
+    # ── 9. Slice fields for contours ────────────────────────────
     if reference is not None and not args.skip_slices:
         _save_slices(out_dir, mesh, partition, reference,
-                     classic_sol, affine_sol)
+                     classic_sol, w1n_sol, affine_sol)
 
-    # ── 9. Print summary table ───────────────────────────────────
+    # ── 10. Print summary table ──────────────────────────────────
     _print_summary(csv_rows, timings, fem_time)
     print(f"\nAll results saved to {out_dir}/")
     return report
 
 
-def _save_slices(out_dir, mesh, partition, reference, classic_sol, affine_sol):
+def _save_slices(out_dir, mesh, partition, reference, classic_sol, w1n_sol, affine_sol):
     """Save z=0.5 slice velocity-magnitude fields for contour plots."""
     from dolfinx import fem
     try:
         slice_data = evaluate_fem_ddpnm_slice(
             mesh, reference.W, reference.solution,
             classic_sol.local_solutions if hasattr(classic_sol, 'local_solutions') else [],
+            w1n_sol.local_solutions if hasattr(w1n_sol, 'local_solutions') else [],
             affine_sol.local_solutions if hasattr(affine_sol, 'local_solutions') else [],
             partition, z_slice=0.5, n_pts=80,
         )

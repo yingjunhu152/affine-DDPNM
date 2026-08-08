@@ -45,10 +45,20 @@ from ddpnm3d.solver import DdpnmSolution, LocalResponse, build_modes
 from ddpnm3d.visualization import evaluate_fem_ddpnm_slice
 
 from random_porous import SPHERES, build_partition
-from affine_face_basis import AffineFaceBasis, CompatibleClassicP0Basis
+from affine_face_basis import (
+    AffineFaceBasis,
+    CompatibleClassicP0Basis,
+    NormalLinearFaceBasis,
+)
 from watershed_partition import build_partition_watershed
 
-METHODS = ("Classic-DDPNM-1", "Affine-DDPNM-9", "Exact-FE-Schur", "Monolithic-FEM")
+METHODS = (
+    "Classic-DDPNM-1",
+    "NormalLinear-DDPNM-3",
+    "Affine-DDPNM-9",
+    "Exact-FE-Schur",
+    "Monolithic-FEM",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -209,7 +219,7 @@ def main() -> None:
     timings: dict[str, dict[str, float]] = {}
     method_data: dict[str, dict] = {}
 
-    print("[1/5] Building the random-sphere partition mesh ...")
+    print("[1/6] Building the random-sphere partition mesh ...")
     started = time.perf_counter()
     if args.partition == "watershed":
         partition = build_partition_watershed(
@@ -243,7 +253,7 @@ def main() -> None:
         f"{len(np.unique(partition.cell_labels))}, interfaces={n_interfaces}"
     )
 
-    print("[2/5] Solving the monolithic Taylor--Hood FEM reference ...")
+    print("[2/6] Solving the monolithic Taylor--Hood FEM reference ...")
     started = time.perf_counter()
     reference = solve_reference(
         partition.mesh,
@@ -280,7 +290,7 @@ def main() -> None:
     }
     print(f"      dofs={reference.ndofs}, solve={fem_seconds:.3f} s")
 
-    print("[3/5] Exact FE-trace Schur complement (correctness baseline) ...")
+    print("[3/6] Exact FE-trace Schur complement (correctness baseline) ...")
     if args.partition == "watershed" and not args.with_exact_schur:
         # The dense exact-Schur implementation costs ~9 minutes at 15k
         # tetrahedra and OOMs near 20k; its correctness role was established
@@ -325,7 +335,7 @@ def main() -> None:
         )
         schur_ref = schur
 
-    print("[4/5] Classic DDPNM: one P0 normal coefficient per face ...")
+    print("[4/6] Classic DDPNM: one P0 normal coefficient per face ...")
     started = time.perf_counter()
     classic_basis = CompatibleClassicP0Basis()
     classic_library = build_response_library(
@@ -365,7 +375,51 @@ def main() -> None:
         f"L2(u)={classic_metric['velocity_relative_l2']:.3%}"
     )
 
-    print("[5/5] Affine DDPNM: one face entity carrying nine modes ...")
+    print("[5/6] Normal-linear DDPNM: three normal modes per face ...")
+    started = time.perf_counter()
+    normal_linear_basis = NormalLinearFaceBasis(partition)
+    normal_linear_library = build_response_library(
+        partition,
+        normal_linear_basis,
+        viscosity=args.viscosity,
+        inlet_pressure=args.inlet_pressure,
+        outlet_pressure=args.outlet_pressure,
+        pressure_stabilization=args.pressure_stabilization,
+    )
+    normal_linear_offline = time.perf_counter() - started
+    normal_linear_primitive_count = sum(
+        len(entry.primitive_modes) for entry in normal_linear_library.entries
+    )
+    started = time.perf_counter()
+    normal_linear_system = InterfaceAssembler(normal_linear_library).assemble(
+        np.zeros(n_interfaces, dtype=np.int8)
+    )
+    normal_linear_solution = reduced_solution(
+        partition, normal_linear_library, normal_linear_system
+    )
+    normal_linear_online = time.perf_counter() - started
+    normal_linear_metric = error_metrics(
+        partition, normal_linear_solution, reference, volumes
+    )
+    timings["NormalLinear-DDPNM-3"] = {
+        "offline_seconds": normal_linear_offline,
+        "online_seconds": normal_linear_online,
+        "first_solve_seconds": normal_linear_offline + normal_linear_online,
+    }
+    method_data["NormalLinear-DDPNM-3"] = {
+        "global_unknowns": len(normal_linear_system.global_keys),
+        "modes_per_interface": 3,
+        "primitive_rhs_columns": normal_linear_primitive_count,
+        **_metric_entry(normal_linear_metric),
+        **_algebraic_diagnostics(normal_linear_solution),
+    }
+    print(
+        f"      dofs={len(normal_linear_system.global_keys)}, "
+        f"offline={normal_linear_offline:.3f} s, online={normal_linear_online:.3f} s, "
+        f"L2(u)={normal_linear_metric['velocity_relative_l2']:.3%}"
+    )
+
+    print("[6/6] Affine DDPNM: one face entity carrying nine modes ...")
     started = time.perf_counter()
     affine_basis = AffineFaceBasis(partition)
     affine_library = build_response_library(
@@ -412,6 +466,7 @@ def main() -> None:
     if schur_ref is not None:
         for name, solution in [
             ("Classic-DDPNM-1", classic_value),
+            ("NormalLinear-DDPNM-3", normal_linear_solution),
             ("Affine-DDPNM-9", affine_solution),
         ]:
             metric = error_metrics(
@@ -425,7 +480,12 @@ def main() -> None:
             errors_to_schur[name] = _metric_entry(metric)
 
     fem_time = timings["Monolithic-FEM"]["first_solve_seconds"]
-    for name in ("Classic-DDPNM-1", "Affine-DDPNM-9", "Exact-FE-Schur"):
+    for name in (
+        "Classic-DDPNM-1",
+        "NormalLinear-DDPNM-3",
+        "Affine-DDPNM-9",
+        "Exact-FE-Schur",
+    ):
         if name not in method_data:
             continue
         first = timings[name]["first_solve_seconds"]
@@ -435,6 +495,7 @@ def main() -> None:
         partition, args, mesh_seconds, timings, method_data, errors_to_schur,
         schur_ref, reference, points, tetrahedra, volumes,
         classic_library, classic_system, classic_value,
+        normal_linear_library, normal_linear_system, normal_linear_solution,
         affine_library, affine_system, affine_solution,
     )
 
@@ -442,6 +503,8 @@ def main() -> None:
 def _write_outputs(partition, args, mesh_seconds, timings, method_data,
                    errors_to_schur, schur_ref, reference, points, tetrahedra,
                    volumes, classic_library, classic_system, classic_value,
+                   normal_linear_library, normal_linear_system,
+                   normal_linear_solution,
                    affine_library, affine_system, affine_solution) -> None:
     out_dir = args.out_dir
     with (out_dir / "random_affine_metrics.csv").open(
@@ -484,6 +547,7 @@ def _write_outputs(partition, args, mesh_seconds, timings, method_data,
         )
         for name, solution in [
             ("classic", classic_value),
+            ("normal_linear", normal_linear_solution),
             ("affine", affine_solution),
         ]
     }
@@ -506,6 +570,13 @@ def _write_outputs(partition, args, mesh_seconds, timings, method_data,
         interface_pressures_classic=classic_value.interface_pressures,
         interface_flux_sums_classic=classic_value.interface_flux_sums,
         schur_matrix_classic=classic_value.schur_matrix,
+        interface_pressures_normal_linear=(
+            normal_linear_solution.interface_pressures
+        ),
+        interface_flux_sums_normal_linear=(
+            normal_linear_solution.interface_flux_sums
+        ),
+        schur_matrix_normal_linear=normal_linear_solution.schur_matrix,
         interface_pressures_affine=affine_solution.interface_pressures,
         interface_flux_sums_affine=affine_solution.interface_flux_sums,
         schur_matrix_affine=affine_solution.schur_matrix,
