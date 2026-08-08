@@ -1,0 +1,312 @@
+{
+  "mesh_strategy": "one global conforming Gmsh mesh; local meshes are exact cell submeshes",
+  "explicit_circle_refinement": false,
+  "adaptive_refinement": false,
+  "requested_mesh_size": 0.04,
+  "global_cells": 1203,
+  "global_vertices": 711,
+  "solid_circle_boundary_edge_lengths": {
+    "count": 189,
+    "minimum": 0.03369702792952212,
+    "mean": 0.03753755259318633,
+    "maximum": 0.039387330770776594
+  },
+  "outer_boundary_edge_lengths": {
+    "count": 46,
+    "minimum": 0.028075974678012816,
+    "mean": 0.03568700073348472,
+    "maximum": 0.040005051009523784
+  },
+  "interior_edge_lengths": {
+    "count": 1687,
+    "minimum": 0.02035650858945155,
+    "mean": 0.03560835575893232,
+    "maximum": 0.05333467577542702
+  },
+  "near_solid_equivalent_triangle_size": {
+    "count": 931,
+    "minimum": 0.021847199725059857,
+    "mean": 0.03522289371239121,
+    "maximum": 0.04537008575490906
+  },
+  "far_from_solid_equivalent_triangle_size": {
+    "count": 6,
+    "minimum": 0.03220334438168373,
+    "mean": 0.036206343329445674,
+    "maximum": 0.03964962258530263
+  },
+  "minimum_interface_facets": 2,
+  "minimum_interface_vertices": 3,
+  "interfaces": [
+    {
+      "interface_id": 0,
+      "pore_pair": [
+        0,
+        1
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.10234807372788803
+    },
+    {
+      "interface_id": 1,
+      "pore_pair": [
+        0,
+        4
+      ],
+      "facet_count": 8,
+      "unique_mesh_vertices": 9,
+      "polyline_length": 0.2937040509219029
+    },
+    {
+      "interface_id": 2,
+      "pore_pair": [
+        0,
+        8
+      ],
+      "facet_count": 4,
+      "unique_mesh_vertices": 5,
+      "polyline_length": 0.1471609285426622
+    },
+    {
+      "interface_id": 3,
+      "pore_pair": [
+        0,
+        11
+      ],
+      "facet_count": 4,
+      "unique_mesh_vertices": 5,
+      "polyline_length": 0.1734917744617011
+    },
+    {
+      "interface_id": 4,
+      "pore_pair": [
+        1,
+        2
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.07363923288399597
+    },
+    {
+      "interface_id": 5,
+      "pore_pair": [
+        1,
+        5
+      ],
+      "facet_count": 7,
+      "unique_mesh_vertices": 8,
+      "polyline_length": 0.23093820737168808
+    },
+    {
+      "interface_id": 6,
+      "pore_pair": [
+        1,
+        10
+      ],
+      "facet_count": 6,
+      "unique_mesh_vertices": 7,
+      "polyline_length": 0.233004037863453
+    },
+    {
+      "interface_id": 7,
+      "pore_pair": [
+        1,
+        13
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.07819589237103242
+    },
+    {
+      "interface_id": 8,
+      "pore_pair": [
+        2,
+        4
+      ],
+      "facet_count": 6,
+      "unique_mesh_vertices": 7,
+      "polyline_length": 0.21796460494828568
+    },
+    {
+      "interface_id": 9,
+      "pore_pair": [
+        2,
+        6
+      ],
+      "facet_count": 5,
+      "unique_mesh_vertices": 6,
+      "polyline_length": 0.16629844762371138
+    },
+    {
+      "interface_id": 10,
+      "pore_pair": [
+        2,
+        14
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.09936825149146905
+    },
+    {
+      "interface_id": 11,
+      "pore_pair": [
+        3,
+        5
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.07890365118797385
+    },
+    {
+      "interface_id": 12,
+      "pore_pair": [
+        3,
+        11
+      ],
+      "facet_count": 5,
+      "unique_mesh_vertices": 6,
+      "polyline_length": 0.19083337389610316
+    },
+    {
+      "interface_id": 13,
+      "pore_pair": [
+        3,
+        17
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.06498123793722907
+    },
+    {
+      "interface_id": 14,
+      "pore_pair": [
+        4,
+        9
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.10028227854037722
+    },
+    {
+      "interface_id": 15,
+      "pore_pair": [
+        5,
+        17
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.10871353509764237
+    },
+    {
+      "interface_id": 16,
+      "pore_pair": [
+        6,
+        7
+      ],
+      "facet_count": 4,
+      "unique_mesh_vertices": 5,
+      "polyline_length": 0.1220829619135422
+    },
+    {
+      "interface_id": 17,
+      "pore_pair": [
+        6,
+        9
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.09994716635220185
+    },
+    {
+      "interface_id": 18,
+      "pore_pair": [
+        7,
+        13
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.06827159312205022
+    },
+    {
+      "interface_id": 19,
+      "pore_pair": [
+        7,
+        14
+      ],
+      "facet_count": 4,
+      "unique_mesh_vertices": 5,
+      "polyline_length": 0.13704307342708621
+    },
+    {
+      "interface_id": 20,
+      "pore_pair": [
+        8,
+        9
+      ],
+      "facet_count": 6,
+      "unique_mesh_vertices": 7,
+      "polyline_length": 0.20194638358814315
+    },
+    {
+      "interface_id": 21,
+      "pore_pair": [
+        10,
+        15
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.075958116321094
+    },
+    {
+      "interface_id": 22,
+      "pore_pair": [
+        10,
+        16
+      ],
+      "facet_count": 4,
+      "unique_mesh_vertices": 5,
+      "polyline_length": 0.1461104905242837
+    },
+    {
+      "interface_id": 23,
+      "pore_pair": [
+        12,
+        15
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.10851065684560803
+    },
+    {
+      "interface_id": 24,
+      "pore_pair": [
+        12,
+        16
+      ],
+      "facet_count": 4,
+      "unique_mesh_vertices": 5,
+      "polyline_length": 0.14087284022583213
+    },
+    {
+      "interface_id": 25,
+      "pore_pair": [
+        13,
+        14
+      ],
+      "facet_count": 2,
+      "unique_mesh_vertices": 3,
+      "polyline_length": 0.0878135153966941
+    },
+    {
+      "interface_id": 26,
+      "pore_pair": [
+        13,
+        15
+      ],
+      "facet_count": 3,
+      "unique_mesh_vertices": 4,
+      "polyline_length": 0.10462161368008926
+    }
+  ]
+}

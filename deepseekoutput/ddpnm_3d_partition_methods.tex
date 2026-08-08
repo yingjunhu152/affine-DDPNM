@@ -1,0 +1,916 @@
+\documentclass[UTF8,zihao=-4]{ctexart}
+
+\usepackage[a4paper,margin=2.35cm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{amsthm}
+\usepackage{booktabs,tabularx,longtable,array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{microtype}
+
+\definecolor{ddblue}{RGB}{27,76,125}
+\definecolor{ddlight}{RGB}{241,246,251}
+\definecolor{ddgray}{RGB}{80,86,94}
+\definecolor{ddgreen}{RGB}{36,112,89}
+\definecolor{ddred}{RGB}{150,47,47}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=ddblue,
+  citecolor=ddgreen,
+  urlcolor=ddblue,
+  pdfauthor={基于 DDPNM 项目源码与数值报告整理},
+  pdftitle={三维孔体子区域分区方法：净距场、Voronoi、等净距曲面与 watershed}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{三维孔体子区域分区方法}
+\fancyhead[R]{数学构造与手算例}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.22em}
+\setlength{\emergencystretch}{2em}% 长 \texttt 文件名无断点时的微拉伸
+\setlist{nosep,leftmargin=2.2em}
+\renewcommand{\arraystretch}{1.16}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\normal}{\bm n}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\proj}{\Pi}
+\newcommand{\Span}{\operatorname{span}}
+\newcommand{\diam}{\operatorname{diam}}
+\newcommand{\cc}{\bm c}
+
+\newtheorem{definition}{定义}[section]
+\newtheorem{proposition}[definition]{命题}
+\newtheorem{lemma}[definition]{引理}
+\newtheorem{remark}[definition]{注}
+
+\newtcolorbox{algobox}[2][]{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=black!75,
+  boxrule=0.55pt,
+  arc=0pt,
+  left=1.2mm,right=1.2mm,top=1mm,bottom=1mm,
+  title={#2},
+  fonttitle=\bfseries,
+  coltitle=black,
+  attach boxed title to top left={xshift=1.4mm,yshift=-2.0mm},
+  boxed title style={colback=white,colframe=white,boxrule=0pt},
+  #1
+}
+
+\newtcolorbox{keybox}[1]{
+  enhanced,
+  breakable,
+  colback=ddlight,
+  colframe=ddblue,
+  boxrule=0.7pt,
+  arc=1mm,
+  title={#1},
+  fonttitle=\bfseries,
+  coltitle=white,
+  colbacktitle=ddblue
+}
+
+\lstdefinestyle{compactcode}{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{black!50},
+  backgroundcolor=\color{black!2},
+  numbers=left,
+  numberstyle=\scriptsize\color{ddgray},
+  numbersep=7pt,
+  xleftmargin=1.7em,
+  framexleftmargin=1.2em,
+  breaklines=true,
+  showstringspaces=false,
+  keywordstyle=\color{ddblue}\bfseries,
+  commentstyle=\color{ddgreen},
+  stringstyle=\color{ddred}
+}
+
+\title{\bfseries\LARGE 三维孔体子区域分区方法\\[0.5em]
+\Large 净距场、球心 Voronoi、等净距曲面与持久性 watershed 的数学构造}
+\author{基于 \texttt{ddpnm\_3d\_uniform\_spheres}、\\
+\texttt{affine\_ddpnm\_3d\_random\_porous} 的源码和交接文档整理}
+\date{2026 年 8 月 5 日}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本文专门讨论三维多孔介质中``孔体子区域如何划分''这一数学任务，是文档
+\texttt{ddpnm\_3d\_math\_document.tex} 的分区专题深化。给定单位立方体内挖去
+若干固体球后的流体域 $\Omega$，孔体分区需要把 $\Omega$ 分割成互不重叠的
+连通子区域（孔体），并把相邻孔体之间的二维分界面（孔喉界面）构造出来。
+本文系统给出四种方法的精确数学对象与算法：规则阵列的解析最大空球分区
+（64 个孔体）、球心点集的无权 Voronoi 平面分区（27 个孔体）、固定球对的
+等净距双曲面（只描述局部几何、不构成全局分区）、以及净距场的持久性
+watershed 分区（82 个孔体）。核心的判别工具是净距函数的活动支撑维数计数
+$\dim\mathcal M_k=4-k$：两球等净距给出二维曲面、三球给出一维曲线、四球给出
+孤立点。文末给出五个可以完全手算的例题——一维净距剖面 watershed 全流程、
+两个不等半径球的三方法对比、支撑数维数计数、规则 $3\times3\times3$ 阵列的
+64/27 孔体对照、以及阈值敏感性思维练习——使读者能在不运行任何代码的前提
+下验证并内化四种方法的语义差异。
+\end{abstract}
+
+\noindent\textbf{关键词：}孔体分区；净距场；最大空球；Voronoi 图；加性加权
+Voronoi 图（Apollonius 图）；中轴；持久同调；watershed
+
+\clearpage
+{\footnotesize\tableofcontents}
+\clearpage
+
+\section{问题设置：把什么分给谁}
+
+\subsection{流体域与固体}
+
+设 $D=(0,1)^3$ 为单位立方体，其中嵌入 $N_s$ 个固体球
+$B_j=\{\bm x:\|\bm x-\cc_j\|<r_j\}$（$\cc_j$ 为球心，$r_j$ 为半径），流体域为
+\begin{equation}
+  \Omega=D\setminus\bigcup_{j=1}^{N_s}\overline{B_j}.
+\end{equation}
+入口与出口分别是 $\Gamma_{\rm in}=\{x=0\}$ 与 $\Gamma_{\rm out}=\{x=1\}$，
+其余立方体边界记为 $\Gamma_w$（$y,z$ 方向四个侧面）。固体边界全部施加速度
+无滑移条件；入口出口是``开口''，不是固体壁。
+
+所有分区方法共享一个底层函数——\emph{净距}（clearance，到最近固体的距离）：
+\begin{equation}\label{eq:clearance}
+  d(\bm x)=\min\left\{
+    \min_j\bigl(\|\bm x-\cc_j\|-r_j\bigr),\ d_{\rm wall}(\bm x)
+  \right\},
+\end{equation}
+其中 $d_{\rm wall}$ 的选取是一个\emph{边界策略}（\texttt{watershed\_partition.py}
+中的 \texttt{clearance\_from\_policy}）：
+\begin{itemize}
+  \item \texttt{"spheres"}：只计球面，$d_{\rm wall}=+\infty$；
+  \item \texttt{"walls\_and\_spheres"}（默认）：计球面与 $y,z$ 四个侧面；
+  \item \texttt{"cube\_and\_spheres"}：计全部六个立方体面。
+\end{itemize}
+入口出口在默认策略中不是固体，这使边界孔体被真实的开口截断，而不会被虚假
+的``墙''制造出新的净距极大值。这个决策直接影响孔体个数：把 $x=0,1$ 算作墙，
+会在边界上产生一整层附加的最大值。
+
+\subsection{分区的数学表述}
+
+\begin{definition}[孔体分区]
+  $\Omega$ 的一个\emph{孔体分区}是开子区域族 $\{\Omega_i\}_{i=1}^{N_p}$，满足
+  \begin{enumerate}
+    \item 互不重叠且覆盖流体域：$\Omega_i\cap\Omega_j=\varnothing\ (i\ne j)$，
+      $\overline\Omega=\bigcup_i\overline{\Omega_i}$；
+    \item 每个 $\Omega_i$ 连通，且 $\partial\Omega_i$ 与固壁
+      （球面或 $\Gamma_w$）有非空交集；
+    \item 对每对相邻孔体，共享面
+      $\Gamma_f=\partial\Omega_i\cap\partial\Omega_j$ 是二维流形片
+      （可带边界），称为\emph{孔喉界面}。
+  \end{enumerate}
+\end{definition}
+
+条件 2 不是装饰：在 DDPNM 的局部 Stokes 求解中，速度 Dirichlet 边界只能来自
+固壁。一个完全不接触固壁的``浮游''孔体（边界全由界面组成）只受纯牵引
+条件，其局部 Stokes 算子含有刚体模态零空间（平移、旋转），Schur 系统会在
+数值上爆炸（实测局部响应范数 $|G|\sim10^{14}$，而有锚定盆约
+$10^{-2}$）。这就是源码中 \texttt{merge\_floating\_basins} 存在的代数原因。
+
+\begin{keybox}{好分区的验收标准（贯穿全文）}
+\begin{enumerate}
+  \item \textbf{语义}：孔体应围绕净距场的局部极大值组织，即每个孔体对应一个
+  ``空隙''，而不是对应一个固体颗粒；
+  \item \textbf{几何}：两孔体之间的界面应贴近净距鞍点，即两盆相遇的最窄处；
+  \item \textbf{数值}：每个子区域有固壁锚定（定义 1 的条件 2），浮游盆被
+  合并；
+  \item \textbf{模态匹配}：界面应尽可能接近一个可被界面迹空间（常数、仿射
+  九模态）表达的曲面——界面越平、法向跳变越小，DDPNM 的近似越好；
+  \item \textbf{稳健性}：换网格、换随机种子后孔体数与界面数不应剧烈跳动。
+\end{enumerate}
+\end{keybox}
+
+这五条标准内部有张力：例如球心 Voronoi 平面在模态匹配（第 4 条）上表现最好，
+却违反语义（第 1 条）——它把孔体定义为``离某个球心最近''的区域，而不是
+``围绕某个净距极大值''的区域。四组合消融实验（\texttt{ablation\_4way.py}）
+的全部结论都可以在这个框架下理解。
+
+\subsection{净距场、活动支撑与维数计数}
+
+\begin{definition}[活动支撑]
+  在 $\bm x$ 处达到最小净距的固体（球或墙）的集合记为 $A(\bm x)$。
+\end{definition}
+
+\begin{proposition}[支撑数维数计数]
+  在一般位置（generic position）下，设 $\bm x$ 处恰有 $k$ 个球同时等净距，
+  则所有满足同样等净距条件的点的集合 $\mathcal M_k$ 在 $\R^3$ 中具有维数
+  \begin{equation}\label{eq:dim-count}
+    \dim\mathcal M_k=3-(k-1)=4-k.
+  \end{equation}
+  一般地，在 $\R^n$ 中为 $n-(k-1)$。因此两球等净距给出二维片，三球给出
+  一维分支，四球给出孤立结点。
+\end{proposition}
+
+\begin{proof}
+  ``$\bm x$ 到球 $i$ 与球 $j$ 的净距相等''是一个光滑方程
+  $\|\bm x-\cc_i\|-r_i=\|\bm x-\cc_j\|-r_j$。$k$ 个球同时等净距给出 $k-1$ 个
+  独立方程（一般位置下梯度线性无关），在三维流形中裁剪出
+  $3-(k-1)=4-k$ 维子流形。
+\end{proof}
+
+这个计数是理解一切三维分区的钥匙：
+\begin{itemize}
+  \item 三维孔喉的\emph{最窄核心}在一般球堆积中通常是三球支撑的一维中轴
+  分支（$\dim\mathcal M_3=1$），在某些对称配置（如规则阵列，见例 4）中退化为
+  四球支撑的孤立鞍点（$\dim\mathcal M_4=0$）；
+  \item 但\emph{整张} watershed 分界面不是由某三个固定球定义的——它由
+  ``两个孔体标签''定义（见式 \eqref{eq:ws-interface}）。支撑球只解释局部
+  奇异结构，标签对定义全局分界面；
+  \item 升维时不能把二维的``两个圆支撑一条线段''机械改写为``三个球支撑整张
+  曲面''。二维的维数计数是 $n-(k-1)=3-k$：两圆给出一维中轴曲线，三圆给出
+  点。把 $k=2$ 时的一维对象直接升成 $k=2$ 时的二维对象，恰好错把``两支撑''
+  当成了``分隔体积''的充分条件。
+\end{itemize}
+
+\section{四种分区方法的数学构造}
+
+\subsection{规则阵列解析分区：64 个最大空球}
+
+规则项目（\texttt{ddpnm\_3d\_uniform\_spheres}）的固体为 $27$ 个等半径球，
+球心在格点 $\{0.2,0.5,0.8\}^3$，半径 $r=0.105$。构造如下：
+
+\begin{enumerate}
+  \item 三族坐标平面把立方体切成 $4\times4\times4=64$ 个胞：
+  \begin{equation}\label{eq:reg-planes}
+    x,y,z\in\{0.2,\,0.5,\,0.8\}.
+  \end{equation}
+  注意这些平面\emph{穿过球心}：球心坐标恰是 $\{0.2,0.5,0.8\}$，故每颗球心
+  落在三张分隔面（$x=c_x,\ y=c_y,\ z=c_z$）上，球面被劈成 $2^3=8$ 片，共
+  $27\times8=216$ 个 CAD patch；
+  \item 每个胞内放置\emph{最大空球}：以胞内某点为球心、在到达固壁或球面
+  之前可以无限膨胀的最大球。设胞的边界轴数为 $b\in\{0,1,2,3\}$（某轴胞
+  下标为 $0$ 或 $3$ 则该轴是边界轴），球心取
+  $\cc=(c_1,c_2,c_3)$，其中边界轴坐标 $c=:b_0$，内部轴坐标取该胞中
+  点（$0.35$ 或 $0.65$）。等净距条件给出
+  \begin{equation}\label{eq:reg-ball}
+    \sqrt{b\,(0.2-b_0)^2+(3-b)\,0.15^2}-0.105=b_0,
+  \end{equation}
+  即``到最近球的距离减 $r$ 等于到最近墙的距离''。当 $b=0$ 时退化为
+  $b_0=\sqrt{3}\cdot 0.15-0.105$；
+  \item 相邻胞之间的喉道鞍点取在分隔面上：对 $(i_x,i_y,i_z)$ 与
+  $(i_x+1,i_y,i_z)$，鞍点 $x=0.2/0.5/0.8$，其余两轴取各自胞中点；
+  \item 胞按六邻接图连接，共
+  \begin{equation}
+    3\text{ 轴}\times3\text{ 间隔}\times16\text{ 行}=144
+  \end{equation}
+  个喉道。
+\end{enumerate}
+
+\begin{algobox}{算法 1：规则阵列的最大空球分区（\texttt{geometry.py}）}
+\begin{lstlisting}[style=compactcode,language=Python]
+for (ix, iy, iz) in product(range(4), repeat=3):
+    b = sum(index in (0, 3) for index in (ix, iy, iz))   # 边界轴数
+    r = brentq(lambda v: sqrt(b*(0.20-v)**2 + (3-b)*0.15**2)
+                          - SPHERE_RADIUS - v, 0.0, 0.20)  # 式 (2.2)
+    center = [boundary_axis_coord(axis) or mid_cell(axis) for axis in range(3)]
+    assert min(clearance(center)) == r                    # 解析自检
+throats = [(cell, cell+neighbor) for cell in 64
+           for neighbor in (+x, +y, +z) if inside]
+fragment(fluid, planes x,y,z in {0.2, 0.5, 0.8})
+\end{lstlisting}
+\end{algobox}
+
+这一构造在当前对称几何中是\emph{严格且高效的}：所有半径由式
+\eqref{eq:reg-ball} 解析给出，代码用解析值反查网格净距自检到
+$2\times10^{-10}$。但它依赖等半径、规则排布与解析对称性，不能作为随机不等
+半径球介质的一般算法。更重要的是，\emph{它本身并不是净距 watershed}：分隔
+平面穿过球心是人为的晶格约定，与``两盆相遇的最窄处''无关（例 4 会给出量化
+对照）。
+
+\subsection{球心 Voronoi 平面基线：27 个孔体}
+
+随机项目（\texttt{affine\_ddpnm\_3d\_random\_porous/random\_porous.py}）的第一
+种分区把\emph{球心点集}作为 Voronoi 图的生成元：
+\begin{enumerate}
+  \item 对球心作 Delaunay 三角剖分，得到候选球对 $(i,j)$；
+  \item 对每个候选对构造连心线上的间隙线段，其中心为等净距鞍点
+  （见 \eqref{eq:saddle-shift}）；若该线段穿过第三个球（用 13 个采样点检验），
+  拒绝这对；
+  \item 取球心点集 Voronoi 图中 $(i,j)$ 对的 ridge polygon（垂直平分面上的
+  凸多边形，被相邻面与立方体边界裁剪），作为界面；
+  \item 加入 6 个远离立方体的虚构种子（\texttt{DUMMY\_SEEDS}），保证每个
+  真实胞都是有限封闭多面体；
+  \item 所有面经 OpenCASCADE fragment 进流体体积，生成一张共形四面体网格。
+\end{enumerate}
+
+\begin{algobox}{算法 2：球心 Voronoi 平面分区（\texttt{random\_porous.py}）}
+\begin{lstlisting}[style=compactcode,language=Python]
+edges = Delaunay(sphere_centers).edges()
+for (i, j) in edges:
+    gap_segment = sphere_surface_gap_on_centerline(i, j)
+    reject_if_gap_segment_crosses_third_sphere(gap_segment)
+    face = Voronoi(sphere_centers + DUMMY_SEEDS).ridge_polygon(i, j)
+    face = clip_to_box(face)
+    reject_if_face_cuts_through_solid(face)
+fragment(fluid, kept_faces)      # 一张共形网格，无网格转换误差
+labels = nearest_sphere_center(volumes)
+\end{lstlisting}
+\end{algobox}
+
+该方法的数学对象是\emph{球心点集的无权 Voronoi 胞}。由此直接得出两个结构性
+结论（均为四组合消融实验观测到的事实）：
+\begin{enumerate}
+  \item \textbf{孔体数等于固体球数}：当前样例 $N_p^{\rm Vor}=27=N_s$。孔体
+  的``身份''是固体颗粒，而不是净距极大值——第 1 条验收标准（语义）在此
+  失败；
+  \item \textbf{不等半径时界面偏离净距鞍点}：对球对 $(i,j)$，Voronoi 界面是
+  球心的垂直平分面
+  $\Pi_{ij}=\{\bm x:(\bm x-(\cc_i+\cc_j)/2)\cdot\bm e_{ij}=0\}$
+  （$\bm e_{ij}$ 为连心单位向量）。而真正的两球等净距位置沿连心线在
+  \begin{equation}\label{eq:saddle-shift}
+    \bm x_{ij}^*=\cc_i+\frac{D_{ij}+r_i-r_j}{2}\,\bm e_{ij},
+    \qquad D_{ij}=\|\cc_j-\cc_i\|,
+  \end{equation}
+  相对球心中点的轴向位移为
+  \begin{equation}
+    \left|(\bm x_{ij}^*-(\cc_i+\cc_j)/2)\cdot\bm e_{ij}\right|
+    =\frac{|r_i-r_j|}{2}.
+  \end{equation}
+\end{enumerate}
+
+\begin{proposition}[鞍点位移]
+  当 $r_i=r_j$ 时等净距面退化为垂直平分面，Voronoi 平面与净距鞍点重合；当
+  $r_i\ne r_j$ 时两者有 $|r_i-r_j|/2$ 的轴向偏差，且该偏差是\emph{画法固有}
+  的——不随网格加密或界面模态升阶而消失。
+\end{proposition}
+
+\begin{proof}
+  沿连心线参数化 $\bm x=\cc_i+t\bm e_{ij}$，净距分别为 $t-r_i$ 与
+  $D_{ij}-t-r_j$。相等给出 $t=(D_{ij}+r_i-r_j)/2$，即
+  \eqref{eq:saddle-shift}；球心中点为 $t=D_{ij}/2$。两式之差即
+  $(r_i-r_j)/2$。
+\end{proof}
+
+随机样例中 126 个候选喉道的轴向位移中位数为 $0.0073$（约占间隙
+$2.8\%$），最差达间隙的 $28.5\%$（\texttt{outputs/watershed\_formal/}）。
+
+\subsection{固定球对的等净距曲面：双曲面}
+
+把命题 2 的等净距条件\emph{不限于连心线}，得到真正的两球等净距曲面
+\begin{equation}\label{eq:hyperboloid}
+  \mathcal H_{ij}=\{\bm x:\|\bm x-\cc_i\|-r_i=\|\bm x-\cc_j\|-r_j\}.
+\end{equation}
+当 $r_i=r_j$ 时它是垂直平分面；当 $r_i\ne r_j$ 时是以两球心为焦点的\emph{双叶
+双曲面}的一支（在二维中叫 Apollonius 圆/双曲线——加性加权 Voronoi 图的
+边界）。沿连心线，它在轴上的交点是 \eqref{eq:saddle-shift} 的 $\bm x_{ij}^*$。
+
+\begin{remark}
+  $\mathcal H_{ij}$ 只描述\emph{固定球对}的局部等距几何，\emph{不构成全局
+  分区}：第一，它没有给出孔体（盆地）的划分，只有界面；第二，在
+  $\mathcal H_{ij}$ 上，最近固体的身份可能切换——当某点离第三个球更近时，
+  ``球 $i$、球 $j$ 等净距''不再决定分界面。真正的分界面是净距场 watershed
+  的 separatrix（下一小节），支撑球的身份在其上逐片变化。这正是``把平面换成
+  双曲面''仍不充分的数学原因。
+\end{remark}
+
+\subsection{持久性净距 watershed：82 个孔体}
+
+watershed 实现（\texttt{watershed\_partition.py}）只依赖流体域的\emph{一张无
+内部切割}的四面体网格。设 $\mathcal G_h=(\mathcal K_h,\mathcal E_h)$ 为四面体
+邻接图，$d_K$ 为单元重心处的净距。
+
+\begin{definition}[超水平滤波与合并树]
+  对阈值 $\lambda$ 定义超水平子图
+  \begin{equation}
+    \mathcal G_h^\lambda=\mathcal G_h[\{K\in\mathcal K_h:d_K\ge\lambda\}].
+  \end{equation}
+  当 $\lambda$ 从高到低下降时，$\mathcal G_h^\lambda$ 的连通分支在局部极大值
+  $\beta$ 处\emph{出生}，在鞍层 $\delta$ 处与更早出生的分支\emph{合并并死亡}。
+  每个分支记为四元组 $(\text{出生值 }\beta,\ \text{出生胞},\ \text{死亡层 }
+  \delta,\ \text{父分支})$，持久性定义为
+  \begin{equation}\label{eq:persistence}
+    \rho=\beta-\delta.
+  \end{equation}
+  合并树即所有这些分支及其父子关系。平台（数值相同的胞）整批激活后再合并，
+  保证确定性。
+\end{definition}
+
+\begin{definition}[持久性标记]
+  分支 $C$ 是\emph{标记}（孔体种子），当
+  \begin{equation}\label{eq:marker-rule}
+    \rho_C\ge\tau_{\rm abs}\quad\text{且}\quad
+    \rho_C\ge\tau_{\rm rel}\,\beta_C,
+  \end{equation}
+  且净距全局最大处出生的分支（滤波的最终幸存者）恒为标记。默认阈值为
+  $(\tau_{\rm abs},\tau_{\rm rel})=(0.02,0.05)$。
+\end{definition}
+
+\begin{definition}[盆地标签与界面]
+  从标记胞出发、按净距降序\emph{洪水}（每个未标记胞取已标记邻居中最小的
+  标记 id，平台整批传播到不动点，然后升序回填），得到连通标签
+  $L(K)\in\{0,\dots,N_p-1\}$。离散孔喉界面为异标签相邻单元的公共三角面并集：
+  \begin{equation}\label{eq:ws-interface}
+    \Gamma_{\alpha\beta}^h
+    =\bigcup_{\substack{F=K^+\cap K^-\\
+    L(K^+)=\alpha,\ L(K^-)=\beta}}F,
+  \end{equation}
+  并按共享边的连通分量拆分：同一标签对可以有多个互不连通的物理接口。
+\end{definition}
+
+\begin{algobox}{算法 3：持久性净距 watershed 分区}
+\begin{lstlisting}[style=compactcode,language=Python]
+mesh = mesh_cube_minus_spheres(no_internal_cuts=True)
+d[K] = clearance(cell_barycenter[K], policy="walls_and_spheres")
+adjacency = tetrahedra_sharing_a_facet(mesh)
+
+tree = superlevel_merge_tree(d, adjacency)          # 平台整批激活
+markers = [c for c in tree
+           if c.pers >= abs_thr and c.pers >= rel_thr * c.birth]
+markers += global_maximum_survivor(tree)            # 恒标记
+labels = descending_watershed_flood(markers, d, adjacency)
+labels = merge_floating_basins(labels)              # 刚性零空间修复
+facets = [F for F in internal_facets(mesh)
+          if labels[F.cell_plus] != labels[F.cell_minus]]
+interfaces = split_by_label_pair_and_edge_component(facets)
+\end{lstlisting}
+\end{algobox}
+
+正式样例在默认阈值下先得到 85 个盆，其中 3 个没有固壁 facet（浮游盆），
+被并入共享界面面积最大的邻居后得到 $N_p^{\rm W}=82$ 个孔体与 369 个界面。
+
+\begin{lemma}[浮游盆合并终止]
+  每次合并严格减少浮游盆个数（接收者保留自己的固壁 facet），循环必然终止；
+  由于流体域连通且必触固壁，至少有一个盆永远不浮游。
+\end{lemma}
+
+\begin{remark}
+  watershed 分区是\emph{网格依赖}的：固定阈值下，三档网格（4{,}311 /
+  6{,}586 / 11{,}404 胞）分别得到 77 / 82 / 50 个盆。连续层面的 watershed
+  是良定义的（净距场的 Morse 划分），但离散近似使鞍层位置随网格漂移，
+  小而浅的盆会跨阈值出现或消失。换网格或换种子后\emph{必须重做阈值扫描}，
+  这是交接文档中明确的实验纪律。这也是持久性阈值 \eqref{eq:marker-rule}
+  存在的理由：它是``极小净距极大值是否值得成为一个孔体''的尺度选择，等价于
+  Edelsbrunner--Harer 意义下的持久性裁剪（见延伸阅读）。
+\end{remark}
+
+\subsection{四种方法的数学身份对照}
+
+\begin{table}[htbp]
+\centering
+\caption{三维分区方法及其数学身份（对照表）}
+\label{tab:partition-identity}
+\small
+\begin{tabularx}{\textwidth}{p{2.9cm}p{3.2cm}p{3.6cm}X}
+\toprule
+方法 & 孔体定义 & 孔喉界面定义 & 关键性质\\
+\midrule
+规则解析分区
+& 对称净距场的 $4^3$ 个最大空球盆
+& 过球心的坐标平面族 \eqref{eq:reg-planes}，鞍点半径解析给出
+& 严格但非一般；界面\emph{不是}净距 watershed\\
+球心 Voronoi
+& 每个球心点集的无权 Voronoi 胞（$N_p=N_s$）
+& Delaunay 球心对的垂直平分面多边形
+& 稳定、平面、与仿射模态匹配好；语义失败（孔体=颗粒）；不等半径时偏离鞍点 $|r_i-r_j|/2$\\
+固定球对等净距
+& 不定义孔体
+& $\mathcal H_{ij}$：垂直平分面或双叶双曲面
+& 局部几何正确；支撑身份在面上切换，不能独立定义全局盆\\
+净距 watershed
+& 持久性净距极大值的吸引盆（$N_p$ 自由）
+& 两盆标签的二维 separatrix，离散为三角面并集
+& 语义正确、一般适用；依赖阈值与网格；阶梯法向跳变\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{手算例题}
+
+本节约读者只带纸笔即可验证全部数字。所有例子都取自项目实际构造的
+简化版本，且与源码中的公式一一对应。
+
+\subsection{例 1：连通细胞图上的净距 watershed 全流程}
+
+\emph{为什么不用一维几何做例子}：在 $\R^1$ 中任何内部固体区间都会把流体
+域切成两段，细胞图根本不连通——而三维球体不隔断 $\R^3$，watershed 代码的
+细胞图总是连通的。代码实际上\emph{从来只见两个输入}：细胞邻接图
+$\mathcal G_h$ 与胞重心净距 $d_K$（几何只负责生产 $d_K$ 这组数）。因此最
+忠实的``最小手算例''是直接在一条连通路径的 9 个细胞上给出净距剖面：
+
+\begin{table}[htbp]
+\centering
+\caption{例 1 的净距剖面（连通路径上的 9 个细胞）}
+\label{tab:ex1-profile}
+\small
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+细胞 & $c_1$ & $c_2$ & $c_3$ & $c_4$ & $c_5$ & $c_6$ & $c_7$ & $c_8$ & $c_9$\\
+\midrule
+$d_K$ & 0.05 & \textbf{0.10} & 0.05 & 0.05 & \textbf{0.15} & 0.10 & 0.05 & \textbf{0.15} & 0.05\\
+注释 & 坡 & \textbf{峰 1} & 谷 & 谷（平台） & \textbf{峰 2} & 坡 & \textbf{谷 2} & \textbf{峰 3} & 坡\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+$d$ 有三个局部极大值（峰 1、2、3），峰 2 与峰 3 之间隔着谷 $c_7$（$0.05$），
+峰 1 与峰 2 之间隔着谷 $c_3,c_4$（$0.05$，平台）。沿 $\lambda$ 从 $+\infty$
+下降到全局最小值 $0.05$，超水平子图 $\mathcal G_h^\lambda$ 的分支事件：
+
+\begin{table}[htbp]
+\centering
+\caption{例 1 的超水平合并树事件（$\lambda$ 降序）}
+\label{tab:ex1-tree}
+\small
+\begin{tabular}{llllll}
+\toprule
+$\lambda$ & 事件 & 出生 $\beta$ & 死亡层 $\delta$ & 持久性 $\rho$ & 说明\\
+\midrule
+$0.15$ & 峰 2 出生 & 0.15 & --- & --- & 单细胞 $\{c_5\}$\\
+$0.15$ & 峰 3 出生 & 0.15 & --- & --- & 单细胞 $\{c_8\}$\\
+$0.10$ & 峰 1 出生 & 0.10 & --- & --- & 单细胞 $\{c_2\}$\\
+$0.10$ & $c_6$ 并入峰 2 & 0.10 & 0.10 & $0$ & 瞬时分量，被阈值自然过滤\\
+$0.05$ & 峰 1 并入峰 2 & 0.10 & 0.05 & 0.05 & 谷 $c_3,c_4$（平台）\\
+$0.05$ & 峰 3 并入峰 2 & 0.15 & 0.05 & 0.10 & 谷 $c_7$\\
+$0.05$ & 幸存者（峰 2） & 0.15 & 0.05 & 0.10 & 幸存者 $\delta=\min d$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+两点值得注意。第一，\emph{平台整批激活}：$d=0.05$ 层的 $c_1,c_3,c_4,c_7,c_9$
+同时激活后再合并，因此峰 1 不会在 $c_3$ 先激活时``提前死亡''——死亡层统一
+取 $0.05$，与代码的平台批处理一致。第二，非峰细胞（$c_6$）也产生分量，
+但出生即死（$\rho=0$），持久性阈值 \eqref{eq:marker-rule} 正是为滤掉这类
+噪声而设。
+
+标记判定（双阈值，$\tau_{\rm rel}=0.05$）：
+
+\begin{table}[htbp]
+\centering
+\caption{例 1 的标记判定（$\tau_{\rm abs}$ 取三档）}
+\label{tab:ex1-markers}
+\small
+\begin{tabularx}{\textwidth}{lrrrccccX}
+\toprule
+分支 & $\beta$ & $\delta$ & $\rho$ & \multicolumn{3}{c}{通过 $\tau_{\rm abs}$} & 相对阈值\\
+\cmidrule(lr){5-7}
+ & & & & $0.02$ & $0.06$ & $0.11$ &\\
+\midrule
+峰 2（幸存） & 0.15 & 0.05 & 0.10 & 是 & 是 & 否 & $0.05\cdot0.15=0.0075$ 过\\
+峰 3 & 0.15 & 0.05 & 0.10 & 是 & 是 & 否 & $0.05\cdot0.15=0.0075$ 过\\
+峰 1 & 0.10 & 0.05 & 0.05 & 是 & 否 & 否 & $0.05\cdot0.10=0.005$ 过\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+  \item $\tau_{\rm abs}=0.02$：三峰全标记 $\Rightarrow$ \textbf{3 个盆}；
+  \item $\tau_{\rm abs}=0.06$：峰 1（$\rho=0.05$）淘汰 $\Rightarrow$
+  \textbf{2 个盆}；
+  \item $\tau_{\rm abs}=0.11$：峰 1、峰 3 全淘汰，仅全局最大幸存者
+  $\Rightarrow$ \textbf{1 个盆}。
+\end{itemize}
+
+\paragraph{洪水标记（$\tau_{\rm abs}=0.02$ 情形，手算）} 标记按出生值降序
+编号：峰 2 $\to$ 标签 0，峰 3 $\to$ 标签 1，峰 1 $\to$ 标签 2。细胞按 $d_K$
+降序处理：$c_5,c_8$ 直接播种；$c_2$ 播种（标签 2）；$c_6$ 取唯一已标记邻居
+$c_5$ 的标签 0；$0.05$ 平台按升序 $c_1,c_3,c_4,c_7,c_9$ 传播：
+\begin{itemize}
+  \item $c_1$：邻居 $c_2$（2）$\Rightarrow$ 2；
+  \item $c_3$：邻居 $c_2$（2）$\Rightarrow$ 2；
+  \item $c_4$：邻居 $c_3$（2）与 $c_5$（0）$\Rightarrow$ 取小者 0；
+  \item $c_7$：邻居 $c_6$（0）与 $c_8$（1）$\Rightarrow$ 0；
+  \item $c_9$：邻居 $c_8$（1）$\Rightarrow$ 1。
+\end{itemize}
+最终三个盆为 $B_0=\{c_4,c_5,c_6,c_7\}$（峰 2）、$B_1=\{c_8,c_9\}$（峰 3）、
+$B_2=\{c_1,c_2,c_3\}$（峰 1）。分界面落在最深谷的边上：$(c_3,c_4)$ 与
+$(c_7,c_8)$——一维中界面是边，三维中界面是二维 separatrix。注意平局时
+``取最小标签''让盆边界偏向较弱盆地一侧：$c_4$ 被峰 2 盆吸走，即使它紧邻
+峰 1。
+
+\begin{keybox}{例 1 的要点}
+\begin{enumerate}
+  \item 算法只看见 $(\mathcal G_h,d_K)$：手算时不需要几何，只需图与数值——
+  这正是与 3D 代码逐行对照的最小可验证对象（
+  \texttt{test\_watershed\_partition.py} 的 5 个测试同构于此）；
+  \item 阈值是网格、种子之外的第三个自由度：同一个剖面，
+  $\tau_{\rm abs}\in\{0.02,0.06,0.11\}$ 给出 $3/2/1$ 个盆。3D 项目中
+  ``固定阈值下盆数随网格为 77/82/50''就是这一机制在网格扰动下的表现，
+  换网格或换种子必须重做阈值扫描；
+  \item 持久性 $\rho=\beta-\delta$ 是``这个极大值值不值得当孔体''的天然
+  打分：它自动把浅峰（$\rho$ 小）与瞬时分量（$\rho=0$）滤掉。
+\end{enumerate}
+\end{keybox}
+
+\subsection{例 2：两个不等半径球——三种方法的差异}
+
+取两球 $\cc_1=(0,0,0)$、$r_1=1$，$\cc_2=(4,0,0)$、$r_2=2$。间隙
+$D-r_1-r_2=1$。
+
+\begin{enumerate}
+  \item \textbf{球心 Voronoi 面}：垂直平分面 $x=2$（球心中点）；
+  \item \textbf{等净距面} $\mathcal H_{12}$：解
+  \begin{equation}
+    \|\bm x-\cc_1\|-1=\|\bm x-\cc_2\|-2
+  \end{equation}
+  沿连心线 $x=t$ 给出 $t-1=|4-t|-2$，即 $t-1=4-t-2$，故
+  \begin{equation}
+    t=\frac{D+r_1-r_2}{2}=\frac{4+1-2}{2}=1.5.
+  \end{equation}
+  这是\emph{双叶双曲面}在轴上的交点，$r_1\ne r_2$ 时不是平面；
+  \item \textbf{两者之差}：$|2-1.5|=0.5=|r_1-r_2|/2$，即命题 2；
+  \item \textbf{鞍点净距}：$1.5-1=0.5$，恰为间隙之半（几何最窄处）；
+  \item \textbf{二维项目会怎么做}：2D 界面是连心线上的间隙线段
+  $\bm x=\cc_1+t\bm e_{12}$，$t\in[1,2]$——端点分别是两圆面上的最近点
+  （``端点由两个圆支撑''）。该线段的中点 $t=1.5$ 恰是鞍点。这就是二维
+  的完整故事：一个 1D 线段、由两圆支撑、中心在鞍点。
+\end{enumerate}
+
+\begin{keybox}{例 2 的要点：升维的几何断裂}
+二维中``线段''既能表达界面（孔喉），又自动落在鞍点上。三维中把
+``线段''替换成``球心连线的垂直平分面''（Voronoi），界面变成二维片，但中心
+偏离鞍点 $|r_1-r_2|/2$——一个由画法决定、网格永远修不好的系统偏差。要
+同时得到``二维曲面''与``过鞍点''，只能回到净距场本身：在无障碍的
+自由空间中，两球 watershed 的 separatrix 就是等净距面 $\mathcal H_{12}$
+（本例中通过 $x=1.5$ 的双曲面）；一旦加入墙或第三球，最近固体的身份
+在面上切换，真正的 separatrix 是 $\mathcal H$ 的若干片段拼接。
+\end{keybox}
+
+\subsection{例 3：支撑数维数计数}
+
+命题 1 的手算验证。以 $\R^3$ 中四点 $A=(0,0,0)$、$B=(1,0,0)$、
+$C=(0,1,0)$、$D=(0,0,1)$ 为例（等权：半径全相等）。
+
+\begin{itemize}
+  \item $k=2$，等距面 $\{x=0.5\}$：二维平面。垂直平分面是唯一的方程；
+  \item $k=3$，三球等距：$A,B,C$ 的垂直平分面 $x=0.5$（对 $A,B$）、
+  $y=0.5$（对 $A,C$）、$x=y$（对 $B,C$：由
+  $(x-1)^2+y^2=x^2+(y-1)^2$ 推出）两两相交于\emph{直线}
+  \begin{equation}
+    (0.5,\ 0.5,\ z),\qquad z\in\R,
+  \end{equation}
+  这是 $A,B,C$ 外接圆所在的直线：一维分支（$\dim\mathcal M_3=1$）；
+  \item $k=4$，四球等距：再加上 $D$ 的垂直平分面 $z=0.5$，交于单点
+  \begin{equation}
+    (0.5,\ 0.5,\ 0.5)=\text{外接球心},\qquad
+    \text{到四顶点距离}=\sqrt{3}/2,
+  \end{equation}
+  即孤立结点（$\dim\mathcal M_4=0$）。
+\end{itemize}
+
+\begin{table}[htbp]
+\centering
+\caption{支撑数维数计数 $n-(k-1)$}
+\label{tab:dim-count}
+\small
+\begin{tabular}{lcccc}
+\toprule
+空间 & $k=1$ & $k=2$ & $k=3$ & $k=4$\\
+\midrule
+$\R^1$ & 区间 $1$ & 中点 $0$ & --- & ---\\
+$\R^2$ & 全平面 $2$ & 垂直平分线 $1$ & 外接圆心 $0$ & ---\\
+$\R^3$ & 全空间 $3$ & 垂直平分面 $2$ & 外接圆线 $1$ & 外接球心 $0$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{remark}
+  半径不等时``等距''对象不是垂直平分面而是双曲面（例 2），但维数计数不变
+  （方程个数不变）。因此``$k$ 支撑定形、维数定拓扑''的结论对不等半径球
+  仍然成立：三维一般球堆积的喉核是三球等净距的一维中轴分支，规则阵列的
+  喉核退化为四球等净距的孤立鞍点（见例 4）。
+\end{remark}
+
+\subsection{例 4：规则 $3\times3\times3$ 阵列——64 个孔体，不是 27}
+
+回到 \S2.1 的配置：球心 $\{0.2,0.5,0.8\}^3$，$r=0.105$。全部数字均可手算。
+
+\paragraph{最大空球} 按边界轴数 $b$ 分四类。令胞中心边界坐标为 $b_0$，
+内部坐标为 $0.35$（或 $0.65$）。式 \eqref{eq:reg-ball} 的具体解：
+
+\begin{table}[htbp]
+\centering
+\caption{规则阵列最大空球（胞中心坐标与半径）}
+\label{tab:reg-balls}
+\small
+\begin{tabularx}{\textwidth}{cccXc}
+\toprule
+$b$（边界轴数） & 胞例 & 中心 & 半径 $b_0$ & 支撑\\
+\midrule
+$0$ & $(1,1,1)$ & $(0.35,0.35,0.35)$ & $\sqrt3\cdot0.15-0.105=0.1548$ & 8 球\\
+$1$ & $(0,1,1)$ & $(0.1213,0.35,0.35)$ & 解 $\sqrt{(0.2-b_0)^2+2\cdot0.15^2}-0.105=b_0$ & 1 墙 + 4 球\\
+$2$ & $(0,0,1)$ & $(0.1006,0.1006,0.35)$ & 解 $\sqrt{2(0.2-b_0)^2+0.15^2}-0.105=b_0$ & 2 墙 + 2 球\\
+$3$ & $(0,0,0)$ & $(0.0884,0.0884,0.0884)$ & $\sqrt3(0.2-b_0)-0.105=b_0$ & 3 墙 + 1 球\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+例如 $b=3$：$\sqrt3(0.2-b_0)=0.105+b_0$，移项得
+$b_0=(\sqrt3\cdot0.2-0.105)/(1+\sqrt3)=0.08836$。每个胞恰好一个最大空球，
+共 $4^3=64$；总支撑数（球+墙）恒 $\ge4$，与代码中的断言一致。
+
+\paragraph{喉道鞍点} 胞 $(1,1,1)$ 与 $(2,1,1)$ 之间的界面在 $x=0.5$，鞍点
+$(0.5,0.35,0.35)$。其净距：到最近球（四个 $x=0.5$ 平面上的球）的距离为
+$\sqrt{2\cdot0.15^2}=0.2121$，减 $r$ 得
+\begin{equation}
+  \sqrt2\cdot0.15-0.105=0.1071,
+\end{equation}
+四球同时等净距（$k=4$）——孤立鞍点，符合 $\dim\mathcal M_4=0$。六邻接图给
+出 $3\times3\times16=144$ 个喉道。
+
+\paragraph{对照：球心 Voronoi 会给出什么} 球心点集 $\{0.2,0.5,0.8\}^3$ 的
+Voronoi 胞数必然是 $N_s=27$（每球一胞），其垂直平分面在
+$x\in\{0.35,0.65\}$（$0.2$ 与 $0.5$ 的中点、$0.5$ 与 $0.8$ 的中点），
+$y,z$ 同理。与解析分隔面 $x\in\{0.2,0.5,0.8\}$ 完全不同：
+
+\begin{table}[htbp]
+\centering
+\caption{同一几何上两种分区的界面平面}
+\label{tab:reg-vs-vor}
+\small
+\begin{tabular}{lcl}
+\toprule
+方法 & $x$ 向界面 & 孔体数\\
+\midrule
+解析最大空球 & $0.2,\ 0.5,\ 0.8$（过球心） & $4^3=64$\\
+球心 Voronoi & $0.35,\ 0.65$（球心中点） & $3^3=27$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{keybox}{例 4 的要点}
+\begin{enumerate}
+  \item ``64 个孔体''与``27 个孔体''回答的是不同问题：前者围绕净距极大值
+  组织（每个格间空隙是一个孔体），后者围绕球心组织（每个固体颗粒占一个
+  胞）。3D 随机项目里的 $82$ 与 $27$ 是同一对概念差的随机版本；
+  \item 解析分隔面穿过球心，是晶格约定而非净距 watershed——即使在此规则
+  几何上，\"解析分区\"与\"净距 watershed\"也不完全重合（最大空球的严格
+  watershed 会在球心面与胞中点之间给出弯曲的 separatrix）。因此手算表中
+  两类平面之差 $0.15$ 不是误差，而是\textbf{方法身份之差}；
+  \item 规则阵列的喉道鞍点是\emph{四球}支撑的孤立点（$k=4$），而一般随机
+  球堆积的喉核是\emph{三球}支撑的曲线（$k=3$）——两者都可由式
+  \eqref{eq:dim-count} 预期，但形状完全不同：规则阵列的界面几何更``干净''
+  （平面、单一法向），随机 watershed 的界面是阶梯面。
+\end{enumerate}
+\end{keybox}
+
+\subsection{例 5：浮游盆判别（思维练习）}
+
+设只有两个固体球 $A,B$ 悬浮于立方体中央（不触任何壁），净距场的两个极大值
+盆（各绕一球）在鞍点处相遇。\emph{无论阈值如何取}，这两个盆都没有固壁
+facet——全部边界都是界面（以及不构成 Dirichlet 的入口出口）。按
+\texttt{merge\_floating\_basins}，浮游盆被并入共享界面面积最大的邻居：
+两盆互相合并为一个孔体，其局部 Stokes 问题因为大盆仍然触壁而恢复适定。
+若立方体只有 $y,z$ 壁（默认策略）而两球恰好悬浮，则整个流体域最终是一个
+孔体——即使净距场有两个极大值。这就是``孔体数 $=$ 极大值数''说法不成立的
+精确边界条件：极大值必须与持久性、壁接触约束联合筛选。
+
+\section{分区与求解器的接口}
+
+分区输出的不是几何本身，而是喂给 DDPNM 求解器的一组量：
+\begin{itemize}
+  \item \textbf{孔体}：标签数组（每四面体一个标签）+ 最大空球
+  （\texttt{maximal\_balls}：中心+半径）+ 峰值净距与持久性
+  （\texttt{pore\_peak\_clearance}、\texttt{pore\_persistence}）；
+  \item \textbf{界面}：面积、面积加权质心、面积平均法向、法向 dispersion、
+  鞍值净距（\texttt{compute\_\allowbreak{}interface\_geometry}）。其中法向与质心直接定义
+  仿射九模态的参考框架 $\{ \normal,\bm t_1,\bm t_2\}$（见
+  \texttt{affine\_face\_basis.py}）；
+  \item \textbf{稳定性修复}：浮游盆合并记录（\texttt{cad\_counts}）；
+  \item \textbf{拓扑不变量检查}：每胞有标签、每盆连通、界面两侧标签不同、
+  每界面边连通、总体积守恒、法向低到高定向一致
+  （\texttt{check\_topology\_invariants}）。
+\end{itemize}
+
+四组合消融（分区画法 $\times$ 界面基）可以这样读：V$\times$Classic 的
+$65.32\%$ 是``几何与模态双错''（Voronoi 语义错 + 常数模态表达力不足）；
+W$\times$Classic 的 $43.55\%$ 说明几何修正对低阶模态有实质帮助；V$\times$
+Affine 的 $6.51\%$ 说明平面几何与平面仿射基天然匹配；W$\times$Affine 的
+$11.31\%$ 说明 watershed 的阶梯法向跳变超出了单平均切平面基的表达力。
+用本文的语言：前三条是式 \eqref{eq:dim-count} 与命题 2 的直接后果，第四条
+指向下一层几何对象——\emph{分片} facet frame 或按法向聚类的多 patch 模态。
+
+\section{延伸阅读}
+
+按主题给出教材与经典文献的具体章节（讨论与取舍见随附说明）：
+
+\begin{itemize}
+  \item \textbf{Voronoi 图与 Delaunay 三角剖分}：
+  de~Berg 等 \emph{Computational Geometry: Algorithms and Applications}（第 3
+  版，Springer 2008）第 7 章（Voronoi 图：邮局问题，含线段 Voronoi 与最远点
+  Voronoi）与第 9 章（Delaunay 三角剖分）；
+  Okabe--Boots--Sugihara--Chiu \emph{Spatial Tessellations}（第 2 版，Wiley
+  2000）第 2 章（定义与基本性质）与第 3 章（\S3.1 加权 Voronoi 图，
+  \S3.1.2 加性加权即 Apollonius 图——等净距双曲面的二维族谱；\S3.5.4 中轴）。
+  \item \textbf{中轴与最大空球}：Blum（1967）；Dong--Blunt（2009，
+  Phys.~Rev.~E \textbf{80}:036307）与 Silin--Patzek（2006，Physica A
+  \textbf{371}:336）——最大内切球孔网提取的直接源头，与本文最大空球构造
+  同源。
+  \item \textbf{持久性与合并树}：Edelsbrunner--Harer \emph{Computational
+  Topology: An Introduction}（AMS 2010）第 VI 章（Morse 函数）与第 VII 章
+  （\S VII.1 持久同调，p.\,149；\S VII.3 扩展持久性）、第 VIII 章（稳定性）；
+  Carr--Snoeyink--Axen（2003，Contour trees）。
+  \item \textbf{watershed}：Soille \emph{Morphological Image Analysis}（第 2
+  版，Springer 2003）第 7 章（测地变换）与第 9 章（分割，p.\,267，watershed
+  所在）；Vincent--Soille（1991，IEEE TPAMI \textbf{13}(6):583）——基于沉浸
+  模拟的经典算法。
+  \item \textbf{孔隙网络提取}：Blunt \emph{Multiphase Flow in Permeable
+  Media}（Cambridge 2017）第 2 章 \S2.2（孔尺度网络与拓扑描述）；
+  Lindquist 等（1996，JGR \textbf{101}:8297）——CT 图像中轴法孔网提取的
+  奠基工作。
+  \item \textbf{域分解与 Schur 补}：Toselli--Widlund \emph{Domain
+  Decomposition Methods: Algorithms and Theory}（Springer 2005）第 4 章
+  （\S4.3 Schur 补系统、\S4.4 离散调和延拓、\S4.5 Schur 补条件数）与第 5 章
+  （原始迭代子结构化方法）。
+\end{itemize}
+
+\appendix
+\section{源码位置对照}
+
+\begin{longtable}{p{5.2cm}p{8.0cm}}
+\caption{源码位置对照}\\
+\toprule
+文件 & 本文使用的内容\\
+\midrule
+\endfirsthead
+\toprule
+文件 & 本文使用的内容\\
+\midrule
+\endhead
+\small
+\texttt{ddpnm\_3d\_uniform\_spheres/} \texttt{ddpnm3d/geometry.py}
+& 规则阵列：\texttt{SPHERE\_GRID}、\texttt{PARTITION\_PLANES}、
+式 \eqref{eq:reg-ball} 的 \texttt{\_boundary\_constrained\_radius}、
+64 最大空球、144 喉道\\
+\texttt{affine\_ddpnm\_3d\_random\_porous/\allowbreak{}random\_porous.py}
+& Delaunay 候选、间隙线段测试、\texttt{voronoi\_throat\_faces}、
+\texttt{DUMMY\_SEEDS}、CAD fragment\\
+\texttt{affine\_ddpnm\_3d\_random\_porous/\allowbreak{}watershed\_partition.py}
+& 边界策略、\texttt{build\_superlevel\_merge\_tree}、双阈值
+\texttt{select\_persistent\_maxima}、\texttt{watershed\_labels}、
+\texttt{merge\_floating\_basins}、\texttt{split\_interface\_components}、
+\texttt{compute\_interface\_geometry}、\texttt{check\_topology\_invariants}\\
+\texttt{affine\_ddpnm\_3d\_random\_porous/\allowbreak{}test\_watershed\_partition.py}
+& 5 个单元测试（含标签不变式）\\
+\texttt{affine\_ddpnm\_3d\_random\_porous/\allowbreak{}ablation\_4way.py}
+& 分区画法 $\times$ 界面基四组合消融\\
+\texttt{affine\_ddpnm\_3d\_random\_porous/\allowbreak{}compare\_partitions\_formal.py}
+& Voronoi 与 watershed 界面的鞍点位移 / Hausdorff 对照\\
+\texttt{ddpnm\_2d\_random\_porous/} \texttt{ddpnm2d/geometry.py}
+& \texttt{analytic\_throat\_cuts}：二维间隙线段（例 2 的二维对照）\\
+\texttt{affine\_ddpnm\_3d\_random\_porous/\allowbreak{}affine\_face\_basis.py}
+& 界面法向 / 质心 / 切向与仿射九模态（分区输出与求解器的接口）\\
+\texttt{outputs/watershed\_formal/} 与 \texttt{handoff\_v6.md}
+& 鞍点位移统计、盆数随网格 77/82/50、四组合误差\\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{9}
+\bibitem{Blum1967}
+H.~Blum, \emph{A transformation for extracting new descriptors of shape},
+in: Models for the Perception of Speech and Visual Form, MIT Press, 1967.
+\bibitem{VincentSoille1991}
+L.~Vincent and P.~Soille, \emph{Watersheds in digital spaces: an efficient
+algorithm based on immersion simulations}, IEEE Trans.~Pattern Anal.~Mach.
+Intell. \textbf{13}(6):583--598, 1991.
+\bibitem{Okabe2000}
+A.~Okabe, B.~Boots, K.~Sugihara, and S.~N.~Chiu, \emph{Spatial Tessellations:
+Concepts and Applications of Voronoi Diagrams}, 2nd ed., Wiley, 2000.
+\bibitem{Lindquist1996}
+W.~B.~Lindquist, S.-M.~Lee, D.~A.~Coker, K.~W.~Jones, and P.~Spanne,
+\emph{Medial axis analysis of void structure in three-dimensional tomographic
+images of porous media}, J.~Geophys.~Res. \textbf{101}(B4):8297--8310, 1996.
+\bibitem{SilinPatzek2006}
+D.~Silin and T.~Patzek, \emph{Pore space morphology analysis using maximal
+inscribed spheres}, Physica A \textbf{371}(2):336--360, 2006.
+\bibitem{Soille2003}
+P.~Soille, \emph{Morphological Image Analysis: Principles and Applications},
+2nd ed., Springer, 2003.
+\bibitem{Carr2003}
+H.~Carr, J.~Snoeyink, and U.~Axen, \emph{Computing contour trees in all
+dimensions}, Comput.~Geom.~Theory Appl. \textbf{24}(2):75--94, 2003.
+\bibitem{ToselliWidlund2005}
+A.~Toselli and O.~Widlund, \emph{Domain Decomposition Methods: Algorithms and
+Theory}, Springer, 2005.
+\bibitem{deBerg2008}
+M.~de~Berg, O.~Cheong, M.~van~Kreveld, and M.~Overmars, \emph{Computational
+Geometry: Algorithms and Applications}, 3rd ed., Springer, 2008.
+\bibitem{DongBlunt2009}
+H.~Dong and M.~J.~Blunt, \emph{Pore-network extraction from
+micro-computerized-tomography images}, Phys.~Rev.~E \textbf{80}:036307, 2009.
+\bibitem{EdelsbrunnerHarer2010}
+H.~Edelsbrunner and J.~L.~Harer, \emph{Computational Topology: An
+Introduction}, AMS, 2010.
+\bibitem{Blunt2017}
+M.~J.~Blunt, \emph{Multiphase Flow in Permeable Media: A Pore-Scale
+Perspective}, Cambridge University Press, 2017.
+\end{thebibliography}
+
+\end{document}

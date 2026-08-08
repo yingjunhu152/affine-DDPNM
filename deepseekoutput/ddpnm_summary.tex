@@ -1,0 +1,411 @@
+\documentclass[11pt,a4paper]{ctexart}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, urlcolor=blue!60!black}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small DDPNM 工程总结（2026-08-04）}
+\fancyhead[R]{\small\thepage}
+
+\newcommand{\Dd}{DDPNM}
+\newcommand{\Ubf}{\boldsymbol{u}}
+\newcommand{\Pbf}{\boldsymbol{p}}
+
+\title{\bfseries 区域分解孔隙网络法（DDPNM）三维与二维工程总结\\
+\large 文件夹：\texttt{ddpnm\_3d\_uniform\_spheres}、\texttt{ddpnm\_2d\_random\_porous}、\texttt{affine\_ddpnm\_3d}}
+\author{DeepSeek 文档整理}
+\date{2026 年 8 月 4 日}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\tableofcontents
+\newpage
+
+\section{总体介绍}
+\label{sec:overview}
+
+本文档总结当前工作目录下三个相互关联的实验文件夹：
+
+\begin{itemize}[itemsep=2pt]
+  \item \texttt{ddpnm\_3d\_uniform\_spheres}：三维 \Dd{} 系列工程，计算域为单位立方体减去 $3\times3\times3=27$ 个规则排列的固体球。除原始 \Dd{} 外，还包含 \Dd{}NT（切向富集）、HODDPNM（完整面内 P1 富集）、自适应层级以及若干界面空间变体实验。
+  \item \texttt{ddpnm\_2d\_random\_porous}：二维 \Dd{} 复现工程，计算域为单位正方形减去 17 个随机圆孔，实现 \texttt{DDPNM.pdf} 第 2.4 节与算法 2.1，并同样搭建了 \Dd{} → \Dd{}NT → HODDPNM 的自适应层级。
+  \item \texttt{affine\_ddpnm\_3d}：三维"单界面实体仿射 \Dd{}"基准实验，在同一张网格上对比经典 \Dd{}、九模态仿射 \Dd{} 与整体 Taylor--Hood FEM。
+\end{itemize}
+
+三个文件夹共享同一套核心代码库 \texttt{ddpnm\_core}（配置、局部有限元工具、响应库、全局界面装配器、Schur 系统与误差估计等模块），且都基于 FEniCSx 环境运行。
+
+\subsection{方法背景}
+\label{sec:method-background}
+
+区域分解孔隙网络法（Domain-Decomposition Pore-Network Method, \Dd{}）的核心思想是：把多孔介质按"最大空球（maximal ball）"划分为若干不重叠子区域，子区域之间的狭窄孔喉截面（鞍点界面）作为网络边；在每个子区域上独立求解局部 Taylor--Hood P2--P1 Stokes 问题，把局部有限元内部自由度静态凝聚掉，只保留界面上的牵引系数作为全局未知量，装配成界面 Schur 系统：
+
+\begin{equation}
+  \mathbf{S}\,\boldsymbol{\lambda}=\mathbf{b},
+\end{equation}
+
+其中 $\boldsymbol{\lambda}$ 为各内部界面上的牵引系数。求得 $\boldsymbol{\lambda}$ 后，各子区域的局部速度—压力场由预存的单位响应线性组合重构。该方法的本质是只在线状/面上的少量界面系数上求解全局问题，从而压缩整体自由度。
+
+三个文件夹围绕同一框架，分别考察：界面空间的阶数选择（低阶→高阶）、二维与三维的差异、以及"每个界面保留多少代表实体与模态"的成本—精度权衡。
+
+\newpage
+\section{\texttt{ddpnm\_3d\_uniform\_spheres}：三维 \Dd{}（27 球规则多孔介质）}
+\label{sec:3d}
+
+\subsection{几何与分区}
+\label{sec:3d-geometry}
+
+计算域为单位立方体 $[0,1]^3$ 减去均匀排列的 $3\times3\times3=27$ 个固体球。球心坐标取 $\{0.20,0.50,0.80\}^3$，半径 $r=0.105$；入口为 $x=0$（压力 1），出口为 $x=1$（压力 0），立方体其余外表面与全部球面为无滑移固壁。
+
+净距函数同时考虑球面与立方体六个外边界：
+\begin{equation}
+  d(\boldsymbol{x})=\min\left\{x,\,1-x,\,y,\,1-y,\,z,\,1-z,\,
+  \min_j\bigl(\|\boldsymbol{x}-\boldsymbol{c}_j\|-r\bigr)\right\}.
+\end{equation}
+
+球心层平面把每个坐标方向分成四段，流体域中得到 $4\times4\times4=64$ 个最大空球与 64 个子区域；连接六邻接最大球得到 144 条图边，即 144 个孔喉界面。对于当前等半径规则阵列，严格净距鞍点分隔面是九个解析平面 $x,y,z\in\{0.2,0.5,0.8\}$；这些平面嵌入 OpenCASCADE 流体体并统一 fragment，因此 64 个局部子网格来自同一张全局一致网格，接口三角形和节点严格匹配。该解析结论只适用于当前对称几何；真实随机三维介质需要数值最大球检测、净距 watershed 与一般曲面接口。
+
+\subsection{网格}
+\label{sec:3d-mesh}
+
+Gmsh 使用三套 \texttt{Distance $\to$ Threshold} 尺寸场并用 \texttt{Min} 合并：球面附近加密、立方体外边界附近加密、144 个孔喉界面附近加密。正式网格含 34{,}341 个四面体、8{,}654 个顶点和 7{,}956 个接口三角形。传统 FEM 与所有 DD-PNM 层级共享这一张 \texttt{partition.mesh}，不存在网格转换误差。
+
+\subsection{方法层级}
+\label{sec:3d-hierarchy}
+
+该文件夹实现了严格嵌套的三层界面牵引空间，全部基于同一张网格上的局部 $[\mathrm{P2}]^3$--P1 Stokes 算子（每个局部矩阵只分解一次）：
+
+\begin{table}[h]
+\centering
+\caption{三维 \Dd{} 方法层级（每条界面）}
+\begin{tabular}{llr}
+\toprule
+方法 & 界面牵引空间 & 每界面自由度 \\
+\midrule
+\Dd{}      & 常数法向牵引（P0 法向） & 1 \\
+\Dd{}NT    & 常数法向 + 两个常数切向牵引 & 3 \\
+HODDPNM   & 三分量 $\times$ 面内完整 P1 基 $\{1,s,t\}$ & 9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+其中 HODDPNM 的九模态界面空间为
+\begin{equation}
+  \mathcal{T}^{(9)}_{ij}
+  =\operatorname{span}\{\boldsymbol{n},\,s\boldsymbol{n},\,t\boldsymbol{n},\,
+  \boldsymbol{t}_1,\,s\boldsymbol{t}_1,\,t\boldsymbol{t}_1,\,
+  \boldsymbol{t}_2,\,s\boldsymbol{t}_2,\,t\boldsymbol{t}_2\},
+\end{equation}
+即法向与两个切向分量均乘以无量纲面内坐标 $s,t$（界面中心附近的仿射坐标）。
+
+此外还实现了两阶段自适应：先比较 \Dd{} 与完整 \Dd{}NT，再比较当前混合阶解与完整 HODDPNM；当归一化速度或压力层级差超过目标容忍值时，按 D\"orfler 准则标记界面，每条被标记界面只升一级。传统 FEM 不参加标记，只用于事后验证。
+
+\subsection{正式自适应结果}
+\label{sec:3d-adaptive-results}
+
+默认参数：层级容忍值 \texttt{TOL=0.01}、D\"orfler $\theta=0.65$、每轮最多标记 12 条界面。最终 142 条界面达到 HODDPNM、2 条保持 \Dd{}NT，界面未知量 1{,}284 个（完整 HODDPNM 为 1{,}296 个）；最终解相对完整 HODDPNM 的层级差为速度 0.212\%、压力 0.052\%。
+
+误差用同一张网格上的整体 Taylor--Hood 解计算，局部 DD-PNM 场保持分片、不做界面两侧平均，体积分使用六阶求积：
+
+\begin{table}[h]
+\centering
+\caption{三维正式结果：与同网格传统 FEM 的严格误差}
+\begin{tabular}{lrrrrr}
+\toprule
+方法 & 界面未知量 & 速度相对 L2 & 速度 broken-H1 & 压力原始相对 L2 & 出口流量误差 \\
+\midrule
+\Dd{}       & 144   & 21.86\% & 45.31\% & 2.88\% & 18.72\% \\
+\Dd{}NT     & 432   & 20.83\% & 44.01\% & 2.90\% & 17.40\% \\
+HODDPNM    & 1{,}296 & 6.72\%  & 20.14\% & 1.43\% & 2.37\% \\
+Adaptive   & 1{,}284 & 6.73\%  & 20.15\% & 1.43\% & 2.37\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+与原始 \Dd{} 相比，adaptive 将速度 L2 误差降低约 69\%，broken-H1 降低约 56\%，出口流量误差降低约 87\%。常数双切向模式 \Dd{}NT 只带来小幅改善；真正显著的改进来自界面上的面内线性变化。剩余误差中，broken-H1 仍有约 20\%，误差高值集中在球体上下游与孔喉交汇处——这些位置的速度迹和梯度沿界面并非简单仿射变化；而压力 L2 仅 1.43\%、流量误差 2.37\%，说明平均压降和总通量已经明显可靠。分析认为剩余误差主要来自界面空间的阶数而非体网格分辨率，下一步应把 HODDPNM 从面内 P1 升到 P2，或采用完整界面节点/谱基的 FE-trace Schur 空间。
+
+\subsection{其他界面空间实验}
+\label{sec:3d-other}
+
+该文件夹（以及部分早期实验）还包含多组界面空间变体，均在更粗的共用网格（12{,}203 个四面体、64 个子区域、144 条界面、FEM 混合自由度 63{,}955）上做六方法同网格比较：
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{cross（十字骨架）系列}：在每个鞍点界面沿两个主方向做方向加权最短路，取 $\mathcal{O}(h^{-1})$ 个骨架节点作为控制点，用最小能量延拓（满足基数插值 $R_{C,f}E_f=I$ 与常数复现 $E_f\mathbf{1}_C=\mathbf{1}_f$）把骨架节点压力延拓到整个界面。Cross-\Dd{}NM 把速度 L2 从 21.084\% 降到 20.528\%；Cross-\Dd{}NT（三分量）为 19.327\%。修复了早期原型"界面法向用两最大球中心连线"的错误（该错误曾造成约 15\% 的全局边界不平衡）。
+  \item \textbf{uniform-point 系列}：每面取 $N_s=\lceil\sqrt{N_f}\rceil=\mathcal{O}(h^{-1})$ 个均匀点，鞍点最近顶点作种子、沿测地最远点采样。Uniform-\Dd{}NT 使用 2{,}160 个界面未知量，速度 L2 19.534\%。结论是：准均匀表面覆盖给出最好的 broken-H1 结果与更好的压力行为，但全局速度 L2 与出口通量仍以 cross 空间最优。
+  \item \textbf{affine-complete uniform-point}：在最小能量延拓中强制精确复现 $\{1,s,t\}$ 三个标量仿射模式（法向版）或九个三分量模式。相同点数与未知量下，速度 L2 从 19.534\% 降到 5.466\%（$-72.0\%$），出口通量误差从 13.797\% 降到 0.023\%（$-99.8\%$）。这证明早期失败主要是基完备性问题而非点数或分布问题。
+  \item \textbf{skeleton-Stokes 与 trace-Schur}：前者验证以界面骨架最小能量延拓为核心的正确实现（局部质量残差达 $2\times10^{-16}$ 量级）；后者实现完整 FE-trace Schur 补 $S=A_{GG}-A_{GI}A_{II}^{-1}A_{IG}$ 作为正确性基线，与整体求解到舍入误差一致。
+\end{itemize}
+
+\subsection{主要文件与运行方式}
+\label{sec:3d-files}
+
+\begin{itemize}[itemsep=2pt]
+  \item \texttt{ddpnm3d/}：包目录。\texttt{geometry.py}（最大球、孔喉图、严格鞍点分区与加密网格）、\texttt{solver.py}（原始 \Dd{} 与传统 FEM）、\texttt{hierarchy.py}（\Dd{}NT、HODDPNM 与 adaptive 界面 Schur 求解）、\texttt{skeleton\_stokes.py}、\texttt{trace\_schur.py} 等。
+  \item \texttt{run\_ddpnm\_3d.py} / \texttt{run.ps1}：原始流程；\texttt{run\_adaptive\_ddpnm\_3d.py} / \texttt{run\_adaptive.ps1}：自适应流程。
+  \item \texttt{plot\_results.py}、\texttt{plot\_adaptive\_results.py}：论文风格图；\texttt{verify\_results.py}、\texttt{verify\_adaptive\_results.py}：自动数值审计。
+  \item 输出目录：\texttt{outputs/fem\_comparison}、\texttt{outputs/adaptive\_hierarchy}，以及 \texttt{cross\_ddpnmt\_smoke}、\texttt{uniform\_point\_smoke}、\texttt{affine\_uniform\_point\_smoke}、\texttt{skeleton\_stokes\_*} 等变体输出。
+\end{itemize}
+
+\newpage
+\section{\texttt{ddpnm\_2d\_random\_porous}：二维 \Dd{}（固定随机多孔介质）}
+\label{sec:2d}
+
+\subsection{几何与孔喉构造}
+\label{sec:2d-geometry}
+
+本文件夹实现 \texttt{DDPNM.pdf} 第 2.4 节与算法 2.1 的二维区域分解孔隙网络法，使用随机种子 \texttt{20260802} 生成的固定 17 圆孔几何。构造流程：
+
+\begin{enumerate}[itemsep=2pt]
+  \item Gmsh 对减去固定圆形颗粒的单位正方形剖分；
+  \item Delaunay 邻接的颗粒对定义候选孔喉；对每个有效颗粒对，构造两圆壁之间的精确中心线间隙线段，其等净距点为解析喉道鞍点；
+  \item 这些线段在剖分前嵌入 CAD 模型，因此每个子区域边界是共形、笔直的鞍点横截面，而不是由既有网格面拼成的阶梯；
+  \item 每个子区域使用稳态 Stokes 的 Taylor--Hood P2--P1 离散，基于几何的尺寸场在圆形壁附近加密、在喉道截面附近更强烈加密；
+  \item 局部"牵引→通量"矩阵装配成全局界面 Schur 系统；每条内部界面有两个牵引未知量：一个常数系数和一个乘界面归一化线性坐标的系数（即"常数 + 线性法向"模式）；
+  \item 局部速度与压力场由存储的单位响应重构；
+  \item 未切割孔空间上的整体 Taylor--Hood 解作为参考，程序报告界面质量残差、DtN 对称性诊断、Schur 特征值与逐顶点误差。
+\end{enumerate}
+
+零阶通量矩（净通量）与一阶通量矩在每条内部界面上均平衡。网格加密由几何决定，是局部的，但并非基于后验误差的自适应加密。
+
+\subsection{自适应层级}
+\label{sec:2d-adaptive}
+
+\texttt{run\_adaptive\_ddpnm\_2d.py} 增加了三个嵌套的物理界面空间（与三维参考实现一致）：
+
+\begin{table}[h]
+\centering
+\caption{二维自适应层级}
+\begin{tabular}{cll}
+\toprule
+层级 & 方法 & 一条内部界面上的未知量 \\
+\midrule
+0 & \Dd{} & 1 个常数法向压力/牵引系数 \\
+1 & \Dd{}NT & \Dd{} 系数 + 1 个常数切向牵引系数 \\
+2 & HODDPNM & P1 节点法向与切向牵引系数 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+注意：基线程序中旧的 \texttt{interface\_order=1} 选项是线性变化的\textbf{法向}牵引，并非真正的 \Dd{}NT；新的 \Dd{}NT 载荷是切向方向的真实矢量牵引。
+
+每个局部 Taylor--Hood 矩阵只分解一次，其 P1 矢量牵引响应库为任意 0/1/2 层级混合产生 Steklov/Schur 界面算子。另外，自适应驱动实现了真实三维文件夹的显式完整 FE 迹正确性 Schur 补：
+\begin{equation}
+  S=A_{GG}-A_{GI}A_{II}^{-1}A_{IG},\qquad
+  g=b_G-A_{GI}A_{II}^{-1}b_I,
+\end{equation}
+该完整 P2--P1 迹求解必须与整体求解在舍入误差内一致——它是正确性基线，不是效率声明。
+
+自适应状态从所有界面处于 \Dd{} 开始，与 \Dd{}NT 富集解比较，按层级场差指标加 D\"orfler 标记，每条被选界面升一级，然后与 HODDPNM 重复。层级只升不降。默认参数：目标层级容忍值 $10^{-2}$（1\%）、D\"orfler $\theta=0.65$、每轮最多标记 3 条界面、每阶段最多 30 轮。
+
+\subsection{主要结果}
+\label{sec:2d-results}
+
+正式自适应算例（网格尺寸 0.04）：27 个子区域、35 条界面，最终 18 条界面保持 \Dd{}、4 条为 \Dd{}NT、13 条升到 HODDPNM，界面未知量 498 个。相对精确 FE 迹 Schur 解的误差：
+
+\begin{table}[h]
+\centering
+\caption{二维：各方法与精确 FE-trace Schur 的误差（速度/压力 L2）}
+\begin{tabular}{lrrr}
+\toprule
+方法 & 界面未知量 & 速度误差 & 压力误差 \\
+\midrule
+\Dd{}          & 35  & 5.829\% & 0.422\% \\
+\Dd{}NT        & 70  & 4.788\% & 0.354\% \\
+HODDPNM       & 918 & 0.053\% & 0.049\% \\
+adaptive 最终解 & 498 & 0.979\% & 0.167\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+完整 FE 迹 Schur 系统本身与整体求解的相对差为 $1.7\times10^{-13}$，Schur 对称误差 $1.1\times10^{-14}$。所有方法的 Schur 最小特征值均为正、对称误差为 0、界面矩残差在 $10^{-16}$ 量级，表明比较没有被守恒失败或线性代数不准确污染。
+
+主要输出位于 \texttt{outputs/}（\texttt{default}、\texttt{adaptive\_hierarchy}、\texttt{strict\_p0\_comparison} 等子目录），包括网格与子区域图、重构场图、参考对比图、界面系统诊断图、论文风格误差图，以及 \texttt{adaptive\_history.csv}、\texttt{adaptive\_report.json}、\texttt{ddpnm\_2d\_fields.xdmf}（ParaView 可读）等数据文件。
+
+\subsection{二维与三维的严格对比}
+\label{sec:2d-vs-3d}
+
+该文件夹还提供原始 P0-\Dd{} 的二维与三维严格误差对比（同一计算口径：同网格、分片场不平均、六阶求积）：
+
+\begin{table}[h]
+\centering
+\caption{原始 P0-\Dd{}：二维与三维严格误差比较}
+\begin{tabular}{lrrr}
+\toprule
+指标 & 2D 随机圆孔 & 3D 规则球阵列 & 3D/2D \\
+\midrule
+速度相对 L2    & 5.17\%  & 21.86\% & 4.23 \\
+速度 broken-H1 & 9.55\%  & 45.31\% & 4.75 \\
+压力原始相对 L2 & 0.35\%  & 2.88\%  & 8.31 \\
+压力去均值相对 L2 & 0.86\% & 5.27\%  & 6.11 \\
+出口流量误差    & 0.92\%  & 18.72\% & 20.32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+二维旧记录中的节点采样误差（速度 5.829\%）与严格体积分得到的 L2（5.169\%）同量级，说明旧记录并非计算错误，只是误差范数不同。三维原始 \Dd{} 明显比二维差，尤其流量与速度梯度，但该对比尚不能单独证明差异完全由空间维数造成——二维是 17 个随机圆孔、27 个子区域、35 条界面，三维是 27 个规则球、64 个子区域、144 条界面，孔隙率、配位数与孔喉面积分布均未匹配。要形成严格的"维度效应"结论，需要构造孔隙率、归一化孔喉宽度与网络配位数匹配的二维/三维基准组。
+
+\newpage
+\section{\texttt{affine\_ddpnm\_3d}：单界面实体仿射 \Dd{} 三维基准}
+\label{sec:affine}
+
+\subsection{动机与设计}
+\label{sec:affine-design}
+
+本文件夹刻意与 \texttt{ddpnm\_3d\_uniform\_spheres} 分开，不修改原有的 affine-uniform 实现及其结果。基准实验在同一张四面体网格上比较三种方法：
+
+\begin{enumerate}[itemsep=2pt]
+  \item 经典 \Dd{}：每条界面 1 个常数法向系数；
+  \item Affine-\Dd{}：每条界面保留一个代表实体，携带九个广义模态 $\{1,s,t\}\times\{\boldsymbol{n},\boldsymbol{t}_1,\boldsymbol{t}_2\}$（$s,t$ 是界面中心附近的无量纲面内坐标，不是额外采样点）；
+  \item 整体 Taylor--Hood FEM 参考解。
+\end{enumerate}
+
+本实验不使用均匀表面采样、点选择算法或节点最小能量延拓。局部坐标原点取界面中心；每个界面仍对应一个代表实体，"不重叠子区域 + 局部 Stokes 响应 + 全局界面守恒/Schur 系统"的框架与经典 \Dd{} 完全一致，区别仅在界面空间。
+
+\subsection{同网格误差结果}
+\label{sec:affine-errors}
+
+公共离散为 12{,}203 个四面体、64 个子区域、144 个内部界面；整体 Taylor--Hood FEM 有 63{,}955 个混合自由度。结果如表 \ref{tab:affine-errors}：
+
+\begin{table}[h]
+\centering
+\caption{Affine-\Dd{} 基准：同网格误差与界面未知量}
+\label{tab:affine-errors}
+\begin{tabular}{lrrrrr}
+\toprule
+方法 & 界面/全局未知量 & 每界面模态 & 速度相对 L2 & 速度 broken-H1 & 出口通量相对误差 \\
+\midrule
+Classic-\Dd{}       & 144        & 1 & 21.084\% & 44.829\% & 16.463\% \\
+Affine-\Dd{}        & 1{,}296    & 9 & 5.630\%  & 21.612\% & 0.323\% \\
+Uniform-\Dd{}NT（保留的旧方案） & 2{,}160 & 平均 15/面 & 5.466\% & 21.590\% & 0.023\% \\
+Monolithic FEM     & 63{,}955   & --- & 参考解 & 参考解 & 参考解 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+相对经典 \Dd{}，单实体九模态 Affine-\Dd{} 将速度 L2 误差降低约 73.3\%，broken-H1 降低约 51.8\%，压力误差降低约 32.3\%，出口通量误差降低约 98.0\%。与保留的 Uniform-\Dd{}NT 相比，Affine-\Dd{} 使用少 40\% 的界面未知量（1{,}296 对 2{,}160），速度 L2 只高 0.164 个百分点，broken-H1 几乎相同，压力误差反而略低；但 Uniform-\Dd{}NT 的出口总通量仍更准确。
+
+\subsection{独立计算成本}
+\label{sec:affine-cost}
+
+公共网格生成耗时 44.538 s（所有方法相同，不计入方法首解时间），误差后处理也不计时。结果如表 \ref{tab:affine-cost}：
+
+\begin{table}[h]
+\centering
+\caption{Affine-\Dd{} 基准：独立计算成本}
+\label{tab:affine-cost}
+\begin{tabular}{lrrrr}
+\toprule
+方法 & 离线：局部响应库 & 在线：全局装配、求解与重构 & 首次求解合计 & 相对整体 FEM 加速 \\
+\midrule
+Classic-\Dd{} & 11.217 s & 0.006 s & 11.223 s & 7.26 倍 \\
+Affine-\Dd{}  & 13.662 s & 0.198 s & 13.859 s & 5.88 倍 \\
+Monolithic FEM & 0      & 81.445 s & 81.445 s & 1.00 倍 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Affine-\Dd{} 的界面系统从 144 维增至 1{,}296 维，在线稠密 Schur 求解由 0.006 s 增至 0.198 s，但绝对时间仍很小。首解相对 Classic-\Dd{} 增加约 23.5\%，换来速度 L2 误差约四分之一化。若复用局部响应库处理多个边界条件，在线阶段的优势更明显。
+
+\subsection{实现核验}
+\label{sec:affine-validation}
+
+初次复用旧 \texttt{basis\_3d.py} 时，九模态 Schur 系统出现奇异。原因不是九模态空间本身，而是同一端口的九个载荷闭包共享可变有限元常量，执行时多个响应列退化为最后一个模态。新目录中的 \texttt{AffineFaceBasis}（\texttt{affine\_face\_basis.py}）在每次载荷装配前恢复该模态自己的标量形状和方向系数；修正后系统可直接求解，并得到严格的 $144\times9=1{,}296$ 个全局界面未知量。
+
+\subsection{结论}
+\label{sec:affine-conclusion}
+
+对这个规则三维算例，主要误差并不要求在界面上布置很多采样点才能消除。保留每面一个代表实体、但释放完整的面内仿射法/切向模态，已经把速度 L2 误差从 21.1\% 降到 5.63\%，并把通量误差降到 0.323\%。这表明经典三维 \Dd{} 的主要瓶颈是"每个面仅保留一个常数法向系数"，而不是"代表实体只有一个"。
+
+\newpage
+\section{三者关系与统一结论}
+\label{sec:synthesis}
+
+\subsection{统一的框架}
+\label{sec:synthesis-framework}
+
+三个文件夹是同一研究线的三个实验面，共享 \texttt{ddpnm\_core} 与 \texttt{ddpnm3d} 包，都遵循"最大球分区 $\to$ 鞍点孔喉界面 $\to$ 局部 P2--P1 Stokes 单次分解 $\to$ 静态凝聚 $\to$ 界面 Schur 系统 $\to$ 局部场重构"的流水线：
+
+\begin{itemize}[itemsep=2pt]
+  \item \texttt{ddpnm\_3d\_uniform\_spheres} 是主战场：建立三维规则算例与严格同网格误差口径，系统比较界面空间阶数（P0 → P0T → P1），并发展自适应层级与多组界面变体；
+  \item \texttt{ddpnm\_2d\_random\_porous} 是二维复现与对照：验证论文算法、提供二维—三维严格对比，并确认三维的困难（尤其在流量与梯度上）；
+  \item \texttt{affine\_ddpnm\_3d} 是成本—精度剖析：在同一框架内隔离"界面模态数"这一个变量，说明即使不增加采样点，仅释放面内仿射模态即可获得大部分精度收益。
+\end{itemize}
+
+\subsection{跨文件夹的关键数字}
+\label{sec:synthesis-numbers}
+
+\begin{table}[h]
+\centering
+\caption{三个文件夹的关键结果一览}
+\begin{tabular}{llll}
+\toprule
+主题 & 2D 随机圆孔 & 3D 规则球（粗网格 12{,}203 四面体） & 3D 规则球（正式网格 34{,}341 四面体） \\
+\midrule
+原始 \Dd{} 速度 L2 & 5.17\%  & 21.084\% & 21.86\% \\
+原始 \Dd{} 出口流量误差 & 0.92\% & 16.463\% & 18.72\% \\
+\Dd{}NT 速度 L2 & 4.79\% & 19.957\% & 20.83\% \\
+HODDPNM（9 模态）速度 L2 & 0.053\% & 5.466\%* & 6.72\% \\
+自适应最终速度 L2 & 0.979\% & --- & 6.73\% \\
+\bottomrule
+\end{tabular}
+
+\small
+*：为 affine-complete Uniform-\Dd{}NT 的值（2{,}160 个界面未知量）；affine-\Dd{}（1{,}296 个界面未知量）为 5.630\%。
+\end{table}
+
+\subsection{主要结论}
+\label{sec:synthesis-conclusions}
+
+\begin{enumerate}[itemsep=3pt]
+  \item \textbf{界面空间阶数是主导因素}：常数法向 \Dd{} 在三维规则算例上速度 L2 误差约 21.9\%，而释放面内仿射模态后（HODDPNM 或 Affine-\Dd{}）降到约 5.6--6.7\%，出口通量误差从约 16--19\% 降到 2.4\% 以下，说明经典三维 \Dd{} 的主要瓶颈是"每面仅一个常数法向系数"。
+  \item \textbf{切向常数模式收益有限}：\Dd{}NT 只把速度 L2 从 21.86\% 降到 20.83\%，真正显著的改进来自面内线性变化（P1 模态）。
+  \item \textbf{自适应可行但三维规则算例几乎全升级}：在 1\% 目标下，三维自适应最终 142/144 条界面升到 HODDPNM；层级估计器表明大多数三维孔喉界面确实需要面内线性模式。二维算例则保留了 18/35 条 \Dd{} 界面，自适应节省更多。
+  \item \textbf{方法一致性经得起审计}：所有方法的局部质量残差、界面矩残差、Schur 残差都在 $10^{-15}$--$10^{-16}$ 量级；精确 FE-trace Schur 与整体求解差 $10^{-13}$ 量级；affine 九模态系统修复后达到严格 1{,}296 个未知量。错误诊断（如旧 cross 原型的法向错误、affine 的可变常量 bug）都被定位并修正。
+  \item \textbf{成本—精度权衡明确}：单实体九模态 affine-\Dd{} 以 5.88 倍加速（相对整体 FEM）换取约 5.6\% 的速度 L2 误差；若用 uniform-point 方案（2{,}160 未知量）可达 5.466\% 与 0.023\% 的通量误差。局部响应库可复用于多边界条件，在线成本极低（亚秒级）。
+\end{enumerate}
+
+\subsection{下一步方向}
+\label{sec:synthesis-next}
+
+\begin{itemize}[itemsep=2pt]
+  \item 把 HODDPNM 从面内 P1 升到 P2，或使用完整界面节点/谱基的 FE-trace Schur 空间，以压低 broken-H1（三维约 20\%）；
+  \item 构造孔隙率、归一化孔喉宽度与网络配位数匹配的二维/三维基准组，以形成严格的"维度效应"结论；
+  \item 以未解析的全界面速度跳跃驱动残差型在线富集（区别于纯几何点位富集）；
+  \item 将界面 Schur 系统从稠密求解转向可扩展的稀疏/迭代求解（当前三维界面未知量仅千级，真实介质会大得多）。
+\end{itemize}
+
+\appendix
+\section{方法名对照表}
+\label{app:names}
+
+\begin{table}[h]
+\centering
+\caption{本文涉及方法名与含义}
+\begin{tabular}{ll}
+\toprule
+缩写 & 含义 \\
+\midrule
+\Dd{} (DDPNM) & Domain-Decomposition Pore-Network Method；每界面常数法向牵引（1 自由度） \\
+\Dd{}NT (DDPNMT) & \Dd{} + 常数切向牵引（3 自由度：法向 + 两切向） \\
+HODDPNM & 三分量 $\times$ 面内 P1 基 $\{1,s,t\}$（9 自由度/面） \\
+Affine-\Dd{} & 每面一个代表实体 + 九模态 $\{1,s,t\}\times\{\boldsymbol{n},\boldsymbol{t}_1,\boldsymbol{t}_2\}$ \\
+Cross-\Dd{}NM(NT) & 鞍点十字骨架节点压力（+ 切向）控制空间，$\mathcal{O}(h^{-1})$ 点/面 \\
+Uniform-\Dd{}NM(NT) & 测地最远点采样的均匀点控制空间，$N_s=\lceil\sqrt{N_f}\rceil$ 点/面 \\
+Affine-complete uniform & 均匀点 + 最小能量延拓中强制精确复现 $\{1,s,t\}$ 仿射模式 \\
+FE-trace Schur & 保留全部界面有限元节点的精确 Schur 补（正确性基线） \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}

@@ -1,0 +1,20 @@
+[
+  {
+    "step": 1,
+    "time": 0.08,
+    "mean_injected_phase_saturation": 0.20637875,
+    "out": "outputs\\codex_runcheck_minimal_twophase_validation\\coarse_8holes_c3_steps20\\voidspace_two_phase_volume_split_clean_step_0001.png"
+  },
+  {
+    "step": 10,
+    "time": 0.8,
+    "mean_injected_phase_saturation": 0.25147892090397084,
+    "out": "outputs\\codex_runcheck_minimal_twophase_validation\\coarse_8holes_c3_steps20\\voidspace_two_phase_volume_split_clean_step_0010.png"
+  },
+  {
+    "step": 20,
+    "time": 1.6,
+    "mean_injected_phase_saturation": 0.2880297363883594,
+    "out": "outputs\\codex_runcheck_minimal_twophase_validation\\coarse_8holes_c3_steps20\\voidspace_two_phase_volume_split_clean_step_0020.png"
+  }
+]

@@ -1,0 +1,319 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{mathtools}
+
+\newtheorem{remark}{Remark}
+\newtheorem{assumption}{Assumption}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dom}{\Omega}
+\newcommand{\pore}[1]{\Omega_{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\stress}{\bm{\sigma}}
+\newcommand{\normal}{\bm{n}}
+\newcommand{\trac}{\bm{\lambda}}
+\newcommand{\DtN}{\mathbf{G}}
+\newcommand{\Schur}{\mathbf{S}}
+\newcommand{\modeset}{\mathcal{M}}
+\newcommand{\loadvec}{\bm{f}}
+\newcommand{\zero}{\bm{0}}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlength{\emergencystretch}{2em}
+
+\begin{document}
+
+\title{\textbf{Affine-DDPNM: Revised Methodology}}
+\author{}
+\date{August 6, 2026}
+\maketitle
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\textwidth}
+This revision fixes the traction/load sign convention, the orientation of
+all tangential modes, the assumptions needed for local invertibility and
+global positive definiteness, and the interpretation of the Galerkin
+enrichment statement.  The original files are not modified.
+\end{minipage}}
+\end{center}
+
+\section{Model problem and weak-form convention}
+
+We consider steady incompressible Stokes flow in a pore domain
+$\dom\subset\R^3$:
+\begin{align}
+ -\nu\Delta\vel+\nabla\pres&=\zero &&\text{in }\dom,\\
+ \nabla\cdot\vel&=0 &&\text{in }\dom,\\
+ \vel&=\zero &&\text{on }\Gamma_{\rm dir},\\
+ \stress(\vel,\pres)\normal&=-p_b\normal
+ &&\text{on }\Gamma_{\rm in}\cup\Gamma_{\rm out},
+\end{align}
+where
+\[
+  \stress(\vel,\pres)=-\pres I+\nu\nabla\vel.
+\]
+The last condition is a prescribed pseudotraction, not a pressure Dirichlet
+condition.  In particular, $\normal\cdot\stress\normal=-p_b$ does not imply
+$\pres=p_b$ pointwise because the normal viscous term is also present.
+
+We use
+\[
+ b_i(\bm v,q)=-\int_{\pore{i}}q\,\nabla\cdot\bm v\,dx,
+\]
+so that the local discrete system has the block form
+\[
+ \begin{bmatrix}A_i&B_i^\top\\B_i&0\end{bmatrix}
+ \begin{bmatrix}U_i\\P_i\end{bmatrix}
+ =\begin{bmatrix}f_i\\0\end{bmatrix}.
+\]
+For a physical outward traction $\bm t=\stress\normal$, the weak load is
+$\int_{\partial\pore{i}}\bm t\cdot\bm v\,dS$.
+
+\section{Partition and oriented interface frames}
+
+The domain is partitioned into non-overlapping Lipschitz subdomains
+$\{\pore{i}\}_{i=1}^N$.  Each internal interface $\iface_k$ is shared by
+exactly two pores, denoted $(i_k,j_k)$, and is assumed planar in the theory.
+Choose once and for all a global orthonormal frame
+\[
+ \{\normal_k,\bm t_{k,1},\bm t_{k,2}\}
+\]
+on $\iface_k$, with $\normal_k$ directed from $i_k$ to $j_k$.  Let
+$\sigma_{i,k}=+1$ for $i=i_k$ and $\sigma_{i,k}=-1$ for $i=j_k$.  The local
+outward normal is
+\[
+ \normal_{i,k}=\sigma_{i,k}\normal_k.
+\]
+
+To match the implementation in which the assembled normal load direction is
+$-\normal_{i,k}$ and the assembled tangential load directions are
+$\sigma_{i,k}\bm t_{k,\nu}$, define the oriented inward-traction directions
+\begin{equation}\label{eq:oriented-directions}
+ \bm d_{i,k,n}=\normal_{i,k},\qquad
+ \bm d_{i,k,t_\nu}=-\sigma_{i,k}\bm t_{k,\nu},\quad \nu=1,2.
+\end{equation}
+Then
+\[
+ \bm d_{j,k,\beta}=-\bm d_{i,k,\beta}
+ \qquad (\beta=n,t_1,t_2).
+\]
+The minus sign in the tangential definition is only an orientation choice;
+changing it together with the corresponding coefficient changes no traction
+space.
+
+For the planar interface centroid $\bm c_k$, define dimensionless coordinates
+\begin{equation}\label{eq:coords}
+ s_k(\bm x)=\frac{(\bm x-\bm c_k)\cdot\bm t_{k,1}}{a_k},\qquad
+ t_k(\bm x)=\frac{(\bm x-\bm c_k)\cdot\bm t_{k,2}}{b_k},
+\end{equation}
+with nonzero scales $a_k,b_k$.  Let
+\[
+ \varphi_0=1,\qquad \varphi_s=s_k,\qquad \varphi_t=t_k,
+ \qquad
+ \modeset=\{0,s,t\}\times\{n,t_1,t_2\}.
+\]
+
+\section{Affine traction Ansatz and code-compatible load sign}
+
+The unknown coefficient $\lambda_{k,\alpha,\beta}$ parameterizes the
+\emph{inward} traction $-\stress\normal_{i,k}$:
+\begin{equation}\label{eq:traction-ansatz}
+ -\stress(\vel_i,\pres_i)\normal_{i,k}
+ =\sum_{(\alpha,\beta)\in\modeset}
+ \lambda_{k,\alpha,\beta}\,\varphi_\alpha\bm d_{i,k,\beta}.
+\end{equation}
+Consequently the physical outward traction entering the weak form is
+\[
+ \stress\normal_{i,k}
+ =-\sum_{(\alpha,\beta)\in\modeset}
+ \lambda_{k,\alpha,\beta}\,\varphi_\alpha\bm d_{i,k,\beta}.
+\]
+The primitive load vector is therefore
+\begin{equation}\label{eq:primitive-load}
+ \bigl[\loadvec_{i,k}^{(\alpha,\beta)}\bigr]_j
+ =-\int_{\iface_k}\varphi_\alpha\,
+ \bm d_{i,k,\beta}\cdot\bm\phi_j^{(i)}\,dS.
+\end{equation}
+This leading minus sign is essential.  For the normal mode it gives the
+assembled direction $-\normal_{i,k}$; for the tangential modes, using
+\eqref{eq:oriented-directions}, it gives
+$+\sigma_{i,k}\bm t_{k,\nu}$, exactly the convention used in the supplied
+basis implementation.
+
+At an inlet or outlet port only the constant normal mode is retained.  The
+known coefficient is $\lambda^k=p_b$, so that the physical outward traction
+is $-p_b\normal$.
+
+\section{Local finite-element response and compliance map}
+
+On pore $\pore{i}$ use an inf-sup stable velocity-pressure pair
+$(V_{i,h},Q_{i,h})$.  The rigorous finite-dimensional assumptions are:
+
+\begin{assumption}\label{ass:local}
+For every pore $i$:
+\begin{enumerate}[nosep,leftmargin=*]
+ \item $A_i$ is symmetric positive definite.  A positive-measure no-slip
+ wall segment is a standard sufficient geometric condition for this
+ coercivity.
+ \item $B_i$ has full row rank in the pressure space actually used in the
+ computation.  This is a discrete inf-sup/rank assumption and is not implied
+ by the wall condition alone.
+ \item The constant function $1$ belongs to $Q_{i,h}$.
+\end{enumerate}
+\end{assumption}
+
+For each primitive mode solve
+\begin{equation}\label{eq:unit-response}
+ \begin{bmatrix}A_i&B_i^\top\\B_i&0\end{bmatrix}
+ \begin{bmatrix}U_{i,k}^{(\alpha,\beta)}\\
+ X_{i,k}^{(\alpha,\beta)}\end{bmatrix}
+ =\begin{bmatrix}\loadvec_{i,k}^{(\alpha,\beta)}\\0\end{bmatrix}.
+\end{equation}
+Let $L_i$ collect all primitive load vectors, including one constant normal
+column for each known boundary port.  Define
+\begin{equation}\label{eq:H}
+ H_i=A_i^{-1}-A_i^{-1}B_i^\top
+ (B_iA_i^{-1}B_i^\top)^{-1}B_iA_i^{-1}.
+\end{equation}
+Then $U_i=H_iL_i\lambda_i$, and the local compliance matrix is
+\begin{equation}\label{eq:G}
+ \DtN_i=L_i^\top H_iL_i.
+\end{equation}
+It is symmetric positive semidefinite.  For any local coefficient vector,
+\begin{equation}\label{eq:energy}
+ \lambda_i^\top\DtN_i\lambda_i=U_i^\top A_iU_i\ge0.
+\end{equation}
+
+For a local mode define the weighted velocity moment
+\begin{equation}\label{eq:moment}
+ M_{i,k}^{(\alpha,\beta)}(U_i)
+ =\int_{\iface_k}\varphi_\alpha\,
+ U_{i,h}\cdot\bm d_{i,k,\beta}\,dS.
+\end{equation}
+Because of the load convention,
+\begin{equation}\label{eq:G-moment}
+ \bigl[\DtN_i\lambda_i\bigr]_{k,\alpha,\beta}
+ =-M_{i,k}^{(\alpha,\beta)}(U_i).
+\end{equation}
+Thus $\DtN_i$ is the negative moment response associated with inward-traction
+coefficients.  The sign has no effect on symmetry or energy positivity, but
+it must be retained in the interpretation and in the full-trace restriction.
+
+\section{Global Schur system}
+
+Let $\lambda\in\R^{9m}$ collect the shared unknown coefficient blocks on all
+internal interfaces.  Since $\bm d_{j,k,\beta}=-\bm d_{i,k,\beta}$, using the
+same coefficient block on the two sides produces equal and opposite physical
+tractions.  Continuity is imposed weakly through all nine moments:
+\begin{equation}\label{eq:moment-continuity}
+ M_{i,k}^{(\alpha,\beta)}+M_{j,k}^{(\alpha,\beta)}=0.
+\end{equation}
+Using \eqref{eq:G-moment}, Boolean assembly gives
+\begin{equation}\label{eq:schur}
+ \Schur\lambda=F,\qquad
+ \Schur=\sum_{i=1}^N(R_i^u)^\top\DtN_i^{uu}R_i^u,
+ \qquad
+ F=-\sum_{i=1}^N(R_i^u)^\top\DtN_i^{uk}R_i^k\lambda^k.
+\end{equation}
+
+\begin{remark}[What is actually required for SPD]\label{rem:spd}
+Per-face linear independence of the nine scalar/vector functions is not
+sufficient for positive definiteness.  The required local algebraic condition
+is
+\begin{equation}\label{eq:rank-condition}
+ \ker(H_iL_i)=\operatorname{span}\{\bm 1_{i,0n}\},
+\end{equation}
+where $\bm 1_{i,0n}$ has value one in every constant-normal port slot and
+zero in all other slots.  Equivalently,
+$\operatorname{rank}(H_iL_i)=n_i-1$.  This condition excludes dependencies
+between different ports and dependencies created after the incompressible
+projection $H_i$.  It must be proved for a specific discretization or checked
+numerically; it does not follow merely from independence on each face.
+\end{remark}
+
+Under Assumption~\ref{ass:local}, condition~\eqref{eq:rank-condition}, and the
+graph anchoring condition that every connected pore component contains at
+least one known-traction port, the companion mathematical document proves
+that $\Schur$ is SPD.  The proof uses zero extension into the known-port slots;
+it does not apply the full local-kernel result directly to a shorter unknown
+vector.
+
+Floating basins and graph anchoring are distinct issues.  Merging a basin with
+no wall facet is intended to restore local coercivity of $A_i$.  Ensuring that
+each connected pore component touches an inlet or outlet removes the remaining
+global constant-pressure gauge.  One operation does not logically imply the
+other.
+
+\section{Algorithm}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+ \item For each pore, assemble $A_i$, $B_i$, and verify the intended pressure
+ rank convention.
+ \item For every internal port and every $(\alpha,\beta)\in\modeset$, assemble
+ the signed load \eqref{eq:primitive-load} and solve
+ \eqref{eq:unit-response}.  For each known boundary port solve the single
+ constant-normal response.
+ \item Form $\DtN_i=L_i^\top H_iL_i$.  As a diagnostic, inspect the singular
+ values of $H_iL_i$ or eigenvalues of $\DtN_i$ and verify that exactly one
+ local null direction is present when \eqref{eq:rank-condition} is assumed.
+ \item Assemble \eqref{eq:schur}.  Check symmetry and the smallest eigenvalue
+ or a Cholesky factorization before treating the system as SPD.
+ \item Solve for $\lambda$ and reconstruct each local field by linear
+ superposition of primitive responses.
+ \item Verify local mass residuals, interface moment residuals, and the global
+ boundary flux balance.
+\end{enumerate}
+
+\section{Relation to classic DD-PNM and scope of enrichment}
+
+Let $E_{\rm P0}:\R^m\to\R^{9m}$ insert each classic coefficient into the
+constant-normal slot.  Restricting both trial and test spaces gives
+\[
+ \Schur_{\rm P0}=E_{\rm P0}^\top\Schur E_{\rm P0},\qquad
+ F_{\rm P0}=E_{\rm P0}^\top F.
+\]
+The full affine solution generally does not have the classic solution as its
+constant-normal subvector.
+
+The valid enrichment statement is conditional and reference-dependent.  If a
+well-defined full interface-traction Schur system $\widehat S\xi=\widehat F$
+is introduced with the same local pressure spaces and sign conventions, then
+the affine system is its Galerkin restriction and the affine error is no larger
+than the classic error in the $\widehat S$ energy \emph{seminorm}.  This does
+not imply monotonic improvement of velocity $L^2$, pressure $L^2$, outlet
+flux, or broken $H^1$ errors.
+
+No theorem in the present analysis establishes equality between that
+broken-pressure traction system and the monolithic continuous-pressure
+Taylor--Hood system.  The supplied ``Exact FE-trace Schur'' computation is a
+primal Schur reduction of the monolithic system and therefore verifies its own
+algebraic elimination, not the missing equivalence with the broken-pressure
+traction formulation.
+
+\section{Computational cost}
+
+A pore with $m_i^u$ internal ports and $m_i^k$ known boundary ports has
+$n_i=9m_i^u+m_i^k$ primitive columns.  The offline response count therefore
+grows by approximately a factor of nine relative to a one-mode internal
+interface model.  The global unknown count is $9m$.  Sparse factorization cost
+depends on graph fill and cannot in general be inferred from the unknown-count
+factor alone.
+
+\begin{thebibliography}{9}
+\bibitem{sun2025ddpnm}
+S.~Sun, Z.~Wang, L.~Zhang, and J.~Zhao.
+\newblock A domain decomposition approach to pore-network modeling of porous
+media flow.
+\newblock \emph{arXiv:2510.13429v2}, 2026.
+\end{thebibliography}
+
+\end{document}

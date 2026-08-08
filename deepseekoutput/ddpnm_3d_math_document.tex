@@ -1,0 +1,918 @@
+\documentclass[UTF8,zihao=-4]{ctexart}
+
+\usepackage[a4paper,margin=2.35cm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{booktabs,tabularx,longtable,array,multirow}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{microtype}
+
+\definecolor{ddblue}{RGB}{27,76,125}
+\definecolor{ddlight}{RGB}{241,246,251}
+\definecolor{ddgray}{RGB}{80,86,94}
+\definecolor{ddgreen}{RGB}{36,112,89}
+\definecolor{ddred}{RGB}{150,47,47}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=ddblue,
+  citecolor=ddgreen,
+  urlcolor=ddblue,
+  pdfauthor={基于 DDPNM 项目源码与数值报告整理},
+  pdftitle={三维 DDPNM 与 Affine-DDPNM：数学算法、几何分区与升维失配机制}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{三维 DDPNM 与 Affine-DDPNM}
+\fancyhead[R]{数学算法与分区机制}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0.22em}
+\setlist{nosep,leftmargin=2.2em}
+\renewcommand{\arraystretch}{1.16}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\V}{\mathcal{V}}
+\newcommand{\Q}{\mathcal{Q}}
+\newcommand{\normal}{\bm n}
+\newcommand{\traction}{\bm\lambda}
+\newcommand{\uh}{\bm u_h}
+\newcommand{\vh}{\bm v_h}
+\newcommand{\stress}{\bm\sigma}
+\newcommand{\dd}{\,\mathrm d}
+\newcommand{\proj}{\Pi}
+\newcommand{\Span}{\operatorname{span}}
+\newcommand{\Range}{\operatorname{Range}}
+\newcommand{\Ker}{\operatorname{Ker}}
+
+\newtheorem{definition}{定义}[section]
+\newtheorem{proposition}[definition]{命题}
+\newtheorem{remark}[definition]{注}
+
+\newtcolorbox{algobox}[2][]{
+  enhanced,
+  breakable,
+  colback=white,
+  colframe=black!75,
+  boxrule=0.55pt,
+  arc=0pt,
+  left=1.2mm,right=1.2mm,top=1mm,bottom=1mm,
+  title={#2},
+  fonttitle=\bfseries,
+  coltitle=black,
+  attach boxed title to top left={xshift=1.4mm,yshift=-2.0mm},
+  boxed title style={colback=white,colframe=white,boxrule=0pt},
+  #1
+}
+
+\newtcolorbox{keybox}[1]{
+  enhanced,
+  breakable,
+  colback=ddlight,
+  colframe=ddblue,
+  boxrule=0.7pt,
+  arc=1mm,
+  title={#1},
+  fonttitle=\bfseries,
+  coltitle=white,
+  colbacktitle=ddblue
+}
+
+\lstdefinestyle{compactcode}{
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  rulecolor=\color{black!50},
+  backgroundcolor=\color{black!2},
+  numbers=left,
+  numberstyle=\scriptsize\color{ddgray},
+  numbersep=7pt,
+  xleftmargin=1.7em,
+  framexleftmargin=1.2em,
+  breaklines=true,
+  showstringspaces=false,
+  keywordstyle=\color{ddblue}\bfseries,
+  commentstyle=\color{ddgreen},
+  stringstyle=\color{ddred}
+}
+
+\title{\bfseries\LARGE 三维 DDPNM 与 Affine-DDPNM\\[0.5em]
+\Large 数学算法、几何分区与升维失配机制}
+\author{基于 \texttt{DDPNM.pdf}、\texttt{ddpnm\_3d\_uniform\_spheres} 与\\
+\texttt{affine\_ddpnm\_3d\_random\_porous} 的源码和实验结果整理}
+\date{2026 年 8 月 5 日}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+本文以三维稳态不可压 Stokes 流为对象，系统给出域分解孔隙网络方法
+(domain-decomposition pore-network method, DDPNM)及其完整向量仿射扩展
+Affine-DDPNM 的数学构造。方法在每个孔体子区域内保留 Taylor--Hood
+有限元分辨率，通过局部牵引响应建立 Dirichlet-to-Neumann 型算子，再将体
+自由度静态凝聚为仅定义在孔喉界面上的 Schur 系统。经典 DDPNM 每个界面
+仅保留一个常数法向牵引系数；Affine-DDPNM 则采用
+$\{1,s,t\}\otimes\{\bm n,\bm t_1,\bm t_2\}$ 的九维向量仿射空间。
+
+本文的第二个重点是三维孔体分区。规则等半径球阵列可用解析鞍点平面构造
+64 个最大空球盆；随机球项目则同时实现了球心 Voronoi 平面基线与净距
+watershed。前者把固体球心当作胞元生成元，因而将``孔体''误同为``颗粒周围
+区域''；后者从距离固体的净距场极大值出发，以持久性筛选孔体种子，并把异
+标签四面体的公共面作为孔喉界面。四组合消融表明，三维升维包含相互独立的
+两种断裂：几何上，二维孔喉线段不能机械替换成球心支撑的平面；代数上，
+二维常数界面模态不足以表达三维二维界面上的两方向变化。实验同时显示，
+修正几何并不会自动修正模态：watershed 阶梯曲面更符合净距拓扑，却可能
+超出单一平均切平面上的九个仿射模态。由此形成本文的科研主线：先识别
+几何对象，再设计与几何匹配的界面空间，最后以投影误差与成本共同评价。
+\end{abstract}
+
+\noindent\textbf{关键词：}孔隙网络；域分解；Stokes 流；Schur 补；
+Dirichlet-to-Neumann 算子；仿射界面模态；净距 watershed
+
+\clearpage
+{\footnotesize\tableofcontents}
+\clearpage
+
+\section{问题背景与科研主线}
+
+经典孔隙网络模型把孔体压缩为图节点、孔喉压缩为图边，计算成本低，但需要
+预先指定一维导流定律。DDPNM 的核心思想不同：孔体内部仍求解真实几何上的
+Stokes 方程，只把跨孔体耦合压缩到界面迹空间。因此，它既是域分解方法，
+也是一种具有有限元物理闭合的孔隙网络模型。参考论文\cite{Sun2026}给出了
+经典 DDPNM 的局部响应、全局 Schur 装配、正定性、质量守恒和 Galerkin
+投影解释。两个三维项目进一步暴露了升维后必须处理的两个问题。
+
+\begin{keybox}{四幕式科研叙事}
+\begin{enumerate}
+  \item \textbf{几何断裂：}二维孔喉界面是线段，三维子区域必须由二维曲面
+  分隔；球心 Voronoi 平面、两球等净距曲面与净距盆分界面并非同一对象。
+  \item \textbf{代数断裂：}经典 DDPNM 的每界面一个常数法向牵引在三维
+  随机介质上产生 $65.32\%$ 的速度相对 $L^2$ 误差；界面面内线性信息不能
+  被单个常数表示。
+  \item \textbf{假说判别：}增加代表点但不给出仿射完备性，改善有限；加入
+  完整九模态后误差显著下降。体网格加密也未消除误差，说明主要瓶颈是
+  界面空间与几何的匹配，而不是局部有限元离散。
+  \item \textbf{解法与边界：}平面界面上九模态 Affine-DDPNM 有效；在
+  watershed 弯折阶梯面上，固定平均切平面的仿射空间出现新的表达误差。
+  因而下一步不是退回 Voronoi，而是建立几何感知、残差驱动的界面富集。
+\end{enumerate}
+\end{keybox}
+
+需要特别避免一种过强表述：不能仅凭二维与三维误差差异就断言``维数本身''
+导致全部退化，因为两个算例尚未严格匹配孔隙率、配位数和孔喉尺度分布。
+本文可以确定的是：升维改变了界面维数、几何分区对象和可用迹空间，这三者
+共同改变了近似误差的结构。
+
+\section{模型问题与同网格有限元基准}
+
+设 $D=(0,1)^3$，固体由球
+$B_j=\{\bm x:\|\bm x-\bm c_j\|<r_j\}$ 及封闭外壁组成，流体域为
+\begin{equation}
+  \Omega=D\setminus\bigcup_{j=1}^{N_s}\overline{B_j}.
+\end{equation}
+入口和出口分别为 $\Gamma_{\rm in}=\{x=0\}$ 与
+$\Gamma_{\rm out}=\{x=1\}$，其余固液边界记为 $\Gamma_w$。稳态 Stokes
+问题为
+\begin{equation}\label{eq:stokes}
+\begin{aligned}
+ -\nu\Delta\bm u+\nabla p&=\bm0 &&\text{in }\Omega,\\
+ \nabla\cdot\bm u&=0 &&\text{in }\Omega,\\
+ \bm u&=\bm0 &&\text{on }\Gamma_w,\\
+ \stress(\bm u,p)\normal&=-p_b\normal
+ &&\text{on }\Gamma_{\rm in}\cup\Gamma_{\rm out},
+\end{aligned}
+\end{equation}
+其中 $\stress(\bm u,p)=-p\bm I+\nu\nabla\bm u$，入口、出口压力分别为
+$p_{\rm in}$ 与 $p_{\rm out}$。两个项目均使用同一父网格上的
+$[P_2]^3-P_1$ Taylor--Hood 离散作为整体 FEM 参考，从而排除网格转换误差。
+
+将 $\Omega$ 划分为互不重叠的孔体子区域
+\begin{equation}
+  \overline\Omega=\bigcup_{i=1}^{N_p}\overline{\Omega_i},\qquad
+  \Omega_i\cap\Omega_j=\varnothing\quad(i\ne j),
+\end{equation}
+并记共享界面 $\Gamma_f=\partial\Omega_i\cap\partial\Omega_j$。每个
+$\Omega_i$ 上的离散混合方程可写为
+\begin{equation}\label{eq:local-matrix}
+K_i x_i=B_i c_i+B_i^b c_i^b,\qquad
+  K_i=\begin{bmatrix}A_i&B_i^{p\top}\\B_i^p&0\end{bmatrix},
+  \qquad x_i=\begin{bmatrix}U_i\\P_i\end{bmatrix}.
+\end{equation}
+这里 $B_i^p$ 是散度矩阵；为避免与界面载荷矩阵混淆，后文始终把界面载荷
+记为 $B_i$。固壁速度自由度施加齐次 Dirichlet 条件。若一个子区域完全不接触
+固壁，则局部纯牵引 Stokes 算子含非平凡常速度或刚体零空间，无法稳定分解；
+这正是 watershed 实现中合并``浮游盆''的代数原因。
+
+\section{DDPNM 的统一数学推导}
+
+\subsection{一般界面牵引空间}
+
+在界面 $\Gamma_f$ 上选择向量值基函数
+$\{\bm\psi_{f,a}\}_{a=1}^{r_f}$，并近似牵引为
+\begin{equation}\label{eq:trace-basis}
+  \traction_h\big|_{\Gamma_f}
+  =\sum_{a=1}^{r_f}c_{f,a}\bm\psi_{f,a}(\bm x).
+\end{equation}
+对于 $\Omega_i$ 的局部端口 $f$，载荷列定义为
+\begin{equation}\label{eq:load-column}
+  (b_{i,f,a})_j
+  =\int_{\Gamma_f}\bm\psi_{f,a}\cdot\bm\varphi_{i,j}\dd S,
+\end{equation}
+其中 $\bm\varphi_{i,j}$ 是速度试函数。将所有局部模式载荷并为矩阵 $B_i$，
+只需分解一次 $K_i$，即可同时得到响应库
+\begin{equation}\label{eq:response}
+  R_i=K_i^{-1}B_i,\qquad R_i^b=K_i^{-1}B_i^b.
+\end{equation}
+项目中的共享核心正是先组装全部 primitive loads，再作块求解。定义局部
+能量响应矩阵
+\begin{equation}\label{eq:local-G}
+  H_i=B_i^\top K_i^{-1}B_i=B_i^\top R_i.
+\end{equation}
+若只观察速度块，$c_i^\top H_i c_i$ 等于对应响应的离散黏性能量，因而
+$H_i$ 对称半正定。参考论文使用相反的通量符号定义负半定 DtN 矩阵 $G_i$，
+于是写成 $S=-\sum R_i^\top G_iR_i$；共享三维代码直接使用
+\eqref{eq:local-G}，两种写法仅差符号约定。
+
+令 $E_i$ 把全局未知系数 $c$ 限制到 $\Omega_i$ 的内部端口。把已知入口、
+出口牵引移到右端，界面矩守恒给出
+\begin{equation}\label{eq:schur}
+  Sc=g,\qquad
+  S=\sum_{i=1}^{N_p}E_i^\top H_iE_i,\qquad
+  g=-\sum_{i=1}^{N_p}E_i^\top B_i^\top R_i^b c_i^b.
+\end{equation}
+求得 $c$ 后，各子区域场独立重构为
+\begin{equation}\label{eq:reconstruct}
+  x_i=R_iE_ic+R_i^bc_i^b.
+\end{equation}
+
+\begin{algobox}{算法 1：统一的 DDPNM / Affine-DDPNM 求解器}
+\begin{lstlisting}[style=compactcode,language=Python]
+for pore i in pores:                      # 可并行的离线阶段
+    K_i = assemble_local_Taylor_Hood(i)
+    factor_i = factorize(K_i)              # 每个孔体只分解一次
+    B_i = assemble_interface_mode_loads(i, basis)
+    R_i = factor_i.solve(B_i)              # 所有单位牵引响应
+    H_i = B_i.T @ R_i                      # 局部能量 / DtN 块
+    S += E_i.T @ H_i[uu] @ E_i
+    g -= E_i.T @ H_i[ub] @ c_boundary
+
+c = solve(S, g)                            # 在线全局界面系统
+for pore i in pores:                       # 可并行重构
+    x_i = R_i @ local_coefficients(c, c_boundary)
+check_interface_moments_and_mass_balance()
+\end{lstlisting}
+\end{algobox}
+
+\subsection{经典 DDPNM：每界面一个常数法向模态}
+
+经典三维 DDPNM 取
+\begin{equation}\label{eq:classic-space}
+  \T_f^{\rm cls}=\Span\{-\normal_f\},\qquad r_f=1,
+\end{equation}
+即在整个 $\Gamma_f$ 上施加常数法向牵引，切向牵引为零。全局未知量数为
+$M_{\rm cls}=N_\Gamma$。该模型保留每个孔体内部的三维旋涡、剪切和压力场，
+但跨界面只传递一个零阶法向矩。它不是传统一维 Poiseuille PNM；其网络边
+权来自局部有限元响应，而不是预设圆管公式。
+
+对任意子区域，所有端口施加相同常数法向压力只产生常压力、零速度响应，
+故局部 DtN 含常数压力核。只要孔体图连通、至少有入口或出口牵引被固定，
+这一全局规范自由度被消除，$S$ 为对称正定矩阵。离散不可压条件中取常数
+压力试函数，又得到
+\begin{equation}
+  \sum_{f\subset\partial\Omega_i}
+  \int_{\Gamma_f}\bm u_i\cdot\bm n_i\dd S=0.
+\end{equation}
+相邻子区域在共享界面上的外法向相反，全局装配使内部通量相消，因此局部与
+全局质量守恒同时成立。项目报告中的 Schur 对称误差与质量残差均达到舍入误差
+量级，和这一结构一致。
+
+\subsection{Affine-DDPNM：完整向量仿射九模态}
+
+对每个界面计算面积加权中心 $\bm c_f$、统一法向 $\bm n_f$，并取正交切向量
+$\bm t_{1,f},\bm t_{2,f}$。定义无量纲面内坐标
+\begin{equation}\label{eq:st-coordinate}
+  s_f(\bm x)=\frac{(\bm x-\bm c_f)\cdot\bm t_{1,f}}{h_{1,f}},\qquad
+  t_f(\bm x)=\frac{(\bm x-\bm c_f)\cdot\bm t_{2,f}}{h_{2,f}},
+\end{equation}
+其中 $h_{1,f},h_{2,f}$ 是界面顶点在两个切向方向上的最大投影尺度。完整向量
+仿射牵引空间为
+\begin{equation}\label{eq:affine-space}
+\begin{aligned}
+  \T_f^{\rm aff}
+  &=\Span\{1,s_f,t_f\}\otimes
+    \Span\{\bm n_f,\bm t_{1,f},\bm t_{2,f}\}\\
+  &=\Span\{\bm n_f,s_f\bm n_f,t_f\bm n_f,
+  \bm t_{1,f},s_f\bm t_{1,f},t_f\bm t_{1,f},
+  \bm t_{2,f},s_f\bm t_{2,f},t_f\bm t_{2,f}\}.
+\end{aligned}
+\end{equation}
+因此每个界面有 $r_f=9$ 个未知量，全局系统大小为
+$M_{\rm aff}=9N_\Gamma$。它包含严格嵌套的三级空间：
+\begin{equation}
+  \T_f^{(1)}=\Span\{\bm n_f\}
+  \subset
+  \T_f^{(3)}=\Span\{\bm n_f,\bm t_{1,f},\bm t_{2,f}\}
+  \subset
+  \T_f^{(9)}=\T_f^{\rm aff}.
+\end{equation}
+规则球项目分别称其为 DDPNM、DDPNMT 与 HODDPNM-P1(9)；随机项目中的
+AffineFaceBasis 使用最后的九维空间。两者在数学上是同一种 reduced trace
+Schur 方法，而不是保留所有有限元界面节点的 exact FE-trace Schur。
+
+\begin{algobox}{算法 2：单个三维界面的九个仿射牵引模式}
+\begin{lstlisting}[style=compactcode,language=Python]
+n = normalize(interface_average_normal[f])
+t1 = normalize(cross(n, reference_axis(n)))
+t2 = cross(n, t1)
+c  = interface_area_weighted_center[f]
+h1 = max(abs((x_vertex-c) @ t1))
+h2 = max(abs((x_vertex-c) @ t2))
+s  = ((x-c) @ t1) / h1
+t  = ((x-c) @ t2) / h2
+
+modes = [q * direction
+         for direction in (n, t1, t2)
+         for q in (1, s, t)]
+\end{lstlisting}
+\end{algobox}
+
+\subsection{Galerkin 投影、嵌套最优性与误差地板}
+
+设 $\widehat S\widehat\lambda=\widehat F$ 是保留完整有限元界面迹自由度的
+经典非重叠域分解系统。令 $P_r$ 把 reduced coefficients 映射到完整迹空间，
+即 $\widehat\lambda_r=P_rc_r$。则 reduced DDPNM 系统为
+\begin{equation}\label{eq:galerkin-restriction}
+  P_r^\top\widehat S P_rc_r=P_r^\top\widehat F.
+\end{equation}
+由 Galerkin 正交性可得参考论文中的最佳逼近性质
+\begin{equation}\label{eq:best-approx}
+  \|\widehat\lambda-\widehat\lambda_r\|_{\widehat S}
+  =\min_{z\in\Range(P_r)}
+  \|\widehat\lambda-z\|_{\widehat S},
+\end{equation}
+以及局部速度能量恒等式
+\begin{equation}\label{eq:energy-error}
+  \sum_i\|U_i^{\rm FE}-U_i^{(r)}\|_{A_i}^2
+  =\|\widehat\lambda-\widehat\lambda_r\|_{\widehat S}^2.
+\end{equation}
+由于 $\T^{\rm cls}\subset\T^{\rm aff}$，在相同分区和相同父网格上，仿射空间
+的 Schur 能量误差不大于经典空间的误差。更重要的是，固定 $r$ 后只细化体
+网格，并不会让右侧最佳逼近距离自动趋于零；它只让 $\widehat\lambda$ 的有限元
+表示更精细，而 $\Range(P_r)$ 没有变得更丰富。这给出了项目中``无 $h$
+收敛''现象的直接数学解释：要降低模型误差，必须富集界面空间或改变分区，
+不能只增加孔体内部四面体。
+
+\section{三维孔体与孔喉界面的分区算法}
+
+\subsection{净距场、支撑数与维数计数}
+
+对球形固体，净距函数写成
+\begin{equation}\label{eq:clearance}
+  d(\bm x)=\min\left\{
+    \min_j\bigl(\|\bm x-\bm c_j\|-r_j\bigr),
+    d_{\rm wall}(\bm x)
+  \right\}.
+\end{equation}
+其中 open inlet/outlet 是否计入 $d_{\rm wall}$ 必须作为边界策略明确指定。
+watershed 项目的默认策略只计球面及 $y,z$ 四个侧壁，不把 $x=0,1$ 当作
+固体壁；这使边界孔体由真实开口截断，而不会被虚假墙面制造新的极大值。
+
+令 $A(\bm x)$ 为在 $\bm x$ 处达到最小净距的活动支撑集合。若一般位置下有
+$k$ 个球同时等净距，则有 $k-1$ 个独立等式约束；在三维中相应中轴分层的
+期望维数为
+\begin{equation}\label{eq:support-dimension}
+  \dim \mathcal M_k=3-(k-1)=4-k.
+\end{equation}
+因此两支撑通常给出二维片，三支撑给出一维分支，四支撑给出孤立结点。三维
+孔喉最窄核心在一般球堆积中通常与三球支撑的一维中轴分支有关，但\emph{整张}
+watershed 分界面不是由某三个固定球定义。该区别十分关键：``三球支撑''描述
+局部喉核，``两孔体标签''定义全局分界面。
+
+二维中相应维数为 $3-k$：两支撑给出一维中轴曲线，三支撑给出点。因而不能
+把二维的``两个圆支撑一条线段''直接改写为``三维三个球支撑整张曲面''；升维
+后的正确对象应由净距盆及其 separatrix 定义，支撑球只用于解释局部奇异结构。
+
+\subsection{规则等半径球阵列：解析最大空球分区}
+
+规则项目的固体球心为 $\{0.2,0.5,0.8\}^3$，半径相同。净距同时考虑球面和
+立方体六壁。对称性使最大空球中心形成 $4\times4\times4$ 阵列，得到
+$64$ 个孔体；六邻接图产生 $144$ 个孔喉。解析分隔面为
+\begin{equation}
+  x,y,z\in\{0.2,0.5,0.8\}.
+\end{equation}
+这些平面经 OpenCASCADE 统一 fragment 后生成一张共形四面体网格。该构造
+在当前对称几何中是严格且高效的，但它依赖等半径、规则排布和解析对称性，
+不能作为随机不等半径球介质的一般算法。
+
+\subsection{随机球的球心 Voronoi 平面基线}
+
+随机项目的第一种分区先对球心作 Delaunay 三角剖分，再把相邻球心的 Voronoi
+ridge polygon 作为界面。对球对 $(i,j)$，设
+$\bm e_{ij}=(\bm c_j-\bm c_i)/D_{ij}$，$D_{ij}=\|\bm c_j-\bm c_i\|$，
+则使用的平面是
+\begin{equation}\label{eq:vor-plane}
+  \Pi_{ij}=\left\{\bm x:
+  \left(\bm x-\frac{\bm c_i+\bm c_j}{2}\right)
+  \cdot\bm e_{ij}=0\right\}.
+\end{equation}
+它被其他 Voronoi 面及立方体边界裁剪成多边形。该方法的数学对象是\emph{球心
+点集的无权 Voronoi 胞}，所以每个胞天然对应一个固体球，而不是一个净距极大
+值。当前随机样例因此得到 $27$ 个子区域和 $114$ 个界面。
+
+\begin{algobox}{算法 3：球心 Voronoi 平面分区基线}
+\begin{lstlisting}[style=compactcode,language=Python]
+edges = Delaunay(sphere_centers).edges()
+for (i, j) in edges:
+    gap_segment = sphere_surface_gap_on_centerline(i, j)
+    reject_if_segment_hits_third_sphere(gap_segment)
+    face = Voronoi(sphere_centers).ridge_polygon(i, j)
+    face = clip_to_cube(face)
+    keep_if_non_degenerate_and_not_inside_solid(face)
+fragment(fluid_volume, all_kept_faces)
+label_regions_and_interfaces_from_conforming_mesh()
+\end{lstlisting}
+\end{algobox}
+
+对不等半径球，真正的两球等净距集合为
+\begin{equation}\label{eq:pair-clearance}
+  \mathcal H_{ij}=\{\bm x:
+  \|\bm x-\bm c_i\|-r_i
+  =\|\bm x-\bm c_j\|-r_j\}.
+\end{equation}
+当 $r_i=r_j$ 时它退化为垂直平分面；否则是以两球心为焦点的双曲面分支。
+沿连心轴，两球壁间的等净距点位于
+\begin{equation}\label{eq:saddle-shift}
+  \bm x_{ij}^*=\bm c_i+\frac{D_{ij}+r_i-r_j}{2}\bm e_{ij}.
+\end{equation}
+因此它相对球心中点平面的轴向位移为
+\begin{equation}
+  \left|(\bm x_{ij}^*-(\bm c_i+\bm c_j)/2)\cdot\bm e_{ij}\right|
+  =\frac{|r_i-r_j|}{2}.
+\end{equation}
+项目中 126 个候选喉道的中位位移为 $0.0073$，约占间隙的 $2.8\%$；最差
+间隙比例达到 $28.5\%$。但必须继续强调：即使把平面换成
+$\mathcal H_{ij}$，它仍只是固定球对的等净距曲面，不必等于两个净距盆之间的
+完整 watershed separatrix，因为最近固体的身份会在曲面上发生切换。
+
+\subsection{净距 watershed：从极大值盆到分界面}
+
+watershed 实现首先只生成流体域的无内部切割四面体网格。设
+$\mathcal G_h=(\mathcal K_h,\mathcal E_h)$ 为四面体邻接图，$d_K$ 是单元
+重心净距。对阈值 $\lambda$ 定义超水平子图
+\begin{equation}
+  \mathcal G_h^\lambda
+  =\mathcal G_h[\{K\in\mathcal K_h:d_K\ge\lambda\}].
+\end{equation}
+当 $\lambda$ 从高到低下降时，连通分支在局部极大值 $\beta$ 处出生，在鞍层
+$\delta$ 与更老分支合并并死亡，持久性定义为
+\begin{equation}
+  \rho=\beta-\delta.
+\end{equation}
+代码采用双阈值
+\begin{equation}\label{eq:persistence-threshold}
+  \rho\ge\tau_{\rm abs},\qquad
+  \rho\ge\tau_{\rm rel}\beta,
+\end{equation}
+并始终保留全局最大分支。随后从这些 marker 出发按净距降序 flooding，获得
+连通盆标签 $L(K)$。离散孔喉界面定义为异标签相邻单元的公共三角面并集：
+\begin{equation}\label{eq:watershed-interface}
+  \Gamma_{\alpha\beta}^h
+  =\bigcup_{\substack{F=K^+\cap K^-\\
+  L(K^+)=\alpha,\ L(K^-)=\beta}}
+  F.
+\end{equation}
+对同一标签对的三角面还要按共享边连通性拆分；因此同一孔体对可以有多个
+互不连通的物理接口。
+
+\begin{algobox}{算法 4：持久性净距 watershed 分区}
+\begin{lstlisting}[style=compactcode,language=Python]
+mesh = mesh_cube_minus_spheres(without_internal_CAD_cuts=True)
+d[K] = clearance(cell_barycenter[K], boundary_policy)
+adjacency = tetrahedra_sharing_a_facet(mesh)
+
+tree = superlevel_merge_tree(d, adjacency)       # 平台批处理
+markers = [c for c in tree
+           if c.persistence >= tau_abs
+           and c.persistence >= tau_rel*c.birth]
+markers += global_maximum_survivor(tree)
+labels = descending_watershed_flood(markers, d, adjacency)
+labels = merge_basins_without_solid_wall_contact(labels)
+
+facets = [F for F in internal_facets(mesh)
+          if labels[cell_plus(F)] != labels[cell_minus(F)]]
+interfaces = split_by_label_pair_and_edge_component(facets)
+compute_area_center_average_normal_and_saddle(interfaces)
+\end{lstlisting}
+\end{algobox}
+
+正式网格在阈值 $(\tau_{\rm abs},\tau_{\rm rel})=(0.02,0.05)$ 下先得到
+$85$ 个盆，其中 $3$ 个没有固壁 facet。它们被并入共享界面面积最大的邻居，
+最终得到 $82$ 个孔体和 $369$ 个界面。九项拓扑不变量均通过，包括每单元有
+标签、每盆连通、接口两侧标签不同、接口连通分量正确、总体积守恒和界面法向
+定向一致。
+
+\subsection{四类分区对象的数学对照}
+
+\begin{table}[htbp]
+\centering
+\caption{三维项目中的分区方法及其数学身份}
+\label{tab:partition-summary}
+\small
+\begin{tabularx}{\textwidth}{p{2.6cm}p{3.3cm}Xp{2.5cm}}
+\toprule
+方法 & 孔体定义 & 孔喉界面定义 & 适用性\\
+\midrule
+规则解析分区 & 对称净距场的 $4^3$ 个最大空球盆
+& 解析鞍点平面，当前等半径阵列中为九张坐标平面
+& 当前规则几何严格\\
+球心 Voronoi & 每个固体球心的无权 Voronoi 胞
+& Delaunay 球心对的垂直平分面多边形
+& 稳定、平面化，但孔体语义偏离净距盆\\
+固定球对等净距 & 未给出完整孔体分区
+& $\|x-c_i\|-r_i=\|x-c_j\|-r_j$ 的双曲面分支
+& 可作局部球对几何比较，不能独立定义全局盆\\
+净距 watershed & 持久性净距极大值的吸引盆
+& 两盆标签的二维 separatrix，离散为三角面集合
+& 语义正确的一般三维方案，但依赖阈值和网格\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{为何机械沿用二维球心画法会产生不良后果}
+
+这里所谓``机械沿用二维''，必须准确限定为：看到二维孔喉由相邻固体圆和连心
+线定位，便在三维中直接把相邻球心的垂直平分面当作孔体分界面。这种做法的
+问题不只是``线段不能分割体积''，而是它在升维时更换了数学对象。
+
+\subsection{后果一：孔体身份从空隙极大值变成固体颗粒标签}
+
+物理孔体应围绕净距局部极大值组织；球心 Voronoi 却围绕固体球心组织。因此
+随机样例出现
+\begin{equation}
+N_p^{\rm Vor}=27=N_s,\qquad
+  N_p^{\rm W}=82\ne N_s.
+\end{equation}
+这不是 watershed ``过分割''的充分证据，也不是 Voronoi ``正确''的证据；它
+首先说明两种方法回答的是不同问题。前者分配``离哪个球心最近''，后者分配
+``沿净距上升会到达哪个孔隙极大值''。
+
+\subsection{后果二：不等半径时界面不再通过净距鞍点}
+
+式\eqref{eq:saddle-shift}表明，球心中点平面与两球等净距位置有
+$|r_i-r_j|/2$ 的系统偏差。这一偏差由画法决定，不会因四面体网格加密或界面
+模态升阶而消失。正式对照中，邻近匹配后的对称 Hausdorff 距离中位数为
+$0.0858$、最大为 $0.2420$。由于 watershed 阶梯面分辨率本身约为
+$0.06$--$0.13$，这些数值是``两组离散界面的空间偏差''，不能被解释为某个
+固定球对物理鞍面的高精度误差。
+
+\subsection{后果三：大而平的界面可能切过孔体主体而非局部喉部}
+
+球心 Voronoi 面是由全局点集对偶关系决定的平面多边形，未必贴近净距盆相遇
+的最窄区域。它可能产生面积较大、跨越范围较广的接口，使一个常数法向系数
+代表更多异质流动。四组合消融中，Classic-DDPNM 从 Voronoi 的
+$65.32\%$ 改为 watershed 的 $43.55\%$，说明更局部的净距盆接口确实更适合
+低阶常数模态。但这个差异不能全部归因于单一几何量，它是分区拓扑、界面数
+和接口尺度共同改变后的净结果。
+
+\subsection{后果四：平面几何可能人为讨好仿射基}
+
+Voronoi 平面具有统一法向，恰好与式\eqref{eq:affine-space}的单一切平面基
+匹配，因此 V$\times$Affine 的速度 $L^2$ 误差为 $6.51\%$。watershed 接口
+由许多法向跳变的阶梯 facets 组成；在同一接口上仍只用一个面积平均法向和
+两个全局切向，W$\times$Affine 误差反而为 $11.31\%$。这不意味着 Voronoi
+更物理，而说明\emph{几何修正暴露了模态设计的下一层缺陷}。
+
+对接口 $\Gamma_f^h=\cup_kF_k$，可以定义有量纲一致的法向弯折指标
+\begin{equation}\label{eq:normal-defect}
+  \delta_{n,f}^2
+  =\frac{1}{A_f}\sum_k A_k\|\bm n_k-\bar{\bm n}_f\|^2,
+  \qquad
+  \bar{\bm n}_f=\frac{\sum_kA_k\bm n_k}
+  {\|\sum_kA_k\bm n_k\|}.
+\end{equation}
+真实牵引 $\bm\lambda(\bm x)$ 在固定平均框架中的不可表达部分为
+\begin{equation}
+  \inf_{\bm q\in[P_1(s,t)]^3}
+  \|\bm\lambda-\bm q\|_{L^2(\Gamma_f^h)}
+  =\|(I-\proj_{[P_1]^3})\bm\lambda\|_{L^2(\Gamma_f^h)}.
+\end{equation}
+当 facet 法向出现大角度跳变时，纯法向牵引
+$\bm\lambda=\pi(\bm x)\bm n(\bm x)$ 也成为分片跳变向量场，不能由全局
+$[P_1]^3$ 精确表示。独立角度统计显示 $369$ 个 watershed 接口中有
+$246$ 个最大法向偏角超过 $30^\circ$，与仿射退化相吻合。
+
+当前源码中的 \texttt{interface\_normal\_dispersion} 实现为近似
+$\sum_k(1-\bm n_k\cdot\bar{\bm n})/A_f$，缺少 facet 面积权重，且与注释所写
+平方公式不一致，因此不应直接把该字段当作式\eqref{eq:normal-defect}。本文的
+弯折结论使用独立的最大角度统计；未来应统一该诊断公式。
+
+\section{实验论证：从排除法到可验证的机理}
+
+\subsection{同分区的模态富集}
+
+规则球项目在 $12{,}203$ 个四面体的同网格实验中，经典 DDPNM 用 $144$ 个
+界面未知量得到 $21.084\%$ 的速度相对 $L^2$ 误差；完整向量仿射九模态在
+另一正式网格中用 $1{,}296$ 个未知量得到 $6.72\%$。随机 Voronoi 项目中，
+从每面 1 模态到 9 模态后，速度 $L^2$ 误差从 $65.32\%$ 降至 $6.51\%$，
+出口流量误差从 $72.72\%$ 降至 $2.71\%$。这与
+\eqref{eq:best-approx}的嵌套最佳逼近性质一致。
+
+\begin{table}[htbp]
+\centering
+\caption{规则与随机三维算例中的主要精度结果}
+\label{tab:main-errors}
+\small
+\begin{tabular}{llrrrr}
+\toprule
+几何/分区 & 方法 & 界面未知量 & 速度 $L^2$ & broken-$H^1$ & 流量误差\\
+\midrule
+规则解析分区 & DDPNM & 144 & 21.08\% & 44.83\% & 16.46\%\\
+规则解析分区 & HODDPNM-P1(9) & 1,296 & 6.72\% & 20.14\% & 2.37\%\\
+规则解析分区 & 仿射完备 Uniform-DDPNMT & 2,160 & 5.47\% & 21.59\% & 0.023\%\\
+随机 Voronoi & Classic-DDPNM & 114 & 65.32\% & 85.85\% & 72.72\%\\
+随机 Voronoi & Affine-DDPNM & 1,026 & 6.51\% & 17.56\% & 2.71\%\\
+随机 watershed & Classic-DDPNM & 369 & 43.55\% & 63.96\% & 40.15\%\\
+随机 watershed & Affine-DDPNM & 3,321 & 11.31\% & 30.73\% & 7.75\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表\ref{tab:main-errors}中的规则实验来自两个不同正式网格，不能把
+$21.08\%\to6.72\%$ 当成严格单变量消融；随机四组合则按各自整体 FEM 做
+同口径误差，但 Voronoi 和 watershed 的网格与子区域数不同。最可靠的结论是
+数量级与趋势，而不是把任一差值解释成单一因素的精确贡献率。
+
+\subsection{压缩比假说与模态形状假说}
+
+三维每个界面可能有上百个 FE 迹自由度，经典方法只保留一个系数。直觉上可
+提出两种竞争解释：
+\begin{itemize}
+  \item 假说 A：误差主要来自代表点或未知量太少，即压缩比过大；
+  \item 假说 B：误差主要来自保留的模式形状不对，即缺少面内仿射完备性。
+\end{itemize}
+规则项目的受控采样实验在每面选择 $4$--$6$ 个点，平均 5 点。若只作常数型
+最小能量延拓，增加点数仍无法恢复重要面内梯度；当延拓精确再现
+$\{1,s,t\}\otimes\{\bm n,\bm t_1,\bm t_2\}$ 后，2,160 个未知量的
+Uniform-DDPNMT 得到 $5.466\%$，与九模态方法同量级。这个结果更支持 B：
+关键不是抽象的点数本身，而是离散空间能否再现正确的低阶迹函数。与此同时，
+九模态以更少未知量达到相近精度，说明模态基比均匀增点具有更高的信息效率。
+
+\subsection{网格加密不能修复固定界面空间}
+
+watershed 在三档网格中的 Affine 速度 $L^2$ 误差为
+\begin{equation}
+  10.89\%\ \longrightarrow\ 11.31\%\ \longrightarrow\ 14.32\%,
+\end{equation}
+Classic 则为 $54.99\%\to43.55\%\to46.73\%$，均无系统收敛趋势。这和
+式\eqref{eq:best-approx}的固定迹空间误差地板一致。不过这里还有第二个
+混杂因素：固定持久性阈值下盆数随网格为 $77,82,50$，说明分区拓扑本身也
+没有保持不变。因此不能把三档数据当作经典意义上``固定连续问题、仅 $h$
+变化''的收敛实验。严格收敛研究必须随网格标定阈值，或构造连续层面的稳定
+marker 追踪规则。
+
+\subsection{四组合消融的正确解读}
+
+\begin{table}[htbp]
+\centering
+\caption{随机介质的分区画法 $\times$ 界面基四组合消融}
+\label{tab:four-way}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+指标 & V$\times$Classic & V$\times$Affine & W$\times$Classic & W$\times$Affine\\
+\midrule
+孔体/界面数 & 27/114 & 27/114 & 82/369 & 82/369\\
+界面未知量 & 114 & 1,026 & 369 & 3,321\\
+速度相对 $L^2$ & 65.32\% & 6.51\% & 43.55\% & 11.31\%\\
+速度 broken-$H^1$ & 85.85\% & 17.56\% & 63.96\% & 30.73\%\\
+压力相对 $L^2$ & 10.30\% & 2.03\% & 6.72\% & 3.93\%\\
+出口流量误差 & 72.72\% & 2.71\% & 40.15\% & 7.75\%\\
+首次求解 & 12.22 s & 15.23 s & 17.35 s & 25.01 s\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表\ref{tab:four-way}支持一个比``watershed 一定更好''更有研究价值的结论：
+\begin{enumerate}
+  \item 对低阶 Classic 基，净距分区更局部，误差明显降低；
+  \item 对固定平面 Affine 基，Voronoi 的平面性使基函数匹配得更好；
+  \item 因此精度主因不是单独的画法或单独的模态数，而是\textbf{界面几何与
+  模态空间的匹配}；
+  \item watershed 上 Affine 仍显著优于 watershed 上 Classic，说明仿射富集
+  有效，但还需继续处理法向跳变和曲面局部坐标。
+\end{enumerate}
+
+\section{计算成本与可扩展性}
+
+\subsection{理论成本}
+
+设孔体 $i$ 的局部混合自由度为 $n_i$，端口总模式数为 $m_i^{\rm mode}$，
+全局界面未知量为 $M=\sum_fr_f$。离线阶段包括一次局部稀疏分解和多个右端
+回代，形式上为
+\begin{equation}
+  C_{\rm off}\approx\sum_i
+  \left(C_{\rm fact}(n_i)+m_i^{\rm mode}C_{\rm solve}(n_i)\right).
+\end{equation}
+各孔体可完全并行，并可在几何与黏度不变的多工况中复用。在线阶段为局部块
+装配、全局 Schur 求解和局部线性组合重构。理想实现中，$S$ 继承孔体图的
+稀疏性；但当前共享装配器使用稠密 \texttt{numpy} 数组和
+\texttt{numpy.linalg.solve}，其存储与直接求解上界分别为
+\begin{equation}
+  C_{\rm mem}=O(M^2),\qquad C_{\rm solve}=O(M^3).
+\end{equation}
+因此目前的千维系统仍很快，但 $M$ 随界面数或模态阶数增长后，稠密 Schur
+会成为新的瓶颈。论文中的``全局系统极稀疏''是方法结构，尚需稀疏装配器和
+迭代预条件实现才能在大规模算例中兑现。
+
+\subsection{随机 Voronoi 算例的独立成本}
+
+\begin{table}[htbp]
+\centering
+\caption{随机 Voronoi 算例的离线、在线和首次求解成本}
+\label{tab:cost-voronoi}
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+方法 & 全局未知量 & 离线 & 在线 & 首次合计 & 相对 FEM 首解\\
+\midrule
+Classic-DDPNM & 114 & 12.204 s & 0.012 s & 12.216 s & $9.55\times$\\
+Affine-DDPNM & 1,026 & 15.087 s & 0.139 s & 15.226 s & $7.66\times$\\
+Exact FE-trace Schur & 21,970 & 0 & 532.360 s & 532.360 s & $0.22\times$\\
+Monolithic FEM & 75,954 & 0 & 116.621 s & 116.621 s & $1.00\times$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+网格生成约 2 分钟，在所有同网格方法之间共享，未计入表\ref{tab:cost-voronoi}。
+Exact FE-trace Schur 使用稠密基线实现，其意义是验证与整体 FEM 一致到
+$10^{-12}$，而非主张效率。Affine 的首次成本仅比 Classic 增加约 $25\%$，
+却把速度误差约降到十分之一；原因是九个右端共享同一个局部分解。
+
+\subsection{watershed 的公平尺度成本与多工况口径}
+
+粗 watershed 网格只有 $6{,}586$ 个四面体，整体 FEM 仅需 $27.5$ s，因此
+W$\times$Affine 的首次加速只有 $1.10\times$。在 $11{,}404$ 个四面体的
+较公平尺度上，watershed 有 $50$ 个盆、$257$ 个界面，Affine 系统为
+$2{,}313$ 维：离线 $23.693$ s、在线 $0.857$ s、首次 $24.550$ s；整体 FEM
+为 $65{,}278$ 个自由度和 $92.889$ s，首次加速为 $3.78\times$，而多工况中
+若响应库可复用，则每工况在线加速约为
+\begin{equation}
+  92.889/0.857\approx108.4\times.
+\end{equation}
+交接文档中的约 $136\times$ 采用 $116.6$ s 的 Voronoi FEM 时间除以同一
+$0.857$ s 在线时间，是一种跨网格叙事口径；正式论文应避免混用。推荐分别
+报告``同网格首次加速''与``同网格多工况在线加速''。
+
+\begin{table}[htbp]
+\centering
+\caption{分区改变后的成本来源}
+\label{tab:cost-partition}
+\small
+\begin{tabularx}{\textwidth}{lrrrrX}
+\toprule
+算例 & 胞数 & 盆/界面 & Affine 未知量 & 首次加速 & 主要成本解释\\
+\midrule
+Voronoi 0.13 & 15,249 & 27/114 & 1,026 & $7.66\times$
+& 内部 CAD 切割增加网格，但界面较少\\
+watershed 0.16 & 4,311 & 77/326 & 2,934 & $0.80\times$
+& FEM 太小，离线库成本尚未摊薄\\
+watershed 0.13 & 6,586 & 82/369 & 3,321 & $1.10\times$
+& 盆和界面较多，稠密全局系统增大\\
+watershed 0.10 & 11,404 & 50/257 & 2,313 & $3.78\times$
+& 规模增大后离线--在线优势开始显现\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{局限性、待验证问题与未来工作}
+
+\subsection{当前结论的边界}
+
+\begin{enumerate}
+  \item \textbf{watershed 尚非网格不变：}固定阈值下盆数为
+  $77/82/50$，不能据此给出经典 $h$ 收敛定理。需要连续 marker 对应或随
+  网格标定的持久性区间。
+  \item \textbf{浮游盆合并是求解器后处理：}它保证每个局部 Stokes 区域
+  有固壁锚定，但会改变纯 watershed 拓扑。当前实现应进一步检查浮游盆合并
+  到另一浮游盆时的链式关系，并在每次合并后更新邻接与壁接触状态。
+  \item \textbf{球对 Hausdorff 只是邻近匹配：}watershed 接口由孔体标签对
+  定义，不具有固定固体球对身份。不能把几何邻近匹配写成``同一球对真实
+  鞍面的误差''。
+  \item \textbf{法向 dispersion 指标需修正：}应使用面积加权、无量纲且
+  定义一致的式\eqref{eq:normal-defect}，并保留最大角度和分位数诊断。
+  \item \textbf{误差理论尚未覆盖弯折接口：}式\eqref{eq:best-approx}给出
+  抽象最佳逼近，但尚未把 facet 法向跳变、曲率、持久性阈值和 broken-$H^1$
+  误差写成可验证的显式界。
+\end{enumerate}
+
+\subsection{建议的后续研究路线}
+
+以下顺序继承交接文档 A--H，但按论文逻辑重新组织。
+
+\begin{longtable}{p{1.0cm}p{3.3cm}p{8.5cm}}
+\caption{未来工作的优先级、目标与验收结果}\label{tab:future}\\
+\toprule
+优先级 & 工作 & 数学目标与验收结果\\
+\midrule
+\endfirsthead
+\toprule
+优先级 & 工作 & 数学目标与验收结果\\
+\midrule
+\endhead
+A & 严格 2D/3D 匹配 & 在孔隙率、配位数、归一化喉宽和网格精度匹配后，
+比较 Classic/Affine 的 $L^2$、broken-$H^1$、流量、未知量和加速比；决定能否
+使用``缺口随维数扩大''这一表述。\\
+B & 多随机种子 & 至少三个球排布，每个种子重新扫描 watershed 持久性阈值，
+报告四组合误差的均值、标准差和盆数稳定区间。\\
+C & 可验证误差分解 & 用 exact FE-trace Schur 隔离有限元/静态凝聚误差，
+用固定分区下 Classic--Affine 差分估计模态误差，用平滑或理想 separatrix
+对照估计几何画法误差。\\
+D & 谱与投影半理论 & 计算界面 Schur 特征模态，建立
+$\|(I-\proj_r)\widehat\lambda\|_{\widehat S}$ 对 $L^2$ 与 broken-$H^1$
+误差地板的预测，并与 $6.5\%/14\%$ 量级实测对照。\\
+E & 几何感知基 & 对 watershed 接口采用分片 facet frame、曲面有限元基、
+局部主成分切平面或按法向聚类的多 patch 模态，验证误差是否随
+$\delta_{n,f}$ 单调降低。\\
+F & 残差驱动富集 & 用速度跳、法向通量残差、切向矩残差和未激活模式残差
+构造指示器；D\"orfler 标记后从 P0 到 P1，再到面内 P2 或局部谱基，证明或
+数值验证 Schur 能量误差单调下降。\\
+G & broken-$H^1$ 专项 & 将
+$\{1,s,t\}$ 升为 $\{1,s,t,s^2,st,t^2\}$，每面 18 个向量模式；检查界面薄层
+导数误差是否下降，而流量误差继续保持低水平。\\
+H & 稀疏和多查询实现 & 用稀疏 Schur 装配、迭代求解器和图预条件替代稠密
+NumPy；缓存局部响应库，分别测量单工况首解、批量工况摊销和并行强扩展。\\
+\bottomrule
+\end{longtable}
+
+若目标为 JCP，需要把弯折界面误差界和自适应收敛论证做严格；若以 CMAME
+为现实目标，可以采用严格的 Galerkin 投影骨架、启发式几何项和完整数值吻合，
+但仍应给出残差控制算法；若两者均未完成，则更适合以计算流体或数值方法应用
+期刊为目标。
+
+\section{结论}
+
+三维 DDPNM 的核心并不是把传统 PNM 的一维管流公式搬到三维，而是把完整
+Stokes 有限元物理保留在孔体内部，仅在孔喉界面上作迹空间降维。经典方法的
+一个常数法向模态是最小 reduced space；Affine-DDPNM 的九个向量仿射模态
+通过一次局部分解、多右端响应和全局 Schur 装配，以较小的额外离线成本显著
+降低误差。Galerkin 最佳逼近定理解释了为什么体网格加密不能替代界面富集。
+
+几何上，正确的三维升维必须从净距盆和二维 separatrix 出发。球心 Voronoi
+平面是稳定的计算基线，但它把颗粒标签误作孔体标签，并在不等半径时偏离净距
+鞍点；固定球对的等净距双曲面又不足以定义完整盆边界。持久性 watershed
+实现了更正确的孔体语义，却引入阈值依赖、阶梯法向跳变和更多界面。四组合
+实验由此给出本文最重要的结论：\textbf{三维精度的主要矛盾是分区几何与界面
+模态的匹配，而不是单独的网格密度、代表点数量或某一种画法。}未来工作的
+自然方向是把净距 watershed 与曲面感知、残差驱动、稀疏可扩展的界面空间
+结合起来。
+
+\appendix
+\section{源码与结果的对应关系}
+
+\begin{longtable}{p{5.0cm}p{8.2cm}}
+\toprule
+文件 & 本文使用的内容\\
+\midrule
+\endfirsthead
+\toprule
+文件 & 本文使用的内容\\
+\midrule
+\endhead
+\path{ddpnm_core/stokes_operator.py} & 局部 Taylor--Hood 混合算子、固壁
+Dirichlet 条件、一次稀疏分解\\
+\path{ddpnm_core/library.py} & primitive loads、块响应
+$R=K^{-1}B$、局部矩阵 $B^\top R$\\
+\path{ddpnm_core/assembler.py} & reduced mode 选择、全局键、Schur 装配、
+稠密求解、矩残差和局部重构\\
+\path{ddpnm3d/basis_3d.py} & Classic P0 与
+$\{1,s,t\}\otimes\{n,t_1,t_2\}$ 九模态空间\\
+\path{ddpnm3d/geometry.py} & 规则球净距、64 个最大空球、144 个六邻接喉道、
+解析分隔面\\
+\path{random_porous.py} & 随机球 Delaunay 候选、中心线 gap、球心 Voronoi
+ridge polygon 与 CAD fragment\\
+\path{watershed_partition.py} & 边界净距策略、超水平 merge tree、持久性
+marker、flooding、浮游盆合并和接口连通分量\\
+\path{RESULTS.md} 与 \path{outputs/} & 同网格误差、四组合消融、网格档次、
+计时、守恒和拓扑不变量\\
+\path{handoff_v6.md} & 四幕科研叙事、A--H 补强路线、期刊验收条件\\
+\bottomrule
+\end{longtable}
+
+\begin{thebibliography}{9}
+\bibitem{Sun2026}
+S.~Sun, Z.~Wang, L.~Zhang, and J.~Zhao,
+\newblock \emph{A Domain Decomposition Approach to Pore-Network Modeling of Porous Media Flow},
+\newblock arXiv:2510.13429v2, 2026.
+\end{thebibliography}
+
+\end{document}

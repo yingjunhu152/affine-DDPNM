@@ -1,0 +1,469 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\newtheorem{remark}{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dom}{\Omega}
+\newcommand{\pore}[1]{\Omega_{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\stress}{\bm{\sigma}}
+\newcommand{\normal}{\bm{n}}
+\newcommand{\trac}{\bm{\lambda}}
+\newcommand{\DtN}{\mathbf{G}}
+\newcommand{\Schur}{\mathbf{S}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\zero}{\bm{0}}
+
+\newcommand{\modeset}{\mathcal{M}}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\begin{document}
+
+\title{\textbf{Affine-DDPNM: Methodology}}
+\author{}
+\date{\today}
+\maketitle
+
+We extend the domain-decomposition pore-network method (DD-PNM) of
+\cite{sun2025ddpnm} by enriching the interface traction space from a single
+constant-normal mode to a nine-mode affine representation.  The method,
+termed \textbf{Affine-DDPNM}, retains the offline--online workflow and
+non-overlapping subdomain partition of the original DD-PNM.  The only
+change is the interface Ansatz: on each internal face, the traction is
+now allowed to vary as an affine function of the in-plane coordinates, in
+both the normal and the two tangential directions.
+
+% ======================================================================
+\section{Model problem}
+% ======================================================================
+
+We consider steady, incompressible Stokes flow in a three-dimensional
+pore domain $\dom \subset \R^3$.  Let $\Gamma_{\text{wall}}$ be the
+solid--fluid interface.  A pressure drop $p_{\text{in}} - p_{\text{out}}
+> 0$ is imposed between the inlet and outlet boundaries, while all
+remaining external boundaries are treated as no-slip walls.  Collecting
+all homogeneous Dirichlet segments in $\Gamma_{\text{dir}}$, the governing
+equations are
+\begin{align}
+  -\nu\Delta\vel + \nabla\pres &= \bm{0},                && \text{in } \dom,\\
+  \nabla\cdot\vel &= 0,                                    && \text{in } \dom,\\
+  \vel &= \bm{0},                                          && \text{on } \Gamma_{\text{dir}},\\
+  \normal\cdot\stress(\vel,\pres)\normal &= -p_b,\quad
+    (I - \normal\otimes\normal)\,\stress(\vel,\pres)\normal = \bm{0},
+                                                          && \text{on } \Gamma_{\text{in}}\cup\Gamma_{\text{out}},
+\end{align}
+where $\vel$ is velocity, $\pres$ is pressure, $\nu$ is the kinematic
+viscosity, $\normal$ is the outward unit normal, and $p_b = p_{\text{in}}$
+on $\Gamma_{\text{in}}$, $p_b = p_{\text{out}}$ on $\Gamma_{\text{out}}$.
+The \emph{pseudostress} tensor is
+\[
+  \stress(\vel,\pres) := -\pres\mathbf{I} + \nu\nabla\vel,
+\]
+which for incompressible flow differs from the standard Cauchy stress
+$-\pres\mathbf{I} + 2\mu\bm{\varepsilon}(\vel)$ in the boundary traction,
+but the two coincide in the interior momentum equation.
+The zero tangential traction condition $(I - \normal\otimes\normal)\,
+\stress(\vel,\pres)\normal = \bm{0}$ is equivalent to
+$\bm{t}_{\nu}\cdot\stress(\vel,\pres)\normal = 0$ for two orthonormal
+tangents $\bm{t}_1,\bm{t}_2$ spanning the boundary plane.
+
+% ======================================================================
+\section{Domain partition}
+% ======================================================================
+
+The pore domain $\dom$ is partitioned into $N$ non-overlapping Lipschitz
+subdomains $\{\pore{i}\}_{i=1}^N$, each corresponding to one pore body.
+For any pair $(i,j)$ of adjacent pores, the shared interface is
+\[
+  \iface_{ij} = \partial\pore{i} \cap \partial\pore{j},
+\]
+and we index the $m$ internal interfaces as $\{\iface_k\}_{k=1}^m$.
+Interfaces are assumed \textbf{planar} throughout the theoretical
+development; the numerical watershed experiments relax this and are
+discussed separately in Remark~\ref{rem:planar}.
+
+For each subdomain $\pore{i}$ we list its $m_i$ ports as
+$\{\iface_{i,1},\dots,\iface_{i,m_i}\}$, partitioned into an
+unknown-traction set $\mathcal{U}_i$ (internal interfaces) and a
+known-traction set $\mathcal{K}_i$ (inlet/outlet boundaries).  The
+local-to-global index maps and the Boolean restriction matrices
+$R_i^u$, $R_i^k$ follow the convention of \cite[Section~2.4]{sun2025ddpnm}.
+
+The Voronoi partition places each interface as the plane perpendicular to
+and bisecting the line connecting the two neighbouring sphere centres;
+for unequal radii this plane differs from the exact clearance saddle
+surface.  The geometric error introduced by this approximation is
+quantified in the numerical companion.
+
+% ======================================================================
+\section{Reference finite-element discretization}
+% ======================================================================
+
+Within each subdomain we employ the inf--sup stable Taylor--Hood pair
+$\mathbf{V}_h = [P_2]^3 \cap \mathbf{V}$,
+$Q_h = P_1 \cap Q$ on a body-fitted tetrahedral mesh, where
+\[
+  \mathbf{V} = \{\bm{v} \in [H^1(\dom)]^3 : \bm{v} = \bm{0}
+    \text{ on } \Gamma_{\text{dir}}\},\qquad
+  Q = L^2(\dom).
+\]
+With bases $\{\bm{\phi}_j\}_{j=1}^{n_u}$ and $\{\psi_l\}_{l=1}^{n_p}$,
+the discrete system on $\pore{i}$ under Neumann boundary data reads
+\begin{equation}\label{eq:local-fe}
+  \begin{bmatrix} A_i & B_i^\top \\ B_i & 0 \end{bmatrix}
+  \begin{bmatrix} \mathbf{U}_i \\ \mathbf{P}_i \end{bmatrix}
+  = \begin{bmatrix} \sum_{r=1}^{m_i} \bm{f}_i^{(r)} \\ \bm{0} \end{bmatrix},
+\end{equation}
+where $A_i$ is the velocity-stiffness matrix (SPD),
+$B_i$ is the divergence matrix, and $\bm{f}_i^{(r)}$ is the Neumann load
+vector assembled from the traction prescribed on port $r$.
+No pressure stabilisation is used ($\varepsilon = 0$).
+
+% ======================================================================
+\section{Interface traction Ansatz}
+% ======================================================================
+
+\subsection{Classic DD-PNM (one mode per interface)}
+
+In the classic DD-PNM \cite{sun2025ddpnm}, the traction on each internal
+interface $\gamma$ is uniform and purely normal:
+\begin{equation}\label{eq:classic-traction}
+  -\stress(\vel,\pres)\normal_\gamma = p_\gamma\,\normal_\gamma,
+\end{equation}
+where $p_\gamma \in \R$ is a single scalar per interface.  Equivalently,
+$\mathcal{T}_\gamma^{\text{P0}} = \operatorname{span}\{\normal_\gamma\}$.
+
+\subsection{Affine-DDPNM (nine modes per interface)}
+\label{sec:affine-ansatz}
+
+For each \textbf{planar} interface $\gamma$, we introduce a local
+orthonormal frame $\{\normal_\gamma, \bm{t}_{\gamma,1},
+\bm{t}_{\gamma,2}\}$ with origin at the interface centroid
+$\bm{c}_\gamma$.  The dimensionless in-plane coordinates are
+\begin{equation}\label{eq:local-coords}
+  s(\bm{x}) = \frac{(\bm{x} - \bm{c}_\gamma) \cdot
+    \bm{t}_{\gamma,1}}{a_\gamma},\qquad
+  t(\bm{x}) = \frac{(\bm{x} - \bm{c}_\gamma) \cdot
+    \bm{t}_{\gamma,2}}{b_\gamma},
+\end{equation}
+where $a_\gamma, b_\gamma$ are the half-spans of $\gamma$ along the two
+tangent directions, ensuring $s,t = O(1)$ under shape-regularity.
+
+For a pore $\pore{i}$ adjacent to $\gamma$, define the \emph{signed}
+direction vectors
+\begin{equation}\label{eq:signed-dir}
+  \bm{d}_{i,\gamma,\normal} = \normal_{i,\gamma},\qquad
+  \bm{d}_{i,\gamma,\bm{t}_\nu} = \sigma_{i,\gamma}\,\bm{t}_{\gamma,\nu}
+  \;\;(\nu=1,2),
+\end{equation}
+where $\sigma_{i,\gamma}=+1$ if $\pore{i}$ is the first member of the
+interface pair and $-1$ otherwise.  These satisfy
+$\bm{d}_{j,\gamma,\beta} = -\bm{d}_{i,\gamma,\beta}$, guaranteeing
+that continuity conditions written below are sign-consistent.
+
+The applied traction on $\gamma$ (as seen from $\pore{i}$) is expanded as
+\begin{equation}\label{eq:affine-traction}
+  -\stress(\vel,\pres)\,\normal_{i,\gamma}
+  = \sum_{(\alpha,\beta)\in\modeset}
+    \lambda_{\gamma,\alpha,\beta}\;
+    \varphi_\alpha(s,t)\,\bm{d}_{i,\gamma,\beta},
+\end{equation}
+where the \textbf{mode index set} is
+$\modeset = \{0,s,t\} \times \{\normal,\bm{t}_1,\bm{t}_2\}$
+with scalar shape functions
+$\varphi_0(s,t) = 1$, $\varphi_s(s,t) = s$, $\varphi_t(s,t) = t$.
+The minus sign on the left follows the classic convention
+$-\sigma n = p\,n$ and ensures that a positive $\lambda_{0,\normal}$
+corresponds to a pressure acting into the pore.
+
+Each interface carries \textbf{nine} scalar coefficients
+$\trac_\gamma = (\lambda_{\gamma,0,\normal},\,
+\lambda_{\gamma,0,\bm{t}_1},\,\lambda_{\gamma,0,\bm{t}_2},\,
+\lambda_{\gamma,s,\normal},\,\dots,\,
+\lambda_{\gamma,t,\bm{t}_2}) \in \R^9$
+as the unknown degrees of freedom.
+The affine traction space is
+\[
+  \mathcal{T}_\gamma^{\text{Affine}} = \operatorname{span}\{\,
+    \varphi_\alpha(s,t)\,\bm{d}_{i,\gamma,\beta}
+    \mid (\alpha,\beta) \in \modeset \,\}.
+\]
+
+\begin{remark}[Behaviour of the nine modes]\label{rem:modes}
+  The constant normal mode $(\alpha,\beta)=(0,\normal)$ corresponds to
+  a uniform normal pressure on the interface, matching the classic
+  single-mode Ansatz.  The linear normal modes $(s,\normal)$ and
+  $(t,\normal)$ capture first-order spatial variation of the normal
+  traction.  The six tangential modes $(\alpha,\bm{t}_\nu)$ allow
+  non-zero shear tractions at the interface, representing cross-flow
+  and viscous momentum exchange that the purely normal classic Ansatz
+  cannot express.
+\end{remark}
+
+\begin{remark}[Planar interface requirement]\label{rem:planar}
+  The theory assumes planar interfaces with a fixed $\normal_\gamma$.
+  Watershed partitions produce bent, faceted interfaces where the
+  mesh-level facet normal $\normal(x)$ varies.  In the code,
+  watershed interfaces use the per-facet $\normal(x)$ for the normal
+  direction but a fixed averaged frame for the tangents; this
+  deviates from the nine-mode space defined here and is one factor
+  behind the degraded Affine accuracy on watershed geometries.
+  All theoretical statements below apply to planar interfaces.
+\end{remark}
+
+% ======================================================================
+\section{Local compliance map}
+% ======================================================================
+
+\subsection{Primitive response loads}
+
+For each subdomain $\pore{i}$ and each mode $(\alpha,\beta) \in \modeset$
+on an internal interface $\iface_{i,r}$, the Neumann load vector is
+\begin{equation}\label{eq:unit-load}
+  \bm{f}_{i,r}^{(\alpha,\beta)} \in \R^{n_{i,u}},\qquad
+  \bigl[\bm{f}_{i,r}^{(\alpha,\beta)}\bigr]_j
+  = \int_{\iface_{i,r}} \varphi_\alpha(s,t)\;
+    \bm{d}_{i,\gamma,\beta} \cdot \bm{\phi}_j^{(i)} \;\mathrm{d}S.
+\end{equation}
+With the sign convention~\eqref{eq:affine-traction}
+$-\sigma n = \sum \lambda\varphi\bm{d}$, a positive coefficient
+$\lambda$ produces a traction acting \emph{into} the pore; the load
+vector thus carries no leading minus sign---it directly provides the
+right-hand side of~\eqref{eq:local-fe} for the applied boundary force.
+For boundary ports only the uniform-normal mode
+$(\alpha,\beta)=(0,\normal)$ is used, with a \emph{prescribed}
+coefficient equal to the inlet/outlet pressure.
+
+Solving the local Stokes system for each unit load yields the velocity
+response $\mathbf{U}_{i,r}^{(\alpha,\beta)}$ and pressure response
+$\mathbf{X}_{i,r}^{(\alpha,\beta)}$:
+\begin{equation}\label{eq:response}
+  \begin{bmatrix} A_i & B_i^\top \\ B_i & 0 \end{bmatrix}
+  \begin{bmatrix} \mathbf{U}_{i,r}^{(\alpha,\beta)} \\
+                   \mathbf{X}_{i,r}^{(\alpha,\beta)} \end{bmatrix}
+  = \begin{bmatrix} \bm{f}_{i,r}^{(\alpha,\beta)} \\ \bm{0} \end{bmatrix}.
+\end{equation}
+
+\subsection{Compliance (Neumann-to-Dirichlet) map}
+
+Let $n_i = 9m_i^u + m_i^k$ be the total number of local traction
+coefficients (nine per internal interface, one per boundary port;
+the $m_i^k$ boundary entries are \emph{prescribed}, not unknown).
+Collect them in $\trac_i \in \R^{n_i}$.
+
+By linearity of~\eqref{eq:local-fe}, the discrete velocity is
+\begin{equation}\label{eq:velocity-linear}
+  \mathbf{U}_i
+  = \sum_{\gamma\in\mathcal{U}_i}\sum_{\alpha,\beta}
+    \lambda_{i,\gamma,\alpha,\beta}\,
+    \mathbf{U}_{i,\gamma}^{(\alpha,\beta)}
+  \;+\; \sum_{\gamma\in\mathcal{K}_i}
+    \lambda_{i,\gamma}^k\,
+    \mathbf{U}_{i,\gamma}^{(0,\normal)}.
+\end{equation}
+
+For each mode $(\alpha,\beta)$ on interface $\iface_{i,r}$, the
+\emph{weighted velocity moment} is
+\begin{equation}\label{eq:moment}
+  M_{i,r}^{(\alpha,\beta)}
+  = \int_{\iface_{i,r}} \varphi_\alpha(s,t)\;
+    \vel_{i,h} \cdot \bm{d}_{i,\gamma,\beta} \;\mathrm{d}S.
+\end{equation}
+Only $M_{i,r}^{(0,\normal)} = \int_\gamma \vel\cdot\normal\,\mathrm{d}S$
+is the volumetric flow rate.  The remaining eight quantities are
+weighted velocity moments: $M^{(s,\normal)},M^{(t,\normal)}$ are
+linear normal flux moments, and
+$M^{(\alpha,\bm{t}_1)},M^{(\alpha,\bm{t}_2)}$
+are tangential velocity moments.  Collectively we call them the
+\textbf{nine weighted velocity moments}.
+
+The local compliance (Neumann-to-Dirichlet) map
+$\DtN_i \in \R^{n_i \times n_i}$ has entries
+\begin{equation}\label{eq:dtn}
+  \DtN_i\bigl[(\gamma,\alpha,\beta),\,(\gamma',\alpha',\beta')\bigr]
+  = \bigl[\bm{f}_{i,\gamma}^{(\alpha,\beta)}\bigr]^\top\,
+    \mathbf{U}_{i,\gamma'}^{(\alpha',\beta')}.
+\end{equation}
+For boundary ports, only the $(\alpha,\beta)=(0,\normal)$ entry is stored.
+The map is symmetric positive semi-definite; the energy identity and
+kernel characterisation are given in the companion mathematical
+properties document.
+
+$\DtN_i$ is block-partitioned into $\DtN_i^{uu}$ (unknown--unknown) and
+$\DtN_i^{uk}$ (unknown--known) as in the classic case.
+
+% ======================================================================
+\section{Global Schur complement assembly}
+% ======================================================================
+
+Let $\trac \in \R^{9m}$ collect all unknown interface coefficients and
+$\trac^k \in \R^{m^k}$ the prescribed boundary tractions.
+Enforcing continuity of \textbf{all nine weighted velocity moments} on
+every internal interface yields the global Schur system
+\begin{equation}\label{eq:schur}
+  \Schur\,\trac = \bm{F},\qquad
+  \Schur = \sum_{i=1}^N (R_i^u)^\top \DtN_i^{uu} R_i^u,\qquad
+  \bm{F} = -\sum_{i=1}^N (R_i^u)^\top \DtN_i^{uk} R_i^k \trac^k,
+\end{equation}
+where $\Schur \in \R^{9m \times 9m}$.  The continuity condition
+$M_{i,r}^{(\alpha,\beta)} + M_{j,r}^{(\alpha,\beta)} = 0$ follows from
+$\bm{d}_{j,\gamma,\beta} = -\bm{d}_{i,\gamma,\beta}$ and is imposed
+for all nine modes, not only the constant normal component.
+
+\begin{remark}[SPD of the global system]\label{rem:spd}
+  $\Schur$ is symmetric by construction.  Positive definiteness requires:
+  \begin{enumerate}[nosep,leftmargin=*]
+    \item Every connected component of the pore adjacency graph contains
+      at least one pore with a prescribed-traction (inlet/outlet) port
+      (the \emph{anchoring condition});
+    \item Each pore has a positive-measure no-slip wall segment, fixing
+      rigid-body modes;
+    \item The nine primitive loads per interface are linearly independent
+      on each face (verified numerically for all tested geometries);
+    \item Interface coordinate frames and side signs are consistent across
+      adjacent pores.
+  \end{enumerate}
+  Under these conditions, the Schur system is SPD and uniquely solvable.
+  In practice, watershed partitions may produce \emph{floating basins}
+  (pores with no solid-wall facet); these are merged into their
+  neighbours before the Schur assembly to enforce the anchoring condition.
+\end{remark}
+
+% ======================================================================
+\section{Solution algorithm}
+\label{sec:algorithm}
+
+The Affine-DDPNM workflow is summarised in Algorithm~\ref{alg:affine}.
+The differences from the classic algorithm are: (i)~nine primitive loads
+per internal interface instead of one, and (ii)~the $9\times$ increase
+in the size of the local compliance blocks and the global Schur system.
+The offline--online decomposition and the embarrassingly parallel
+structure are preserved unchanged.
+
+\bigskip
+\noindent\framebox{%
+\begin{minipage}{0.95\textwidth}
+\textbf{Algorithm~\ref{alg:affine}:} Affine-DDPNM solver
+(assemble -- couple -- recover)
+\label{alg:affine}
+
+\smallskip
+\noindent\textbf{Input:} subdomain meshes, FE pairs $(V_{i,h}, Q_{i,h})$,
+  prescribed tractions $\trac^k$.
+
+\noindent\textbf{Output:} unknown interface coefficients $\trac$,
+  weighted velocity moments, and (optionally) local fields.
+
+\smallskip
+\begin{enumerate}[nosep,leftmargin=*]
+  \item[\bfseries 1.] \textbf{Offline library} --- For each pore body
+    $i = 1,\dots,N$ (in parallel):
+    \begin{enumerate}[nosep,leftmargin=*]
+      \item Assemble local operators $A_i$, $B_i$.
+      \item For each internal interface $\gamma \in \mathcal{U}_i$ and
+        each mode $(\alpha,\beta) \in \modeset$:
+        assemble unit load $\bm{f}_{i,\gamma}^{(\alpha,\beta)}$ via
+        \eqref{eq:unit-load}, solve~\eqref{eq:response} for
+        $(\mathbf{U}_{i,\gamma}^{(\alpha,\beta)},
+          \mathbf{X}_{i,\gamma}^{(\alpha,\beta)})$.
+      \item For each boundary port $\gamma \in \mathcal{K}_i$:
+        assemble and solve the single uniform-normal load
+        $(\alpha,\beta) = (0,\normal)$.
+      \item Form local compliance block $\DtN_i$ via \eqref{eq:dtn}.
+      \item Accumulate $S \mathrel{+}= (R_i^u)^\top \DtN_i^{uu} R_i^u$,
+        $\bm{F} \mathrel{-}= (R_i^u)^\top \DtN_i^{uk} R_i^k \trac^k$.
+    \end{enumerate}
+  \item[\bfseries 2.] \textbf{Global solve} --- Solve
+    $\Schur\,\trac = \bm{F}$ by sparse direct solver.
+  \item[\bfseries 3.] \textbf{Reconstruction} (optional, in parallel):
+    \begin{align*}
+      \mathbf{U}_i &= \sum_{\gamma\in\mathcal{U}_i}\sum_{\alpha,\beta}
+        \lambda_{i,\gamma,\alpha,\beta}\,
+        \mathbf{U}_{i,\gamma}^{(\alpha,\beta)}
+        \;+\; \sum_{\gamma\in\mathcal{K}_i} \lambda_{i,\gamma}^k\,
+        \mathbf{U}_{i,\gamma}^{(0,\normal)},\\[2pt]
+      \mathbf{P}_i &= \sum_{\gamma\in\mathcal{U}_i}\sum_{\alpha,\beta}
+        \lambda_{i,\gamma,\alpha,\beta}\,
+        \mathbf{X}_{i,\gamma}^{(\alpha,\beta)}
+        \;+\; \sum_{\gamma\in\mathcal{K}_i} \lambda_{i,\gamma}^k\,
+        \mathbf{X}_{i,\gamma}^{(0,\normal)}.
+    \end{align*}
+\end{enumerate}
+\end{minipage}}
+\bigskip
+
+% ======================================================================
+\section{Relation to the classic DD-PNM}
+\label{sec:reduction}
+% ======================================================================
+
+Let $\mathcal{P}_{\text{P0}} : \R^m \to \R^{9m}$ be the embedding that
+maps the $m$ classic constant-normal coefficients to the $9m$ affine
+space by placing them in the $(0,\normal)$ slots and setting all other
+components to zero.  The classic traction space
+$\operatorname{Range}(\mathcal{P}_{\text{P0}})$ is a subspace of the
+affine traction space.
+
+The classic DD-PNM is recovered by \textbf{restricting both the trial
+and test spaces} to the constant-normal subspace:
+\begin{equation}\label{eq:classic-recovery}
+  \Schur_{\text{P0}} = \mathcal{P}_{\text{P0}}^\top \Schur\,
+                       \mathcal{P}_{\text{P0}},\qquad
+  \bm{F}_{\text{P0}} = \mathcal{P}_{\text{P0}}^\top \bm{F},
+\end{equation}
+yielding the classic $m\times m$ Schur system.  In general, the classic
+solution $\bm{p} = \Schur_{\text{P0}}^{-1}\bm{F}_{\text{P0}}$ does
+\emph{not} coincide with the $(0,\normal)$-components of the full
+$9m$-system solution $\trac = \Schur^{-1}\bm{F}$, because the eight
+additional test-space constraints alter the Galerkin projection.
+
+The enrichment guarantee is that the affine space contains the classic
+space as a subspace of the traction representation, and the Galerkin
+optimality (proved in the companion mathematical properties document)
+ensures that the affine error in the $\widehat{\Schur}$-energy norm is
+never larger than the classic error.  The 73--90\% $L^2$ reductions
+observed numerically are \emph{consistent} with this energy-norm
+guarantee.
+
+% ======================================================================
+\section{Computational cost}
+% ======================================================================
+
+For a pore with $m_i$ ports, the local compliance matrix $\DtN_i$ has
+size $n_i \times n_i$ where $n_i \approx 9m_i$ (versus $m_i$ in the
+classic method).  Building $\DtN_i$ requires $n_i$ independent local
+Stokes solves; this offline work is embarrassingly parallel.
+The global Schur system $\Schur$ has size $9m \times 9m$ and is solved
+by a sparse direct solver.
+
+Offline cost grows approximately $9\times$ in the number of local solves.
+Online cost is dominated by the sparse LU factorisation of $\Schur$,
+which has at most $9 \times (\text{max coordination}) \times 9$
+non-zero blocks per row.  For multi-boundary-condition studies the
+offline library is built once and reused; the on-line solve then
+achieves the speedups reported in the numerical companion
+($100$--$10^4\times$ over monolithic FEM for Classic, $1.7$--$840\times$
+for Affine).
+
+\begin{thebibliography}{99}
+
+\bibitem{sun2025ddpnm}
+S.~Sun, Z.~Wang, L.~Zhang, J.~Zhao.
+\newblock A domain decomposition approach to pore-network modeling of porous
+  media flow.
+\newblock \textit{arXiv:2510.13429v2}, 2026.
+
+\end{thebibliography}
+
+\end{document}

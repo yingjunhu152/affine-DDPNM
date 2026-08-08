@@ -1,0 +1,75 @@
+{
+  "watershed": {
+    "n_interfaces": 369,
+    "facet_id_consistency": true,
+    "geometry": {
+      "n_interfaces": 369,
+      "normal_norms": {
+        "max_deviation_from_1": 2.220446049250313e-16,
+        "min": 0.9999999999999998,
+        "max": 1.0000000000000002
+      },
+      "center_to_own_facets": {
+        "median": 0.01600181845108334,
+        "max": 0.0628674876843054,
+        "max_interface": 54
+      },
+      "center_offset_over_scale": {
+        "median": 0.12878302982521292,
+        "max": 0.6756025143811235
+      },
+      "scale_coverage": {
+        "min": 0.22288467426517863,
+        "max": 1.0
+      },
+      "max_angular_deviation_deg": {
+        "median": 53.16960456158991,
+        "max": 89.91492298717384,
+        "max_interface": 326,
+        "n_flat_under_10deg": 101,
+        "n_flat_under_20deg": 112,
+        "n_bent_over_30deg": 246
+      },
+      "dispersion_code_formula": {
+        "median": 179.44998526004116,
+        "max": 1255.4586586509986,
+        "max_interface": 204
+      },
+      "dispersion_docstring_formula": {
+        "median": 1.5794474292454799,
+        "max": 4.0,
+        "max_interface": 5
+      }
+    },
+    "frame": {
+      "violations": {
+        "t1_not_unit": 0,
+        "t2_not_unit": 0,
+        "t1t2_not_orth": 0,
+        "t1n_not_orth": 0,
+        "t2n_not_orth": 0
+      },
+      "n_interfaces": 369
+    }
+  },
+  "voronoi": {
+    "n_interfaces": 114,
+    "normal_norms": {
+      "max_deviation_from_1": 2.220446049250313e-16
+    },
+    "frame": {
+      "violations": {
+        "t1_not_unit": 0,
+        "t2_not_unit": 0,
+        "t1t2_not_orth": 0,
+        "t1n_not_orth": 0,
+        "t2n_not_orth": 0
+      },
+      "n_interfaces": 114
+    }
+  },
+  "notes": {
+    "dispersion_definition": "compute_interface_geometry's code computes unweighted sum(1 - n_f . nbar)/A while its docstring claims (1/A) sum A_f (1 - n_f . nbar)^2; both are reported above. Either fix and rerun, or document the code formula in the reports (hand-off 3.4).",
+    "frame_determinism": "tangents come from _tangent_frame(average normal): unit and orthogonal by construction; violations would only arise from non-unit normals."
+  }
+}

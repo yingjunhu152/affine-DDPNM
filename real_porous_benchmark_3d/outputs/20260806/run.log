@@ -1,0 +1,26 @@
+=== 100-sphere Voronoi benchmark ===
+100 spheres, porosity=85.6%
+r=[0.055,0.097], r_max-r_min=0.041
+mesh: 45191cells 537interfaces 100regions (72.7s)
+FEM...
+  23.8s 404MiB
+Classic...
+  off=67.7s on=0.2274s off_mem=81MiB on_mem=34MiB uk=537
+  L2(u)=95.092% H1=115.610% p=11.174% flux=132.215%
+Affine...
+  off=89.2s on=13.8313s off_mem=496MiB on_mem=660MiB uk=4833
+  L2(u)=15.724% H1=30.215% p=2.514% flux=8.713%
+Slice...
+  saved slice_fields.npz
+saved D:\hu\tongjiproj\20260727\real_porous_benchmark_3d\outputs\benchmark_voronoi_100/benchmark_report.json
+
+========================================================================================================================
+Method                   uk    L2(u)    H1(u)    L2(p)     flux   off_t      on_t   off_mem    on_mem   spd
+------------------------------------------------------------------------------------------------------------------------
+Classic-DDPNM           537   95.09%  115.61%   11.17%  132.21%   67.7s   0.2274s     81MiB     34MiB  104x
+Affine-DDPNM           4833   15.72%   30.22%    2.51%    8.71%   89.2s  13.8313s    496MiB    660MiB    2x
+Monolithic-FEM            -      ref      ref      ref      ref       -     23.8s         -    404MiB    1x
+========================================================================================================================
+
+porosity=85.6% | r_max-r_min=0.0415 | standard Voronoi
+mesh: 45191 cells, 537 interfaces | outputs: D:\hu\tongjiproj\20260727\real_porous_benchmark_3d\outputs\benchmark_voronoi_100/

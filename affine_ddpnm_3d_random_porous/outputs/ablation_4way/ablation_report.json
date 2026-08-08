@@ -1,0 +1,111 @@
+{
+  "table": {
+    "metric": [
+      "global_interface_unknowns",
+      "velocity_relative_l2",
+      "velocity_relative_broken_h1",
+      "pressure_relative_l2",
+      "outlet_flux_relative_error",
+      "first_solve_seconds",
+      "speedup_vs_fem_first_solve",
+      "schur_symmetry_error",
+      "max_mass_residual",
+      "min_schur_eigenvalue",
+      "inlet_outlet_flux_imbalance"
+    ],
+    "voronoi_classic": [
+      114,
+      0.6532027987220976,
+      0.8585183206465691,
+      0.10303528968086886,
+      0.7271873647152199,
+      12.215952800004743,
+      9.546613294050301,
+      0.0,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "voronoi_affine": [
+      1026,
+      0.06505828625812608,
+      0.17556381317240716,
+      0.020276357090142347,
+      0.027055470437198366,
+      15.225515400001314,
+      7.659575018393546,
+      0.0,
+      NaN,
+      NaN,
+      NaN
+    ],
+    "watershed_classic": [
+      369,
+      0.43553546916244373,
+      0.6396213498190328,
+      0.0672328262320115,
+      0.40147966478196473,
+      17.34996580000734,
+      1.5863542278571927,
+      0.0,
+      2.8275992658421956e-16,
+      2.9199074986766638e-06,
+      2.0169722585485458e-14
+    ],
+    "watershed_affine": [
+      3321,
+      0.11312942889474828,
+      0.3072942685739607,
+      0.039322856897022834,
+      0.07750806272105489,
+      25.012470299989218,
+      1.100378781860311,
+      0.0,
+      8.267003618125934e-13,
+      -2.968663875885632e-18,
+      3.9897122837242637e-11
+    ]
+  },
+  "context": {
+    "voronoi": {
+      "mesh_cells": 15249,
+      "pore_subdomains": 27,
+      "interfaces": 114,
+      "mesh_parameters": {
+        "mesh_size": 0.13,
+        "sphere_size": 0.065,
+        "boundary_size": 0.085,
+        "interface_size": 0.075,
+        "sphere_band": 0.15,
+        "boundary_band": 0.13,
+        "interface_band": 0.12
+      }
+    },
+    "watershed": {
+      "mesh_cells": 6586,
+      "pore_subdomains": 82,
+      "interfaces": 369,
+      "mesh_parameters": {
+        "mesh_size": 0.13,
+        "sphere_size": 0.065,
+        "boundary_size": 0.085,
+        "sphere_band": 0.15,
+        "boundary_band": 0.13,
+        "policy": "walls_and_spheres",
+        "abs_threshold": 0.02,
+        "rel_threshold": 0.05
+      },
+      "note": "watershed mesh has no interface size field (no internal cuts); the unpartitioned mesh coarsens the saddle regions relative to the Voronoi mesh."
+    },
+    "monolithic_fem": {
+      "voronoi_mesh_dofs": 75954,
+      "watershed_mesh_dofs": 38243,
+      "voronoi_solve_seconds": 116.62097740001627,
+      "watershed_solve_seconds": 27.523191600019345
+    }
+  },
+  "caveats": {
+    "meshes_differ": "The two partitions are meshed differently by construction: the Voronoi mesh embeds the saddle planes as internal cuts (with an interface size field), the watershed mesh has no cuts and no interface refinement.  Same geometry, same sphere/boundary fields.",
+    "watershed_exact_schur_skipped": "The exact dense FE-trace Schur was not rerun for the watershed partition; correctness was established on the Voronoi partition (monolithic difference ~1e-12)."
+  }
+}

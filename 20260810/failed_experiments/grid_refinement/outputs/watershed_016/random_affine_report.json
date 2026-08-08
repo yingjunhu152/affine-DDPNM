@@ -1,0 +1,147 @@
+{
+  "benchmark": "random-sphere 3-D medium: classic DDPNM vs single-entity nine-mode affine DDPNM vs exact FE-trace Schur vs monolithic FEM",
+  "geometry": "unit cube minus a frozen seed-20260804 packing of 27 random spheres (18 clipped wall spheres + 9 interior spheres); throat faces are the Voronoi faces of the Delaunay pairs, i.e. the saddle-plane sections bounded by the neighbouring saddle planes",
+  "common_mesh_seconds": 2.976453900017077,
+  "parameters": {
+    "partition": "watershed",
+    "with_exact_schur": false,
+    "policy": "walls_and_spheres",
+    "abs_threshold": 0.02,
+    "rel_threshold": 0.05,
+    "mesh_size": 0.16,
+    "sphere_size": 0.08,
+    "boundary_size": 0.105,
+    "interface_size": 0.075,
+    "sphere_band": 0.185,
+    "boundary_band": 0.16,
+    "interface_band": 0.12,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0,
+    "pressure_stabilization": 0.0,
+    "reference_iterative_threshold": 100000,
+    "reference_rtol": 1e-09,
+    "reference_restart": 60,
+    "reference_maxiter": 150,
+    "reference_ilu_drop_tolerance": 0.002,
+    "reference_ilu_fill_factor": 6.0,
+    "out_dir": "outputs\\fair_speedup\\watershed_016"
+  },
+  "counts": {
+    "solid_spheres": 27,
+    "pore_subdomains": 77,
+    "interfaces": 326,
+    "global_vertices": 1283,
+    "global_tetrahedra": 4311,
+    "interface_surface_patches": 326
+  },
+  "timings": {
+    "Monolithic-FEM": {
+      "offline_seconds": 0.0,
+      "online_seconds": 14.365916500013554,
+      "first_solve_seconds": 14.365916500013554
+    },
+    "Classic-DDPNM-1": {
+      "offline_seconds": 15.024992099992232,
+      "online_seconds": 0.01337450000573881,
+      "first_solve_seconds": 15.038366599997971
+    },
+    "Affine-DDPNM-9": {
+      "offline_seconds": 16.448225200001616,
+      "online_seconds": 1.4858033999917097,
+      "first_solve_seconds": 17.934028599993326
+    }
+  },
+  "methods": {
+    "Monolithic-FEM": {
+      "global_unknowns": 25265,
+      "modes_per_interface": "monolithic",
+      "primitive_rhs_columns": 0,
+      "velocity_relative_l2": 0.0,
+      "velocity_relative_broken_h1": 0.0,
+      "pressure_relative_l2": 0.0,
+      "pressure_aligned_relative_l2": 0.0,
+      "outlet_flux_relative_error": 0.0
+    },
+    "Classic-DDPNM-1": {
+      "global_unknowns": 326,
+      "modes_per_interface": 1,
+      "primitive_rhs_columns": 685,
+      "velocity_relative_l2": 0.549906920914861,
+      "velocity_relative_broken_h1": 0.7218503714040497,
+      "pressure_relative_l2": 0.0737267282749666,
+      "pressure_aligned_relative_l2": 0.1592355545165989,
+      "outlet_flux_relative_error": 0.5000777341073217,
+      "schur_symmetry_error": 0.0,
+      "min_schur_eigenvalue": 8.81034352533235e-06,
+      "max_mass_residual": 1.702197410802242e-16,
+      "boundary_fluxes": {
+        "inlet": -0.011559944988451379,
+        "outlet": 0.011559944988451101
+      },
+      "speedup_vs_fem_first_solve": 0.9552843657911287
+    },
+    "Affine-DDPNM-9": {
+      "global_unknowns": 2934,
+      "modes_per_interface": 9,
+      "primitive_rhs_columns": 5901,
+      "velocity_relative_l2": 0.1089422480384744,
+      "velocity_relative_broken_h1": 0.3198513780052251,
+      "pressure_relative_l2": 0.05164706455488955,
+      "pressure_aligned_relative_l2": 0.11162748940962426,
+      "outlet_flux_relative_error": 0.06664192222437734,
+      "schur_symmetry_error": 0.0,
+      "min_schur_eigenvalue": -7.195539162445668e-19,
+      "max_mass_residual": 5.298403859751999e-14,
+      "boundary_fluxes": {
+        "inlet": -0.008219788656898194,
+        "outlet": 0.008219788656903948
+      },
+      "speedup_vs_fem_first_solve": 0.80104235475675
+    }
+  },
+  "errors_to_exact_fem": {
+    "Monolithic-FEM": {
+      "velocity_relative_l2": 0.0,
+      "velocity_relative_broken_h1": 0.0,
+      "pressure_relative_l2": 0.0,
+      "pressure_aligned_relative_l2": 0.0,
+      "outlet_flux_relative_error": 0.0
+    },
+    "Classic-DDPNM-1": {
+      "velocity_relative_l2": 0.549906920914861,
+      "velocity_relative_broken_h1": 0.7218503714040497,
+      "pressure_relative_l2": 0.0737267282749666,
+      "pressure_aligned_relative_l2": 0.1592355545165989,
+      "outlet_flux_relative_error": 0.5000777341073217,
+      "schur_symmetry_error": 0.0,
+      "min_schur_eigenvalue": 8.81034352533235e-06,
+      "max_mass_residual": 1.702197410802242e-16,
+      "boundary_fluxes": {
+        "inlet": -0.011559944988451379,
+        "outlet": 0.011559944988451101
+      }
+    },
+    "Affine-DDPNM-9": {
+      "velocity_relative_l2": 0.1089422480384744,
+      "velocity_relative_broken_h1": 0.3198513780052251,
+      "pressure_relative_l2": 0.05164706455488955,
+      "pressure_aligned_relative_l2": 0.11162748940962426,
+      "outlet_flux_relative_error": 0.06664192222437734,
+      "schur_symmetry_error": 0.0,
+      "min_schur_eigenvalue": -7.195539162445668e-19,
+      "max_mass_residual": 5.298403859751999e-14,
+      "boundary_fluxes": {
+        "inlet": -0.008219788656898194,
+        "outlet": 0.008219788656903948
+      }
+    }
+  },
+  "errors_to_exact_fe_schur": {},
+  "exact_fe_trace_schur": null,
+  "reference": {
+    "mixed_dofs": 25265,
+    "relative_linear_residual": 9.721031472455652e-13,
+    "relative_mass_imbalance": 7.090858304948049e-15
+  }
+}

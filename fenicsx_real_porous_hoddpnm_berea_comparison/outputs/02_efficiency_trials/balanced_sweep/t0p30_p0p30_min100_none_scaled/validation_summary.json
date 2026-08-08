@@ -1,0 +1,180 @@
+{
+  "method": "real porous medium Taylor-Hood P2-P1 Stokes HODDPNM via Schur complement",
+  "numerical_structure": "same FEM assembly + interface/interior partition + Schur reconstruction as the random-sphere HODDPNM validation",
+  "validation_scope": "solver-equivalence check against the same discrete FEniCSx Taylor-Hood system; not an analytic or high-resolution true-error study",
+  "pressure_gauge_note": "pressure is compared in the pinned-gauge system imposed by the FEM boundary condition; mean-aligned pressure diagnostics are also reported",
+  "pressure_partition_note": "known Dirichlet/gauge dofs are removed first; only free pressure dofs near decomposition interfaces are kept in the active Schur boundary, while subregion-interior pressure dofs are eliminated",
+  "interface_selection": {
+    "velocity_interface_thickness": 0.3,
+    "pressure_interface_thickness": 0.3,
+    "min_pressure_boundary_dofs": 100
+  },
+  "output_note": "legacy DOF-vector errors are retained for continuity; FEM integral L2/H1 metrics should be preferred for validation",
+  "input_volume": "data\\berea_100_to_300.npz",
+  "hoddpnm_solver": "gmres",
+  "hoddpnm_solver_info": {
+    "type": "matrix_free_gmres_schur_known_fixed",
+    "converged": true,
+    "iterations": 1842,
+    "schur_matvecs": 1867,
+    "gmres_info": 0,
+    "relative_residual": 2.0617665307219455e-06,
+    "rtol": 1e-10,
+    "atol": 1e-12,
+    "restart": 80,
+    "maxiter": 300,
+    "schur_diagonal_scaling": true,
+    "schur_scale_min": 3.354101960530576e-05,
+    "schur_scale_max": 402996.2965556806,
+    "preconditioner": "none"
+  },
+  "region_decomposition": "geodesic Voronoi partition on the connected real pore voxel graph",
+  "domain_shape_voxels": [
+    16,
+    16,
+    16
+  ],
+  "voxel_size": 1.0,
+  "pore_voxels": 1304,
+  "regions": 6,
+  "region_interface_faces": 190,
+  "n_vertices": 2104,
+  "n_tets": 7824,
+  "mixed_dofs": 42532,
+  "velocity_p2_scalar_nodes": 13476,
+  "velocity_dofs": 40428,
+  "pressure_dofs": 2104,
+  "hoddpnm_interface_dofs": 670,
+  "hoddpnm_known_fixed_dofs": 21940,
+  "hoddpnm_active_boundary_dofs": 505,
+  "hoddpnm_velocity_boundary_dofs": 405,
+  "hoddpnm_pressure_boundary_dofs": 100,
+  "hoddpnm_pressure_interface_dofs": 100,
+  "hoddpnm_pressure_interior_dofs_eliminated": 2004,
+  "hoddpnm_interior_dofs_eliminated": 20087,
+  "schur_condition_number": null,
+  "timings_seconds": {
+    "geometry_and_decomposition": 5.791924400022253,
+    "fem_assembly": 0.7731097999785561,
+    "fem_sparse_direct_solve": 7.8646643999964,
+    "hoddpnm_schur_solve": 28.68147159999353,
+    "total_before_output": 43.144084899977315
+  },
+  "memory_trace_mib": {
+    "start": {
+      "working_set_mib": 136.9140625,
+      "peak_working_set_mib": 136.9140625,
+      "pagefile_mib": 2247.73046875,
+      "peak_pagefile_mib": 2247.73046875
+    },
+    "after_geometry_and_decomposition": {
+      "working_set_mib": 140.76953125,
+      "peak_working_set_mib": 256.671875,
+      "pagefile_mib": 2249.84765625,
+      "peak_pagefile_mib": 2367.55859375
+    },
+    "after_fem_assembly": {
+      "working_set_mib": 262.98828125,
+      "peak_working_set_mib": 292.49609375,
+      "pagefile_mib": 2373.09765625,
+      "peak_pagefile_mib": 2403.171875
+    },
+    "after_fem_sparse_direct_solve": {
+      "working_set_mib": 263.984375,
+      "peak_working_set_mib": 1027.42578125,
+      "pagefile_mib": 2374.28515625,
+      "peak_pagefile_mib": 4882.9453125
+    },
+    "after_hoddpnm_schur_solve": {
+      "working_set_mib": 265.7421875,
+      "peak_working_set_mib": 1027.42578125,
+      "pagefile_mib": 2376.40625,
+      "peak_pagefile_mib": 4882.9453125
+    }
+  },
+  "errors_mixed_all": {
+    "l2_abs": 0.0017718940127923652,
+    "l2_rel": 8.224944310097962e-15,
+    "linf_abs": 0.0013468913093674928,
+    "mean_abs": 8.745355217289067e-07,
+    "median_abs": 0.0
+  },
+  "errors_velocity_p2_all": {
+    "l2_abs": 0.00020907600915572036,
+    "l2_rel": 4.901304110198577e-07,
+    "linf_abs": 4.240083333259518e-05,
+    "linf_rel": 9.733924053332735e-07,
+    "mean_abs": 5.654452836505337e-07,
+    "median_abs": 0.0
+  },
+  "errors_pressure_p1_all": {
+    "l2_abs": 0.0017595157330825284,
+    "l2_rel": 8.167485646919922e-15,
+    "linf_abs": 0.0013468913093674928,
+    "mean_abs": 1.2309462794967254e-05,
+    "median_abs": 4.405281615493806e-06
+  },
+  "errors_velocity_vertices": {
+    "l2_abs": 6.897111600308449e-05,
+    "l2_rel": 4.971302436391689e-07,
+    "linf_abs": 1.8986944269263303e-05,
+    "linf_rel": 6.230090231654937e-07,
+    "mean_abs": 4.2654958885458367e-07,
+    "median_abs": 0.0
+  },
+  "errors_pressure_vertices": {
+    "l2_abs": 0.0017595157330825286,
+    "l2_rel": 8.167485646919929e-15,
+    "linf_abs": 0.0013468913093674928,
+    "mean_abs": 1.2309462794967254e-05,
+    "median_abs": 4.405281615493806e-06
+  },
+  "fem_integral_validation": {
+    "preferred_for_validation": true,
+    "velocity_l2_abs": 6.737744831069289e-05,
+    "velocity_l2_rel": 4.5136025754394764e-07,
+    "velocity_h1_seminorm_abs": 0.00016812470801200944,
+    "velocity_h1_seminorm_rel": 5.938514399737371e-07,
+    "pressure_l2_abs": 0.0006927982899915283,
+    "pressure_l2_rel": 1.2845357928233029e-14,
+    "pressure_l2_mean_aligned_abs": 0.0006049518651680027,
+    "pressure_l2_mean_aligned_rel": 1.1247053926513392e-14,
+    "pressure_mean_gauge_shift": 9.35015466248433e-06,
+    "velocity_coordinate_max_mismatch": 0.0,
+    "pressure_coordinate_max_mismatch": 0.0
+  },
+  "physical_diagnostics": {
+    "diagnostic_note": "Flux/permeability values are boundary-DOF proxy diagnostics for FEM-vs-HODDPNM comparison, not calibrated laboratory permeability.",
+    "inlet_area_proxy": 178.0,
+    "outlet_area_proxy": 127.0,
+    "fem": {
+      "inlet_flux_proxy": 178.0,
+      "outlet_flux_proxy": 96.73343785003365,
+      "flux_imbalance_proxy": 81.26656214996635,
+      "pressure_drop_proxy": 5073959444.47971,
+      "permeability_like": 2.84043380277345e-09,
+      "continuity_row_residual_l2": 1.1374069049018045e-11,
+      "continuity_row_residual_linf": 8.990782311908451e-12,
+      "velocity_magnitude_min": 0.0,
+      "velocity_magnitude_max": 43.5598563336621
+    },
+    "hoddpnm": {
+      "inlet_flux_proxy": 178.0,
+      "outlet_flux_proxy": 96.7334383771743,
+      "flux_imbalance_proxy": 81.2665616228257,
+      "pressure_drop_proxy": 5073959444.479725,
+      "permeability_like": 2.8404338082234813e-09,
+      "continuity_row_residual_l2": 5.931356915127081e-10,
+      "continuity_row_residual_linf": 1.9167693647570427e-10,
+      "velocity_magnitude_min": 0.0,
+      "velocity_magnitude_max": 43.55985930812985
+    },
+    "relative_errors": {
+      "inlet_flux_proxy": 0.0,
+      "outlet_flux_proxy": 5.449414948585234e-09,
+      "pressure_drop_proxy": 3.0072745416010425e-15,
+      "permeability_like": 1.918732007810398e-09,
+      "continuity_row_residual_l2": 51.14806494988838
+    }
+  }
+}

@@ -1,0 +1,888 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{assumption}[theorem]{Assumption}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dom}{\Omega}
+\newcommand{\pore}[1]{\Omega_{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\stress}{\bm{\sigma}}
+\newcommand{\normal}{\bm{n}}
+\newcommand{\trac}{\bm{\lambda}}
+\newcommand{\DtN}{\mathbf{G}}
+\newcommand{\Schur}{\mathbf{S}}
+\newcommand{\Shat}{\widehat{\Schur}}
+\newcommand{\Shatuu}{\widehat{\Schur}{}^{uu}}
+\newcommand{\Fhat}{\widehat{\bm{F}}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\zero}{\bm{0}}
+\newcommand{\Range}{\operatorname{Range}}
+\newcommand{\Ker}{\operatorname{Ker}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\modeset}{\mathcal{M}}
+\newcommand{\loadvec}{\bm{f}}
+\newcommand{\Vspace}{\mathcal{V}}
+\newcommand{\Wspace}{\mathcal{W}}
+\newcommand{\Lspace}{\Lambda}
+\newcommand{\Pcal}{\mathcal{P}}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\begin{document}
+
+\title{\textbf{Theory of the Affine-DDPNM}\\[4pt]
+       \large Best Approximation, Nested Decomposition, and Error Separation\\[4pt]
+       \large Version 3 --- corrected 2026-08-07}
+\author{}
+\date{}
+\maketitle
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\textwidth}
+This document develops the Galerkin projection theory of the
+Affine-DDPNM.  Starting from the broken-pressure
+continuous-traction (C-DD) reference system, we prove:
+(i)~the Schur solution at each modal level is the
+$\Shatuu$-seminorm best approximation to the full C-DD trace solution;
+(ii)~for nested trace subspaces the error admits an orthogonal
+Pythagorean decomposition; and (iii)~the total volume error is bounded
+in terms of a C-DD discretisation component and an
+interface-modal-reduction component.  The reduction component is
+identified exactly in the broken energy and broken-$H^1$ measures;
+in $L^2$, an exact two-sided triangle bound is combined with a
+one-sided Poincar\'e--Friedrichs estimate.
+
+\textbf{Scope.}  The reference system throughout is the
+broken-pressure C-DD formulation (discontinuous $P_1$ pressure across
+pores).  Equivalence with the monolithic continuous-pressure
+Taylor--Hood system is not established here; consequently the
+discretisation term $\|\vel - \vel_h\|$ appearing in the separation
+bounds is a C-DD discretisation error, not a standard FEM error.
+All results assume planar interfaces with a fixed orthonormal frame.
+\end{minipage}}
+\end{center}
+
+% ======================================================================
+\section{C-DD reference system and trace subspaces}
+% ======================================================================
+
+\subsection{Notation and standing assumptions}
+
+We work on a fixed finite-element mesh of the fluid domain
+$\dom\subset\R^3$, partitioned into $N$ non-overlapping pore subdomains
+$\{\pore{i}\}_{i=1}^N$ with $m$ planar internal interfaces
+$\{\iface_k\}_{k=1}^m$.  On each pore we use the Taylor--Hood
+$[P_2]^3$--$P_1$ pair with \textbf{discontinuous} pressure across
+interfaces (the broken-pressure C-DD formulation).  All objects are
+finite-dimensional; $h$ refers to the given mesh.
+
+\begin{assumption}[Local algebraic stability]\label{ass:local}
+  For every pore $i$:
+  \begin{enumerate}[label=(\alph*),nosep,leftmargin=*]
+    \item $A_i \in \R^{n_{u,i}\times n_{u,i}}$ is symmetric positive definite;
+    \item $B_i \in \R^{n_{p,i}\times n_{u,i}}$ has full row rank;
+    \item the constant function $1$ belongs to the local pressure space.
+  \end{enumerate}
+\end{assumption}
+
+For the standard conforming velocity space, Assumption~\ref{ass:local}(a)
+follows, for example, if $\pore{i}$ is connected and Lipschitz and its
+Dirichlet/no-slip wall portion $\Gamma_{w,i}\subset\partial\pore{i}$ has
+positive surface measure.  These geometric conditions exclude nonzero
+constant-velocity null modes via the Poincar\'e--Friedrichs inequality.
+
+\begin{assumption}[Matching interface trace spaces]\label{ass:matching}
+  For every internal interface $\iface_k$ shared by pores $i$ and $j$,
+  the two local velocity trace spaces coincide with a shared scalar
+  nodal basis $\{\psi_{k,\ell}\}_{\ell=1}^{m_k}$ and a one-to-one DOF
+  correspondence between the two sides.
+\end{assumption}
+
+\medskip\noindent
+\textbf{Dimension conventions.}
+$m_k$ = number of scalar trace DOFs on interface $k$;
+$m_\Gamma = 3\sum_{k=1}^m m_k$ = total C-DD interface DOFs
+(three components per trace node).
+For pore $i$,
+$r_i^u = 3\sum_{\gamma\in\mathcal{U}_i} m_{i,\gamma}$
+(C-DD internal trace DOFs) and
+$r_i^k = 3\sum_{\gamma\in\mathcal{K}_i} m_{i,\gamma}$
+(C-DD boundary trace DOFs).
+
+\subsection{Interface frames and affine scalar shapes}
+
+On interface $\iface_k$ fix an orthonormal frame
+$\{\normal_k,\bm{t}_{k,1},\bm{t}_{k,2}\}$ with $\normal_k$ directed
+from the first pore of the pair to the second.  Let
+$\bm{c}_k$ be the interface centroid and define the half-span-normalised
+in-plane coordinates
+\begin{equation}\label{eq:st}
+  s_k(\bm{x}) = \frac{(\bm{x}-\bm{c}_k)\cdot\bm{t}_{k,1}}{a_k},\qquad
+  t_k(\bm{x}) = \frac{(\bm{x}-\bm{c}_k)\cdot\bm{t}_{k,2}}{b_k},
+\end{equation}
+where $a_k,b_k > 0$ are the maximal absolute in-plane coordinate
+values on $\iface_k$.  The three affine scalar shape functions are
+\begin{equation}\label{eq:shapes}
+  \varphi_0(\bm{x}) \equiv 1,\qquad
+  \varphi_s(\bm{x}) = s_k(\bm{x}),\qquad
+  \varphi_t(\bm{x}) = t_k(\bm{x}),
+\end{equation}
+and the mode set is
+$\modeset := \{0,s,t\} \times \{n,t_1,t_2\}$.
+
+\subsection{C-DD coupling, Schur complement, and energy seminorm}
+
+For pore $i$ incident on $\iface_k$, define the oriented
+inward-traction directions
+$\bm{d}_{i,k,\beta}$ ($\beta\in\{n,t_1,t_2\}$) satisfying
+$\bm{d}_{j,k,\beta} = -\bm{d}_{i,k,\beta}$ for the opposite pore $j$.
+
+The C-DD coupling block for direction $\beta$ on $\iface_k$ is
+\begin{equation}\label{eq:N}
+  [N_{i,k}^{\beta}]_{\ell,j}
+  = \int_{\iface_k} \psi_{k,\ell}\;
+    \bm{d}_{i,k,\beta}\cdot\bm{\phi}_j^{(i)}\,\mathrm{d}S
+  \;\in\; \R^{m_k\times n_{u,i}}.
+\end{equation}
+Collect the three-direction blocks on all internal ports of pore $i$
+into $N_i^u \in \R^{r_i^u \times n_{u,i}}$, and on all boundary ports
+into $N_i^k \in \R^{r_i^k \times n_{u,i}}$.  Let $\bm{\xi}^k \in
+\R^{m_\Gamma^k}$ (with $m_\Gamma^k = \sum_i r_i^k$) denote the
+globally prescribed boundary traction nodal values.  Through the
+boundary affine restriction (see the companion
+mathematical-properties document, Appendix~A) these are determined by
+the prescribed inlet/outlet pressures.
+
+The velocity response operator is
+$H_i = A_i^{-1} - A_i^{-1}B_i^\top M_i^{-1}B_i A_i^{-1}$,
+with $M_i = B_i A_i^{-1}B_i^\top$.
+$H_i$ is symmetric positive semidefinite and satisfies
+$H_i^\top A_i H_i = H_i$,
+$\Ker(H_i) = \Range(B_i^\top)$.
+
+The \textbf{internal-unknown block} of the local C-DD Schur complement is
+\begin{equation}\label{eq:Shat-local}
+  \Shatuu_i = N_i^u H_i (N_i^u)^\top \;\in\; \R^{r_i^u\times r_i^u}.
+\end{equation}
+Let $\widehat{R}_i^u : \R^{m_\Gamma} \to \R^{r_i^u}$ be the Boolean
+restriction extracting the C-DD DOFs of pore $i$ from the global
+vector of unknown interface DOFs.  The assembled C-DD Schur complement
+(uu-block) is
+\begin{equation}\label{eq:Shat}
+  \Shatuu = \sum_{i=1}^N (\widehat{R}_i^u)^\top \Shatuu_i \widehat{R}_i^u
+  \;\in\; \R^{m_\Gamma\times m_\Gamma}.
+\end{equation}
+$\Shatuu$ is symmetric positive semidefinite.
+
+The C-DD right-hand side, with prescribed boundary tractions absorbed,
+is
+\begin{equation}\label{eq:Fhat}
+  \Fhat = -\sum_{i=1}^N (\widehat{R}_i^u)^\top
+    N_i^u H_i (N_i^k)^\top \widehat{R}_i^k \bm{\xi}^k
+  \;\in\; \R^{m_\Gamma},
+\end{equation}
+where $\widehat{R}_i^k$ extracts the boundary DOFs of pore $i$ from
+$\bm{\xi}^k$.
+
+The \textbf{full C-DD system} for the unknown interface DOFs is
+\begin{equation}\label{eq:full-sys}
+  \Shatuu\,\bm{\xi} = \Fhat,\qquad \bm{\xi}\in\Vspace:=\R^{m_\Gamma}.
+\end{equation}
+\begin{assumption}[Full C-DD consistency]\label{ass:consistency}
+  The assembled full C-DD Schur system~\eqref{eq:full-sys} is consistent,
+  equivalently
+  $\Fhat\in\Range(\Shatuu)$.
+\end{assumption}
+This assumption is the only global solvability hypothesis used in the
+projection arguments below.  Its derivation from a fully specified
+broken-pressure mixed Stokes formulation is not repeated in this
+document.
+Define the energy seminorm on $\Vspace$ by
+$\|\bm{\xi}\|_{\Shatuu}^2 := \bm{\xi}^\top \Shatuu \bm{\xi}$.
+
+\subsection{Restriction operators and nested trace subspaces}
+
+\begin{definition}[Per-interface restriction matrices]\label{def:Pkl}
+  For each interface $\iface_k$, let
+  $[M_k]_{\ell,\ell'} = \int_{\iface_k}\psi_{k,\ell}\psi_{k,\ell'}\,\mathrm{d}S$
+  be the face mass matrix and
+  $[b_k^\alpha]_\ell = \int_{\iface_k} \varphi_\alpha\psi_{k,\ell}\,\mathrm{d}S$.
+  Since $\{\psi_{k,\ell}\}_{\ell=1}^{m_k}$ is linearly independent in
+  $L^2(\iface_k)$, $M_k$ is symmetric positive definite and hence
+  invertible.  Define the $L^2$-projection vectors
+  $p_k^\alpha = M_k^{-1} b_k^\alpha \in \R^{m_k}$ for
+  $\alpha\in\{0,s,t\}$.
+  For level $\ell\in\{0,1,2\}$ with $d_\ell$ coefficient DOFs per interface,
+  \begin{itemize}
+    \item $\ell=0$ (classic P0, $d_0=1$):
+      $P_{k,0} = \begin{bmatrix} p_k^0 \\ \zero \\ \zero \end{bmatrix}
+       \in \R^{3m_k\times 1}$;
+    \item $\ell=1$ (constant-vector P0, $d_1=3$):
+      $P_{k,1} = \begin{bmatrix}
+        p_k^0 & \zero   & \zero   \\
+        \zero & p_k^0   & \zero   \\
+        \zero & \zero   & p_k^0
+      \end{bmatrix} \in \R^{3m_k\times 3}$;
+    \item $\ell=2$ (full affine, $d_2=9$):
+      $P_{k,2} = \begin{bmatrix}
+        p_k^0 & \zero & \zero & p_k^s & \zero & \zero & p_k^t & \zero & \zero \\[2pt]
+        \zero & p_k^0 & \zero & \zero & p_k^s & \zero & \zero & p_k^t & \zero \\[2pt]
+        \zero & \zero & p_k^0 & \zero & \zero & p_k^s & \zero & \zero & p_k^t
+      \end{bmatrix} \in \R^{3m_k\times 9}$.
+  \end{itemize}
+  Each column occupies only the block-row matching its direction
+  $\beta\in\{n,t_1,t_2\}$.
+\end{definition}
+
+The global restriction at level $\ell$ is the block-diagonal assembly
+\begin{equation}\label{eq:Pcal}
+  \Pcal_\ell := \bigoplus_{k=1}^m P_{k,\ell}
+  \;:\; \R^{d_\ell m} \;\longrightarrow\; \Vspace.
+\end{equation}
+The corresponding \textbf{trace subspace} is
+$\Wspace_\ell := \Range(\Pcal_\ell) \subset \Vspace$.
+
+\begin{lemma}[Nested trace subspaces]\label{lem:nested}
+  $\Wspace_0 \subseteq \Wspace_1 \subseteq \Wspace_2 \subseteq \Vspace$.
+\end{lemma}
+
+\begin{proof}
+  Each $P_{k,0}$ (resp.\ $P_{k,1}$) is obtained from $P_{k,1}$
+  (resp.\ $P_{k,2}$) by selecting a subset of its columns.
+  The block-diagonal structure of $\Pcal_\ell$ preserves the inclusion
+  of ranges.
+\end{proof}
+
+\begin{remark}[Coefficient-space nesting is not literal]\label{rem:coeff-nest}
+  The coefficient spaces $\R^{d_0 m}$, $\R^{d_1 m}$, and $\R^{d_2 m}$
+  have different dimensions and are not literally nested unless
+  explicit embeddings are specified.  The intrinsic nesting used in
+  the Galerkin argument is the nesting of the lifted trace ranges
+  $\Wspace_\ell = \Range(\Pcal_\ell) \subseteq \Vspace$.
+  All results below are stated in terms of these trace subspaces.
+  When we refer to ``level $\ell$'' we mean the subspace $\Wspace_\ell$
+  and its associated restriction operator $\Pcal_\ell$.
+\end{remark}
+
+% ======================================================================
+\section{Best approximation in the energy seminorm}
+% ======================================================================
+
+For a fixed level $\ell$, the \textbf{reduced Schur complement} and
+\textbf{reduced right-hand side} are
+\begin{equation}\label{eq:S-ell}
+  \Schur_\ell = \Pcal_\ell^\top \Shatuu\, \Pcal_\ell
+  \;\in\; \R^{d_\ell m \times d_\ell m},\qquad
+  \bm{F}_\ell = \Pcal_\ell^\top \Fhat.
+\end{equation}
+
+\begin{lemma}[Reduced consistency]\label{lem:reduced-cons}
+  Under Assumption~\ref{ass:consistency}, for
+  every level $\ell$,
+  $\bm{F}_\ell \in \Range(\Schur_\ell)$.
+\end{lemma}
+
+\begin{proof}
+  Let $\bm{\xi}$ be any solution of $\Shatuu\,\bm{\xi} = \Fhat$.
+  Set $A_\ell = (\Shatuu)^{1/2}\Pcal_\ell$; then
+  $\Schur_\ell = A_\ell^\top A_\ell$ and
+  $\bm{F}_\ell = A_\ell^\top (\Shatuu)^{1/2}\bm{\xi}$.
+  Finite-dimensional linear algebra gives
+  $\Range(A_\ell^\top A_\ell) = \Range(A_\ell^\top)$,
+  hence $\bm{F}_\ell \in \Range(\Schur_\ell)$.
+\end{proof}
+
+Consequently there exists at least one solution $\trac_\ell \in
+\R^{d_\ell m}$ of the reduced system
+$\Schur_\ell \trac_\ell = \bm{F}_\ell$.
+Define the corresponding C-DD trace approximation
+\begin{equation}\label{eq:xi-ell}
+  \bm{\xi}_\ell := \Pcal_\ell \trac_\ell \;\in\; \Wspace_\ell \subset \Vspace.
+\end{equation}
+Let $\bm{\xi} \in \Vspace$ be any fixed solution of the full C-DD
+system $\Shatuu\,\bm{\xi} = \Fhat$.
+
+\begin{theorem}[Galerkin best approximation]\label{thm:best}
+  Under Assumptions~\ref{ass:local}, \ref{ass:matching}, and
+  \ref{ass:consistency}, for each level $\ell\in\{0,1,2\}$,
+  \begin{equation}\label{eq:best}
+    \|\bm{\xi} - \bm{\xi}_\ell\|_{\Shatuu}
+    = \min_{\bm{\mu}\in\R^{d_\ell m}}
+      \|\bm{\xi} - \Pcal_\ell\bm{\mu}\|_{\Shatuu}.
+  \end{equation}
+  When $\Shatuu$ is semidefinite the minimiser need not be unique,
+  but the seminorm value is independent of the choice of
+  representatives for both $\bm{\xi}$ and $\trac_\ell$.
+\end{theorem}
+
+\begin{proof}
+  From $\Shatuu\,\bm{\xi} = \Fhat$,
+  $\Schur_\ell \trac_\ell = \bm{F}_\ell$,
+  $\Schur_\ell = \Pcal_\ell^\top \Shatuu\,\Pcal_\ell$, and
+  $\bm{F}_\ell = \Pcal_\ell^\top \Fhat$, we obtain
+  \begin{equation}\label{eq:ortho}
+    \Pcal_\ell^\top \Shatuu\,(\bm{\xi}_\ell - \bm{\xi}) = \zero.
+  \end{equation}
+  Hence $\bm{e}_\ell := \bm{\xi} - \bm{\xi}_\ell$ is
+  $\Shatuu$-orthogonal to $\Wspace_\ell = \Range(\Pcal_\ell)$.
+
+  For arbitrary $\bm{\mu}\in\R^{d_\ell m}$, decompose
+  $\bm{\xi} - \Pcal_\ell\bm{\mu}
+   = \bm{e}_\ell + \bm{v}$
+  with $\bm{v} := \bm{\xi}_\ell - \Pcal_\ell\bm{\mu}
+  \in \Wspace_\ell$.
+  By~\eqref{eq:ortho}, $\bm{e}_\ell^\top \Shatuu\,\bm{v} = 0$, and the
+  Pythagorean identity in the $\Shatuu$ seminorm yields
+  $\|\bm{\xi} - \Pcal_\ell\bm{\mu}\|_{\Shatuu}^2
+   = \|\bm{e}_\ell\|_{\Shatuu}^2 + \|\bm{v}\|_{\Shatuu}^2
+   \ge \|\bm{e}_\ell\|_{\Shatuu}^2$.
+  Equality at $\bm{\mu} = \trac_\ell$ proves~\eqref{eq:best}.
+
+  Semidefinite independence: if $\trac_\ell,\trac_\ell'$ both solve
+  $\Schur_\ell\trac = \bm{F}_\ell$, then
+  $\Pcal_\ell(\trac_\ell-\trac_\ell') \in \Ker(\Shatuu)$,
+  so the seminorm on both sides of~\eqref{eq:best} is unchanged.
+  Similarly, any two full solutions differ by an element of
+  $\Ker(\Shatuu)$, and adding an element of this kernel does not change
+  any $\Shatuu$-seminorm distance.
+\end{proof}
+
+% ======================================================================
+\section{Nested orthogonal decomposition}
+% ======================================================================
+
+\begin{theorem}[Orthogonal decomposition for nested trace subspaces]\label{thm:nested}
+  Under the same assumptions as Theorem~\ref{thm:best}, let
+  $\ell < \ell'$, so that $\Wspace_\ell \subseteq \Wspace_{\ell'}$ by
+  Lemma~\ref{lem:nested}.  Then
+  \begin{equation}\label{eq:nested}
+    \|\bm{\xi} - \bm{\xi}_\ell\|_{\Shatuu}^2
+    = \|\bm{\xi} - \bm{\xi}_{\ell'}\|_{\Shatuu}^2
+      + \|\bm{\xi}_{\ell'} - \bm{\xi}_\ell\|_{\Shatuu}^2.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  By Theorem~\ref{thm:best} at level $\ell'$,
+  $\bm{e}_{\ell'} = \bm{\xi} - \bm{\xi}_{\ell'}$ is
+  $\Shatuu$-orthogonal to $\Wspace_{\ell'}$.
+  The difference $\bm{\xi}_{\ell'} - \bm{\xi}_\ell$ satisfies
+  $\bm{\xi}_{\ell'} \in \Wspace_{\ell'}$ and
+  $\bm{\xi}_\ell \in \Wspace_\ell \subseteq \Wspace_{\ell'}$,
+  hence $\bm{\xi}_{\ell'} - \bm{\xi}_\ell \in \Wspace_{\ell'}$.
+  Therefore $\bm{e}_{\ell'} \perp_{\Shatuu}
+  (\bm{\xi}_{\ell'} - \bm{\xi}_\ell)$.
+  The decomposition
+  $\bm{\xi} - \bm{\xi}_\ell = \bm{e}_{\ell'} +
+   (\bm{\xi}_{\ell'} - \bm{\xi}_\ell)$
+  is $\Shatuu$-orthogonal; the Pythagorean identity gives~\eqref{eq:nested}.
+\end{proof}
+
+\begin{corollary}[Three-level gain decomposition]\label{cor:gains}
+  For $\Wspace_0 \subseteq \Wspace_1 \subseteq \Wspace_2$,
+  \begin{equation}\label{eq:gains}
+    \|\bm{\xi} - \bm{\xi}_0\|_{\Shatuu}^2
+    = \|\bm{\xi} - \bm{\xi}_2\|_{\Shatuu}^2
+      + \|\bm{\xi}_2 - \bm{\xi}_1\|_{\Shatuu}^2
+      + \|\bm{\xi}_1 - \bm{\xi}_0\|_{\Shatuu}^2.
+  \end{equation}
+  Interpretation of the three right-hand-side terms:
+  \begin{itemize}
+    \item $\|\bm{\xi} - \bm{\xi}_2\|_{\Shatuu}^2$:
+      \textbf{affine residual} --- error after the full nine-mode
+      affine approximation;
+    \item $\|\bm{\xi}_2 - \bm{\xi}_1\|_{\Shatuu}^2$:
+      \textbf{linear gain} --- reduction from adding the six linear
+      modes $\{s,t\}\times\{n,t_1,t_2\}$ to the constant-vector space;
+    \item $\|\bm{\xi}_1 - \bm{\xi}_0\|_{\Shatuu}^2$:
+      \textbf{tangential gain} --- reduction from adding the two
+      tangential constant modes to the single normal constant mode.
+  \end{itemize}
+\end{corollary}
+
+\begin{proof}
+  Apply Theorem~\ref{thm:nested} with $(\ell,\ell')=(0,1)$ and
+  $(\ell,\ell')=(1,2)$, then substitute.
+\end{proof}
+
+\begin{remark}[Four-space diagnostic diamond]\label{rem:four-space}
+  The three-level chain $\Wspace_0\subseteq\Wspace_1\subseteq\Wspace_2$
+  combines all six linear modes into one gain term.  A controlled
+  diagnostic can instead use four global trace subspaces whose
+  per-interface mode contents are
+  \begin{align*}
+    \Wspace_{0n} &: \{1\cdot n\},\\
+    \Wspace_{0v} &: \{1\cdot n,\;1\cdot t_1,\;1\cdot t_2\},\\
+    \Wspace_{1n} &: \{1\cdot n,\;s\cdot n,\;t\cdot n\},\\
+    \Wspace_{1v} &: \{1,s,t\}\times\{n,t_1,t_2\}.
+  \end{align*}
+  Here each notation denotes the range of the corresponding
+  block-diagonal modal lifting assembled over all interfaces, and
+  $\bm{\xi}_{0n}$, $\bm{\xi}_{0v}$, $\bm{\xi}_{1n}$, and
+  $\bm{\xi}_{1v}$ denote the associated Galerkin trace solutions.
+  The following inclusions always hold:
+  $\Wspace_{0n}\subseteq\Wspace_{0v}\subseteq\Wspace_{1v}$
+  and
+  $\Wspace_{0n}\subseteq\Wspace_{1n}\subseteq\Wspace_{1v}$.
+  Whether $\Wspace_{0v}$ and $\Wspace_{1n}$ are nonnested depends on
+  the discrete trace space.  They are nonnested, for instance, if there
+  exists at least one interface on which the projected linear shapes
+  $\{p_k^s,p_k^t\}$ contain a direction outside
+  $\operatorname{span}\{p_k^0\}$ and the constant tangential liftings are
+  nonzero.  The following two nested-path Pythagorean decompositions are
+  valid irrespective of whether either inclusion is strict.  Applying
+  Theorem~\ref{thm:nested} gives
+  \[
+  \begin{aligned}
+  \|\bm{\xi}-\bm{\xi}_{0n}\|_{\Shatuu}^2
+  &= \|\bm{\xi}-\bm{\xi}_{1v}\|_{\Shatuu}^2
+   + \|\bm{\xi}_{1v}-\bm{\xi}_{0v}\|_{\Shatuu}^2
+   + \|\bm{\xi}_{0v}-\bm{\xi}_{0n}\|_{\Shatuu}^2,\\
+  &= \|\bm{\xi}-\bm{\xi}_{1v}\|_{\Shatuu}^2
+   + \|\bm{\xi}_{1v}-\bm{\xi}_{1n}\|_{\Shatuu}^2
+   + \|\bm{\xi}_{1n}-\bm{\xi}_{0n}\|_{\Shatuu}^2.
+  \end{aligned}
+  \]
+  These are path-dependent marginal-gain decompositions, not a unique
+  causal attribution.  Two cleanly defined error-reduction contrasts
+  sharing the same baseline $\bm{\xi}_{0n}$ are obtained from the
+  Pythagorean identity (Theorem~\ref{thm:nested}):
+  \[
+    \Delta_T
+    := \|\bm{\xi}-\bm{\xi}_{0n}\|_{\Shatuu}^2
+       -\|\bm{\xi}-\bm{\xi}_{0v}\|_{\Shatuu}^2
+    = \|\bm{\xi}_{0v}-\bm{\xi}_{0n}\|_{\Shatuu}^2 \ge 0,
+  \]
+  \[
+    \Delta_N
+    := \|\bm{\xi}-\bm{\xi}_{0n}\|_{\Shatuu}^2
+       -\|\bm{\xi}-\bm{\xi}_{1n}\|_{\Shatuu}^2
+    = \|\bm{\xi}_{1n}-\bm{\xi}_{0n}\|_{\Shatuu}^2 \ge 0.
+  \]
+  These quantify the reductions in squared Schur-energy error under the
+  two specified nested enrichments.  The complementary path-conditional
+  gains are
+  \[
+    \Delta_{N\mid T}
+    := \|\bm{\xi}_{1v}-\bm{\xi}_{0v}\|_{\Shatuu}^2,\qquad
+    \Delta_{T\mid N}
+    := \|\bm{\xi}_{1v}-\bm{\xi}_{1n}\|_{\Shatuu}^2.
+  \]
+  The total reduction from the classic baseline to the full affine
+  solution therefore satisfies
+  \[
+    \|\bm{\xi}-\bm{\xi}_{0n}\|_{\Shatuu}^2
+    -\|\bm{\xi}-\bm{\xi}_{1v}\|_{\Shatuu}^2
+    = \Delta_T + \Delta_{N\mid T}
+    = \Delta_N + \Delta_{T\mid N}.
+  \]
+  In general $\Delta_N \neq \Delta_{N\mid T}$ and
+  $\Delta_T \neq \Delta_{T\mid N}$, illustrating that
+  the two paths produce path-dependent marginal-gain decompositions.
+  No identity of the form
+  $\Delta_{\mathrm{total}} = \Delta_T + \Delta_N$ is asserted, and no
+  per-interface additive causal decomposition is claimed.
+\end{remark}
+
+% ======================================================================
+\section{Velocity reconstruction and trace error identity}
+% ======================================================================
+
+\subsection{Velocity reconstruction from C-DD trace data}
+
+For a C-DD trace vector $\bm{\zeta}\in\Vspace$ (unknown internal DOFs)
+and prescribed boundary traction data $\bm{\xi}^k$, the local velocity
+field on pore $i$ is
+\begin{equation}\label{eq:reconstruct}
+  U_i(\bm{\zeta};\,\bm{\xi}^k)
+  = -H_i\Bigl[(N_i^u)^\top \widehat{R}_i^u \bm{\zeta}
+               + (N_i^k)^\top \widehat{R}_i^k \bm{\xi}^k\Bigr]
+  \;\in\; \R^{n_{u,i}}.
+\end{equation}
+The first term couples the unknown interface DOFs to the pore
+interior; the second term injects the prescribed boundary tractions.
+The global reconstructed velocity field $\vel_h(\bm{\zeta})$ is the
+discontinuous assembly of the local fields $\{U_i(\bm{\zeta};\,
+\bm{\xi}^k)\}$ across pores.
+
+\begin{lemma}[Trace-to-velocity error identity]\label{lem:vel-id}
+  For any two trace vectors $\bm{\zeta},\bm{\zeta}'\in\Vspace$ sharing
+  the same prescribed boundary data $\bm{\xi}^k$,
+  \begin{equation}\label{eq:vel-id}
+    \sum_{i=1}^N \|U_i(\bm{\zeta}) - U_i(\bm{\zeta}')\|_{A_i}^2
+    = \|\bm{\zeta} - \bm{\zeta}'\|_{\Shatuu}^2,
+  \end{equation}
+  where $\|U\|_{A_i}^2 := U^\top A_i U$.
+\end{lemma}
+
+\begin{proof}
+  The boundary coupling terms $(N_i^k)^\top \widehat{R}_i^k \bm{\xi}^k$
+  are identical for both arguments and cancel in the difference:
+  \begin{align*}
+    U_i(\bm{\zeta}) - U_i(\bm{\zeta}')
+    &= -H_i (N_i^u)^\top \widehat{R}_i^u (\bm{\zeta} - \bm{\zeta}').
+  \end{align*}
+  Using $H_i^\top A_i H_i = H_i$,
+  \begin{align*}
+    \|U_i(\bm{\zeta}) - U_i(\bm{\zeta}')\|_{A_i}^2
+    &= (\bm{\zeta}-\bm{\zeta}')^\top \widehat{R}_i^{u\top}
+       N_i^u H_i A_i H_i (N_i^u)^\top \widehat{R}_i^u
+       (\bm{\zeta}-\bm{\zeta}') \\
+    &= (\bm{\zeta}-\bm{\zeta}')^\top \widehat{R}_i^{u\top}
+       \Shatuu_i \widehat{R}_i^u (\bm{\zeta}-\bm{\zeta}').
+  \end{align*}
+  Summing over $i$ and using~\eqref{eq:Shat} gives~\eqref{eq:vel-id}.
+\end{proof}
+
+\subsection{Notation for the true solution and its approximations}
+
+Let $\vel_h := \vel_h(\bm{\xi})$ be the C-DD full-trace reconstruction
+using a solution $\bm{\xi}$ of~\eqref{eq:full-sys}.
+For level $\ell$, let $\vel_\ell := \vel_h(\bm{\xi}_\ell)$.
+Let $\vel$ denote the exact Stokes solution with the prescribed
+continuous boundary-traction data.  The full C-DD reconstruction
+$\vel_h$ and the reduced reconstruction $\vel_\ell$ share the same
+prescribed discrete boundary-traction vector $\bm{\xi}^k$, obtained
+from the boundary restriction in~\eqref{eq:Fhat}.  Consequently the
+discrete boundary terms cancel exactly in $\vel_h-\vel_\ell$.
+Any discrepancy between the continuous boundary data and its discrete
+representation is included in the C-DD discretisation error
+$\vel-\vel_h$.
+All velocity error fields considered below satisfy homogeneous
+wall data.
+
+Let $\Gamma_{w,i}$ denote the no-slip wall portion of
+$\partial\pore{i}$ and define the broken wall-zero space
+\[
+  X_0:=\prod_{i=1}^N
+  \{\bm{v}_i\in H^1(\pore{i})^3:\ \bm{v}_i|_{\Gamma_{w,i}}=\zero\}.
+\]
+All velocity error fields used below belong to $X_0$ because the exact,
+full C-DD, and reduced solutions impose the same no-slip wall data.
+For a (possibly discontinuous) field $\bm{v}$ define
+\begin{align}
+  \|\bm{v}\|_A^2 &:= \sum_{i=1}^N \nu\int_{\pore{i}}
+                     \nabla\bm{v}:\nabla\bm{v}\,\mathrm{d}x,
+                     \label{eq:A-norm} \\[4pt]
+  \|\bm{v}\|_{L^2}^2 &:= \sum_{i=1}^N \int_{\pore{i}}
+                         |\bm{v}|^2\,\mathrm{d}x, \label{eq:L2-norm} \\[4pt]
+  |\bm{v}|_{H^1}^2 &:= \sum_{i=1}^N \int_{\pore{i}}
+                        \nabla\bm{v}:\nabla\bm{v}\,\mathrm{d}x
+                        = \frac{1}{\nu}\|\bm{v}\|_A^2. \label{eq:H1-semi}
+\end{align}
+On the full broken product space, the two gradient-based quantities
+$\|\cdot\|_A$ and $|\cdot|_{H^1}$ are seminorms.  If every $\pore{i}$ is connected and Lipschitz and
+$|\Gamma_{w,i}|>0$, Poincar\'e--Friedrichs makes $\|\cdot\|_A$ a norm
+on $X_0$.  These conditions are assumed whenever the term ``$A$-norm''
+is used below.  For a discrete function $\bm{v}_h$ with local coefficient
+vectors $\{V_i\}$,
+$\|\bm{v}_h\|_A^2 = \sum_i V_i^\top A_i V_i$.
+
+% ======================================================================
+\section{Volume error---trace error separation}
+% ======================================================================
+
+\subsection{Two-sided $A$-norm separation and the trace-dominated regime}
+
+Set
+\begin{equation}\label{eq:DE}
+  D_h := \|\vel - \vel_h\|_A,\qquad
+  E_\ell := \|\vel_h - \vel_\ell\|_A
+          = \|\bm{\xi} - \bm{\xi}_\ell\|_{\Shatuu},
+\end{equation}
+where the second equality is Lemma~\ref{lem:vel-id} with
+$\bm{\zeta}=\bm{\xi}$, $\bm{\zeta}'=\bm{\xi}_\ell$.
+
+\begin{theorem}[Two-sided volume-trace bound: $A$-norm]\label{thm:sep-A}
+  Under Assumptions~\ref{ass:local}, \ref{ass:matching}, and
+  \ref{ass:consistency},
+  for each level $\ell$,
+  \begin{equation}\label{eq:sep-A}
+    |E_\ell - D_h|
+    \;\le\; \|\vel - \vel_\ell\|_A
+    \;\le\; E_\ell + D_h.
+  \end{equation}
+  Equivalently,
+  $|\,\|\vel-\vel_\ell\|_A - E_\ell\,| \le D_h$.
+  Hence, whenever $E_\ell>0$,
+  \begin{equation}\label{eq:relative}
+    \Bigl|
+      \frac{\|\vel-\vel_\ell\|_A}{E_\ell} - 1
+    \Bigr|
+    \le \frac{D_h}{E_\ell}.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  By the reverse and forward triangle inequalities for the $A$-norm,
+  \[
+    \bigl|\|\vel_h - \vel_\ell\|_A - \|\vel - \vel_h\|_A\bigr|
+    \le \|\vel - \vel_\ell\|_A
+    \le \|\vel_h - \vel_\ell\|_A + \|\vel - \vel_h\|_A.
+  \]
+  Substituting $E_\ell$ and $D_h$ from~\eqref{eq:DE} gives the first
+  statement; dividing by $E_\ell>0$ yields~\eqref{eq:relative}.
+\end{proof}
+
+\begin{remark}[Fixed-mesh trace domination and its limitation]\label{rem:floor}
+  On a fixed mesh $h$, define the discretisation-to-reduction ratio
+  \begin{equation}\label{eq:rho}
+    \rho_{\ell,h} := \frac{D_h}{E_{\ell,h}},
+  \end{equation}
+  which is well-defined whenever $E_{\ell,h}>0$.
+  For a prescribed tolerance $0\le\eta<1$, we call the discretisation
+  \textbf{trace-dominated at level $\eta$} if $\rho_{\ell,h}\le\eta$.
+  In that case~\eqref{eq:relative} gives the two-sided estimate
+  \begin{equation}\label{eq:trace-dom}
+    (1-\eta)E_{\ell,h}
+    \;\le\; \|\vel - \vel_{\ell,h}\|_A
+    \;\le\; (1+\eta)E_{\ell,h}.
+  \end{equation}
+
+  This statement is strictly mesh-dependent.  It does not imply that
+  mesh refinement leaves the total error unchanged, because both
+  $D_h$ and $E_{\ell,h}$ vary with $h$.  A positive asymptotic lower
+  bound for the total $A$-error requires control of the
+  discretisation error as well.  From~\eqref{eq:sep-A},
+  $\|\vel-\vel_{\ell,h}\|_A \ge E_{\ell,h}-D_h$, hence
+  \[
+    \liminf_{h\to0}\,\|\vel-\vel_{\ell,h}\|_A
+    \;\ge\; \liminf_{h\to0}E_{\ell,h} - \limsup_{h\to0}D_h.
+  \]
+  A sufficient condition for a positive asymptotic error floor is
+  therefore
+  \begin{equation}\label{eq:floor-cond}
+    \liminf_{h\to0}E_{\ell,h} \;>\; \limsup_{h\to0}D_h.
+  \end{equation}
+  In particular, $D_h\to0$ together with
+  $\liminf_{h\to0}E_{\ell,h}=c_*>0$ is sufficient.
+  The present theory does not establish whether~\eqref{eq:floor-cond}
+  holds for the geometries under study; numerical plateaus may motivate
+  such a hypothesis but are not a consequence of these theorems.
+  Moreover, the planar-interface theory developed here does not justify
+  interpreting a plateau on a non-planar watershed partition as
+  evidence for~\eqref{eq:floor-cond}.
+
+  \textbf{Computability.}  $E_{\ell,h}
+  =\|\bm{\xi}-\bm{\xi}_\ell\|_{\Shatuu}$ is computable when the full
+  C-DD and reduced discrete solutions are both available.  In contrast,
+  $D_h=\|\vel-\vel_h\|_A$ requires the exact PDE solution and is not
+  directly computable in a generic problem; it must be replaced by a
+  manufactured-solution error, an independent overkill reference, or a
+  separate discretisation-error estimator.
+\end{remark}
+
+\subsection{Analogous bounds in $L^2$ and broken $H^1$}
+
+\begin{theorem}[Two-sided bound: $L^2$-norm]\label{thm:sep-L2}
+  Under the same assumptions, suppose each pore $\pore{i}$ admits a
+  Poincar\'e--Friedrichs constant $C_{P,i}>0$ such that
+  $\|\bm{v}\|_{L^2(\pore{i})} \le C_{P,i}|\bm{v}|_{H^1(\pore{i})}$
+  for all $\bm{v}$ vanishing on the wall portion of
+  $\partial\pore{i}$.  Set $C_P := \max_i C_{P,i}$ and define
+  \begin{equation}\label{eq:TL2}
+    T_\ell^{L^2} := \|\vel_h - \vel_\ell\|_{L^2},\qquad
+    D_h^{L^2} := \|\vel - \vel_h\|_{L^2}.
+  \end{equation}
+  Then the following hold.
+  \begin{enumerate}[label=(\alph*),nosep,leftmargin=*]
+    \item \textbf{Two-sided bound with $T_\ell^{L^2}$:}
+      $|T_\ell^{L^2} - D_h^{L^2}|
+       \le \|\vel - \vel_\ell\|_{L^2}
+       \le T_\ell^{L^2} + D_h^{L^2}$.
+    \item \textbf{Poincar\'e upper bound:}
+      $T_\ell^{L^2} \le \frac{C_P}{\sqrt{\nu}}\,E_\ell$, and therefore
+      $\|\vel - \vel_\ell\|_{L^2}
+       \le D_h^{L^2} + \frac{C_P}{\sqrt{\nu}}\,E_\ell$.
+  \end{enumerate}
+  No corresponding lower bound in terms of $E_\ell$ is available without
+  a reverse stability estimate (e.g.\ an inverse inequality bounding
+  the $A$-norm from above by the $L^2$-norm on the discrete velocity
+  space).
+\end{theorem}
+
+\begin{proof}
+  (a)~Apply the reverse and forward triangle inequalities for the
+  $L^2$-norm to $\vel-\vel_\ell = (\vel-\vel_h) + (\vel_h-\vel_\ell)$.
+  (b)~From Lemma~\ref{lem:vel-id} and per-pore Poincar\'e--Friedrichs,
+  $(T_\ell^{L^2})^2
+   = \sum_i \|U_i(\bm{\xi})-U_i(\bm{\xi}_\ell)\|_{L^2(\pore{i})}^2
+   \le \frac{C_P^2}{\nu}\sum_i \|U_i(\bm{\xi})-U_i(\bm{\xi}_\ell)\|_{A_i}^2
+   = \frac{C_P^2}{\nu}\,E_\ell^2$.
+  Taking square roots and substituting into the upper bound of (a)
+  gives the second statement.
+\end{proof}
+
+\begin{theorem}[Two-sided bound: broken-$H^1$ seminorm]\label{thm:sep-H1}
+  Under the same assumptions, define
+  $T_\ell^{H^1} := |\vel_h - \vel_\ell|_{H^1}$ and
+  $D_h^{H^1} := |\vel - \vel_h|_{H^1}$.
+  From~\eqref{eq:H1-semi} and Lemma~\ref{lem:vel-id},
+  $T_\ell^{H^1} = E_\ell/\sqrt{\nu}$ exactly.
+  Then
+  \begin{equation}\label{eq:sep-H1}
+    |T_\ell^{H^1} - D_h^{H^1}|
+    \;\le\; |\vel - \vel_\ell|_{H^1}
+    \;\le\; T_\ell^{H^1} + D_h^{H^1}
+    \;=\; \frac{1}{\sqrt{\nu}}\,E_\ell + D_h^{H^1}.
+  \end{equation}
+\end{theorem}
+
+\begin{proof}
+  The identity $T_\ell^{H^1} = E_\ell/\sqrt{\nu}$ follows from
+  $|\bm{v}|_{H^1}^2 = \|\bm{v}\|_A^2/\nu$ and Lemma~\ref{lem:vel-id}.
+  The seminorm triangle inequalities give the two-sided bound.
+  Unlike the $L^2$ case, both the upper and the lower bound are
+  available here because $T_\ell^{H^1}$ is exactly computable
+  from $E_\ell$ (no additional inequality needed).
+\end{proof}
+
+\begin{remark}[Pessimism of the $L^2$ constant]\label{rem:CP}
+  The constant $C_P=\max_i C_{P,i}$ is a worst-case Poincar\'e constant
+  and may be pessimistic.  For the particular reduction error
+  $\bm{e}_\ell:=\vel_h-\vel_\ell$, the field-dependent effective
+  Poincar\'e ratio is
+  \[
+    C_{P,\mathrm{eff}}(\bm{e}_\ell)
+      :=\frac{\|\bm{e}_\ell\|_{L^2}}{|\bm{e}_\ell|_{H^1}}
+      =\sqrt{\nu}\,\frac{\|\bm{e}_\ell\|_{L^2}}
+                              {\|\bm{e}_\ell\|_A},
+  \]
+  whenever $\bm{e}_\ell\neq0$.  Its square is a generalized Rayleigh
+  quotient for the mass and stiffness forms evaluated at this specific
+  error field; it is not a uniform stability constant for the whole
+  space.
+\end{remark}
+
+% ======================================================================
+\section{Discussion}
+% ======================================================================
+
+\subsection{Summary of the theoretical chain}
+
+\begin{enumerate}[leftmargin=*,itemsep=4pt]
+  \item \textbf{Best approximation} (Theorem~\ref{thm:best}).
+    Under the explicit consistency assumption for the full C-DD Schur
+    system, the level-$\ell$ trace solution is a
+    $\Shatuu$-seminorm best approximation to the full C-DD trace in
+    $\Wspace_\ell$.
+  \item \textbf{Nested decomposition} (Theorem~\ref{thm:nested},
+    Corollary~\ref{cor:gains}).
+    For nested modal trace spaces, squared Schur-energy errors satisfy
+    exact Pythagorean identities.  The three-level chain therefore
+    separates the classic-P0 reduction error into the residual after
+    full affine approximation and the gains associated with the two
+    nested enrichments.
+  \item \textbf{Volume--trace separation}.
+    In the broken $A$ measure,
+    \[
+      |E_\ell-D_h|\le\|\vel-\vel_\ell\|_A\le E_\ell+D_h.
+    \]
+    In the broken-$H^1$ seminorm the same statement holds after the
+    exact scaling $E_\ell/\sqrt{\nu}$.  In $L^2$, the exact two-sided
+    triangle bound involves the actual reduction error
+    $T_\ell^{L^2}=\|\vel_h-\vel_\ell\|_{L^2}$; the Schur-energy error
+    $E_\ell$ supplies only the upper estimate
+    $T_\ell^{L^2}\le(C_P/\sqrt{\nu})E_\ell$ unless an additional
+    reverse stability estimate is available.
+\end{enumerate}
+
+\subsection{Limitations of the current theory}
+
+\begin{enumerate}[leftmargin=*,itemsep=4pt]
+  \item \textbf{Full C-DD consistency is assumed, not re-proved here.}
+    Assumption~\ref{ass:consistency} is sufficient for all Galerkin
+    projection arguments in this document.  A self-contained derivation
+    would start from the complete broken-pressure mixed Stokes system
+    and prove that its elimination produces a consistent Schur system.
+
+  \item \textbf{No C-DD--monolithic equivalence theorem is claimed.}
+    The C-DD reference uses pressure that is discontinuous across pore
+    interfaces, whereas the usual monolithic Taylor--Hood discretisation
+    uses globally continuous $P_1$ pressure.  Equality of their discrete
+    velocity solutions is not established.  Even if such an equality
+    were proved, a separate finite-element discretisation error between
+    the monolithic discrete solution and the exact PDE solution would
+    remain.
+
+  \item \textbf{No mesh-independent positive error floor is proved.}
+    Theorem~\ref{thm:sep-A} is a fixed-mesh separation result.  To infer
+    a refinement-resistant positive floor one would additionally need
+    to control the $h$-dependence of $E_{\ell,h}$ and $D_h$; a sufficient
+    condition is $\liminf_{h\to0}E_{\ell,h} > \limsup_{h\to0}D_h$
+    (see~\eqref{eq:floor-cond}).  The present theory does not establish
+    whether this condition holds.
+
+  \item \textbf{The $L^2$ trace-energy estimate is one-sided.}
+    The Poincar\'e--Friedrichs inequality bounds
+    $\|\vel_h-\vel_\ell\|_{L^2}$ from above by $E_\ell$, but it yields no
+    lower bound in terms of $E_\ell$.  Consequently $E_\ell$ should not
+    be called an $L^2$ error floor without an additional reverse
+    stability estimate.
+
+  \item \textbf{The affine residual need not be strictly positive.}
+    Although the nine-mode affine trace space is generally lower
+    dimensional than a nodal C-DD trace space, strict inclusion alone
+    does not imply $E_2>0$ for a particular solution.  A positive
+    affine residual requires
+    $\bm{\xi}\notin\Wspace_2+\Ker(\Shatuu)$.
+
+  \item \textbf{The four-space diamond is diagnostic, not a unique
+    causal decomposition.}
+    When $\Wspace_{0v}$ and $\Wspace_{1n}$ are nonnested, as under the
+    sufficient nondegeneracy condition stated in
+    Remark~\ref{rem:four-space}, the two Pythagorean paths provide
+    path-indexed marginal-gain decompositions, which are path-dependent
+    in general.  Regardless of whether the two middle spaces happen to
+    be comparable for a particular discrete trace space, the quantities
+    $\Delta_T$ and $\Delta_N$ are controlled error-reduction contrasts
+    associated with specified enrichments, not a unique causal
+    attribution.
+
+  \item \textbf{Non-planar interfaces are outside the present scope.}
+    Every theorem uses a fixed orthonormal frame on a planar interface.
+    Faceted or genuinely curved interfaces with spatially varying
+    normals introduce a geometric representation issue not covered by
+    these results.
+\end{enumerate}
+
+% ======================================================================
+\begin{thebibliography}{9}
+
+\bibitem{sun2025ddpnm}
+S.~Sun, Z.~Wang, L.~Zhang, J.~Zhao.
+\newblock A domain decomposition approach to pore-network modeling of porous
+  media flow.
+\newblock \textit{arXiv:2510.13429v2}, 2026.
+
+\bibitem{toselli2005}
+A.~Toselli and O.~Widlund.
+\newblock \textit{Domain Decomposition Methods---Algorithms and Theory}.
+\newblock Springer, 2005.
+
+\bibitem{horn}
+R.~A.~Horn and C.~R.~Johnson.
+\newblock \textit{Matrix Analysis}, 2nd ed.
+\newblock Cambridge University Press, 2012.
+
+\end{thebibliography}
+
+\end{document}

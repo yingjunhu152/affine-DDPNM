@@ -1,0 +1,540 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{theorem}[lemma]{Theorem}
+\newtheorem{remark}[lemma]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dom}{\Omega}
+\newcommand{\pore}[1]{\Omega_{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\stress}{\bm{\sigma}}
+\newcommand{\normal}{\bm{n}}
+\newcommand{\trac}{\bm{\lambda}}
+\newcommand{\DtN}{\mathbf{G}}
+\newcommand{\Schur}{\mathbf{S}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\zero}{\bm{0}}
+\newcommand{\modeset}{\mathcal{M}}
+\newcommand{\loadvec}{\bm{f}}
+\newcommand{\respvel}{\mathbf{U}}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+
+\begin{document}
+
+\title{\textbf{Mathematical Properties of the Affine-DDPNM}\\[4pt]
+       \large Version 4 --- revised 2026-08-06}
+\author{}
+\date{}
+\maketitle
+
+\section{Preliminaries and notation}
+
+\subsection{Domain, interfaces, and subdomains}
+
+The pore domain $\dom \subset \R^3$ is partitioned into $N$ non-overlapping
+Lipschitz subdomains $\{\pore{i}\}_{i=1}^N$ with $m$ \textbf{planar} internal
+interfaces $\{\iface_k\}_{k=1}^m$,
+$\iface_k = \partial\pore{i} \cap \partial\pore{j}$.
+Each $\pore{i}$ has $m_i$ ports, $m_i^u$ internal and $m_i^k$ boundary.
+We assume every $\pore{i}$ possesses a positive-measure no-slip wall segment;
+this, together with the discrete inf--sup condition of the Taylor--Hood
+$[P_2]^3$--$P_1$ pair on a shape-regular tetrahedral mesh, guarantees that
+the local saddle-point matrix $K_i$ is invertible.
+
+\subsection{Sign convention and interface traction}
+
+On each interface $\iface_k$, fix an orthonormal frame
+$\{\normal_k,\,\bm{t}_{k,1},\,\bm{t}_{k,2}\}$
+with $\normal_k$ pointing from pore $i$ to pore $j$ (where $i<j$ in the
+interface pair).  For pore $i$, the outward normal is
+$\normal_{i,k} = \sigma_{i,k}\normal_k$ with
+$\sigma_{i,k}=+1$ if $i$ is the first member and $-1$ otherwise.
+The \textbf{signed direction vectors} are
+\begin{equation}\label{eq:dir}
+  \bm{d}_{i,k,\normal} = \normal_{i,k},\qquad
+  \bm{d}_{i,k,\bm{t}_\nu} = \sigma_{i,k}\,\bm{t}_{k,\nu}\;\;(\nu=1,2),
+\end{equation}
+satisfying $\bm{d}_{j,k,\beta} = -\bm{d}_{i,k,\beta}$.
+We abbreviate $\bm{d}_{i,\gamma,\beta}$ when the context is clear.
+
+\medskip\noindent
+\textbf{Traction Ansatz.}
+Using the pseudostress $\stress(\vel,\pres) := -\pres\mathbf{I} + \nu\nabla\vel$,
+the applied traction on an internal interface $\gamma$ as seen from $\pore{i}$ is
+\begin{equation}\label{eq:traction}
+  -\stress(\vel,\pres)\,\normal_{i,\gamma}
+  = \sum_{(\alpha,\beta)\in\modeset}
+    \lambda_{\gamma,\alpha,\beta}\;
+    \varphi_\alpha(s,t)\,\bm{d}_{i,\gamma,\beta},
+\end{equation}
+where $\modeset = \{0,s,t\}\times\{\normal,\bm{t}_1,\bm{t}_2\}$,
+$\varphi_0=1$, $\varphi_s=s$, $\varphi_t=t$, and $s,t$ are dimensionless
+half-span--normalised in-plane coordinates.
+The minus sign on the left conforms to the classic notation
+$-\sigma n = p_\gamma n$, so that a positive $\lambda_{\gamma,0,\normal}$
+corresponds to an isotropic pressure acting into the pore.
+Equation~\eqref{eq:traction} implies
+$\stress\normal_{i,\gamma} = -\sum \lambda \varphi\,\bm{d}_{i,\gamma,\beta}$;
+this is the sign that enters the boundary term of the weak formulation.
+
+For inlet/outlet ports the same convention~\eqref{eq:traction} is used with
+the single mode $(\alpha,\beta)=(0,\normal)$ and a prescribed coefficient
+equal to the boundary pressure.
+
+\subsection{Unit loads and local compliance map}
+
+For each mode $(\alpha,\beta) \in \modeset$ on an internal interface
+$\gamma$ of $\pore{i}$, the Neumann load vector is
+\begin{equation}\label{eq:load}
+  [\loadvec_{i,\gamma}^{(\alpha,\beta)}]_j
+  = \int_{\gamma} \varphi_\alpha(s,t)\;
+    \bm{d}_{i,\gamma,\beta} \cdot \bm{\phi}_j^{(i)} \;\mathrm{d}S,
+\end{equation}
+where $\{\bm{\phi}_j^{(i)}\}$ is the local $[P_2]^3$ velocity basis.
+There is no leading minus sign: from~\eqref{eq:traction} with
+$\lambda_{\gamma,\alpha,\beta}=1$ (all others zero), the applied boundary
+force is $+\bm{d}_{i,\gamma,\beta}\varphi_\alpha$, which is exactly the
+integrand of~\eqref{eq:load}.  For boundary ports only
+$(\alpha,\beta)=(0,\normal)$ is used with a prescribed coefficient.
+
+The discrete local Stokes system (no pressure stabilisation) reads
+\begin{equation}\label{eq:local-sys}
+  \begin{bmatrix} A_i & B_i^\top \\ B_i & 0 \end{bmatrix}
+  \begin{bmatrix} \respvel_{i,\gamma}^{(\alpha,\beta)} \\
+                   \mathbf{X}_{i,\gamma}^{(\alpha,\beta)} \end{bmatrix}
+  = \begin{bmatrix} \loadvec_{i,\gamma}^{(\alpha,\beta)} \\ \bm{0} \end{bmatrix}.
+\end{equation}
+
+Let $n_i = 9m_i^u + m_i^k$ be the number of local traction coefficients
+(the $m_i^k$ boundary entries are prescribed, not unknown).
+Define $L_i \in \R^{n_{i,u} \times n_i}$ as the matrix whose columns are all
+$\loadvec_i^{(\mu)}$, $\mu$ ranging over the $n_i$ modes.
+The local compliance (Neumann-to-Dirichlet) map is
+\begin{equation}\label{eq:dtn}
+  \DtN_i = L_i^\top H_i L_i \;\in\; \R^{n_i \times n_i},\qquad
+  H_i = A_i^{-1} - A_i^{-1}B_i^\top M_i^{-1}B_i A_i^{-1},\;\;
+  M_i = B_i A_i^{-1}B_i^\top.
+\end{equation}
+$\DtN_i$ is symmetric positive semi-definite (Lemma~\ref{lem:sym}).
+It is partitioned as
+\[
+  \DtN_i =
+  \begin{bmatrix}
+    \DtN_i^{uu} & \DtN_i^{uk} \\
+    \DtN_i^{ku} & \DtN_i^{kk}
+  \end{bmatrix},
+\]
+where $\DtN_i^{uu} \in \R^{9m_i^u \times 9m_i^u}$ couples internal modes
+and $\DtN_i^{uk} \in \R^{9m_i^u \times m_i^k}$ couples internal to boundary.
+
+\subsection{Weighted velocity moments and global Schur complement}
+
+For mode $(\alpha,\beta)$ on interface $\gamma$ of $\pore{i}$,
+\begin{equation}\label{eq:moment}
+  M_{i,\gamma}^{(\alpha,\beta)}
+  = \int_{\gamma} \varphi_\alpha(s,t)\;
+    \vel_{i,h} \cdot \bm{d}_{i,\gamma,\beta} \;\mathrm{d}S.
+\end{equation}
+Only $M_{i,\gamma}^{(0,\normal)} = \int_\gamma \vel\cdot\normal\,\mathrm{d}S$
+is the volumetric flow rate; the other eight are weighted velocity moments.
+From~\eqref{eq:dir}, $M_{i,\gamma}^{(\alpha,\beta)}
++ M_{j,\gamma}^{(\alpha,\beta)} = 0$ for any continuous velocity field.
+
+Enforcing continuity of all nine weighted velocity moments on every internal
+interface yields the global Schur system
+\begin{equation}\label{eq:schur}
+  \Schur\,\trac = \bm{F},\qquad
+  \Schur = \sum_{i=1}^N (R_i^u)^\top \DtN_i^{uu} R_i^u,\qquad
+  \bm{F} = -\sum_{i=1}^N (R_i^u)^\top \DtN_i^{uk} R_i^k \trac^k,
+\end{equation}
+where $\trac \in \R^{9m}$, $\trac^k \in \R^{m^k}$, and $R_i^u,R_i^k$
+are Boolean restriction maps.
+
+% ======================================================================
+\section{Mathematical properties}
+% ======================================================================
+
+\begin{lemma}[Discrete incompressibility]\label{lem:incomp}
+  $B_i\,\respvel_{i,\gamma}^{(\alpha,\beta)} = \bm{0}$
+  for every unit response.
+\end{lemma}
+
+\begin{proof}
+  From the second block row of~\eqref{eq:local-sys}.
+  The explicit expression $\respvel_{i,\gamma}^{(\alpha,\beta)}
+  = H_i \loadvec_{i,\gamma}^{(\alpha,\beta)}$ follows from standard
+  Schur-complement algebra; the verification $H_i^\top A_i H_i = H_i$
+  and the consequence $B_i H_i = 0$ are obtained by direct expansion
+  (see the companion methodology document).
+\end{proof}
+
+% ----------------------------------------------------------------------
+
+\begin{lemma}[Symmetry and energy identity]\label{lem:sym}
+  $\DtN_i$ is symmetric positive semi-definite and
+  $\trac_i^\top \DtN_i \trac_i
+   = \respvel_i^\top A_i \respvel_i \ge 0$.
+\end{lemma}
+
+\begin{proof}
+  $\DtN_i(\mu,\mu') = [\loadvec_i^{(\mu)}]^\top H_i \loadvec_i^{(\mu')}
+   = [\respvel_i^{(\mu)}]^\top A_i \respvel_i^{(\mu')}$,
+  symmetric by symmetry of $A_i$.
+  Summing with coefficients $\lambda_{i,\mu}$ gives the energy identity;
+  $A_i \succ 0$ implies $\DtN_i \succeq 0$.
+\end{proof}
+
+% ----------------------------------------------------------------------
+
+\begin{lemma}[Kernel of the local compliance map]\label{lem:kernel}
+  Let $\one_{(0,\normal)} \in \R^{n_i}$ have entry $1$ at every
+  mode $(\gamma,0,\normal)$ (internal and boundary) and $0$ elsewhere.
+  Assume
+  \begin{equation}\label{eq:rank-assumption}
+    \operatorname{rank}(H_i^{1/2} L_i) = n_i - 1.
+  \end{equation}
+  Then $\ker(\DtN_i) = \operatorname{span}\{\one_{(0,\normal)}\}$
+  is exactly one-dimensional.
+\end{lemma}
+
+\begin{proof}
+  \textbf{(i)~$\one_{(0,\normal)} \in \ker(\DtN_i)$.}
+  Summing the constant-normal loads and using the divergence theorem,
+  $\sum_\gamma \loadvec_i^{(\gamma,0,\normal)} = B_i^\top\mathbf{1}$
+  (coefficient vector of $p_h \equiv 1$).
+  Hence $(\respvel_i,\mathbf{X}_i) = (\bm{0}, p_{\text{const}}\mathbf{1})$
+  solves~\eqref{eq:local-sys} for uniform $\lambda_{\gamma,0,\normal}
+  \equiv p_{\text{const}}$.
+  By uniqueness, $\respvel_i = \bm{0}$, so
+  $\DtN_i\one_{(0,\normal)} = L_i^\top H_i L_i\one_{(0,\normal)}
+   = L_i^\top H_i^{1/2}(H_i^{1/2}L_i\one_{(0,\normal)}) = \bm{0}$.
+
+  \textbf{(ii)~Dimension of the kernel.}
+  $\DtN_i = (H_i^{1/2}L_i)^\top (H_i^{1/2}L_i)$, hence
+  $\ker(\DtN_i) = \ker(H_i^{1/2}L_i)$.  \textbf{Note:}
+  $H_i$ is \emph{not} SPD on $\operatorname{Range}(L_i)$; indeed
+  $\operatorname{Range}(L_i) \ni B_i^\top\mathbf{1} \in \ker(H_i)$.
+  The equality $\ker(L_i^\top H_i L_i) = \ker(H_i^{1/2}L_i)$ holds
+  because $H_i \succeq 0$, so $x^\top L_i^\top H_i L_i x
+  = \|H_i^{1/2}L_i x\|^2$, which vanishes iff $H_i^{1/2}L_i x = 0$.
+  By~\eqref{eq:rank-assumption},
+  $\dim\ker(H_i^{1/2}L_i) = n_i - (n_i-1) = 1$.
+  Part~(i) provides one non-zero kernel vector, hence
+  $\ker(\DtN_i) = \operatorname{span}\{\one_{(0,\normal)}\}$.
+\end{proof}
+
+\begin{remark}\label{rem:rank}
+  Assumption~\eqref{eq:rank-assumption} states that the $n_i$ projected
+  responses $H_i^{1/2}\loadvec_i^{(\mu)}$ satisfy exactly one linear
+  relation---the constant-pressure identity
+  $\sum_\gamma H_i^{1/2}\loadvec_i^{(\gamma,0,\normal)} = \bm{0}$.
+  This is verified numerically for all tested geometries (each $G_i$
+  has exactly one zero eigenvalue to machine precision).
+  The rank condition concerns only the $n_i$ projected responses, not
+  the much larger space $\operatorname{Range}(H_i)$ of all divergence-free
+  velocities; the codimension of $\operatorname{Range}(H_i^{1/2}L_i)$
+  in $\operatorname{Range}(H_i^{1/2})$ is $>1$ in general and irrelevant
+  to the argument.
+  A rigorous proof of~\eqref{eq:rank-assumption} for general Lipschitz
+  pores is open; the numerical evidence is uniform across all tested
+  configurations.
+\end{remark}
+
+% ----------------------------------------------------------------------
+
+\begin{theorem}[Solvability and mass conservation]\label{thm:main}
+  Assume Lemma~\ref{lem:kernel} holds for every pore.
+  Further assume:
+  \begin{enumerate}[label=(A\arabic*),nosep,leftmargin=*]
+    \item Every connected component of the pore adjacency graph contains
+      at least one pore with a prescribed-traction (inlet/outlet) port
+      (\emph{global anchoring});
+    \item Each pore has a positive-measure no-slip wall segment
+      (\emph{local coercivity}).
+  \end{enumerate}
+  Then $\Schur$ is SPD, the system $\Schur\,\trac = \bm{F}$ has a unique
+  solution, and the reconstructed velocity satisfies local and global
+  discrete mass conservation ($\sum_r M_{i,r}^{(0,\normal)} = 0$ for each
+  pore, $\int_{\partial\dom}\vel_h^{\text{DD}}\cdot\normal\,\mathrm{d}S=0$).
+\end{theorem}
+
+\begin{proof}
+  \textbf{SPD.}  For $\trac \in \R^{9m}$, let $\trac_i^u = R_i^u\trac$.
+  Then $\trac^\top\Schur\trac = \sum_i (\trac_i^u)^\top \DtN_i^{uu}\trac_i^u
+   = \sum_i \respvel_i^\top A_i \respvel_i \ge 0$.
+
+  If $\trac^\top\Schur\trac = 0$, then $\respvel_i = \bm{0}$ for all $i$.
+  \textbf{Zero-extension argument.}  Define
+  $\bar{\trac}_i = (\trac_i^u; \bm{0}) \in \R^{n_i}$, i.e.\ extend
+  $\trac_i^u$ by zeros on the boundary ports.  Since
+  $(\trac_i^u)^\top \DtN_i^{uu} \trac_i^u
+   = \bar{\trac}_i^\top \DtN_i \bar{\trac}_i = 0$,
+  Lemma~\ref{lem:kernel} gives
+  $\bar{\trac}_i = c_i \one_{(0,\normal)}$ for some $c_i \in \R$.
+
+  If $\pore{i}$ has a boundary port, the corresponding entry of
+  $\bar{\trac}_i$ is $0$ (by construction) while
+  $[\one_{(0,\normal)}]_{\text{boundary}} = 1$, forcing $c_i = 0$.
+  If $\pore{i}$ has no boundary port, $\trac_i^u = c_i\one_{(0,\normal)}$
+  restricted to internal interfaces.
+
+  Interface continuity propagates $c_i = c_j$ for adjacent pores.
+  Condition (A1) ensures every connected component contains a boundary
+  pore where $c = 0$; hence $c_i = 0$ for all $i$ and $\trac = \bm{0}$.
+  Thus $\Schur \succ 0$.
+
+  \textbf{Mass conservation.}  From $B_i\respvel_i = \bm{0}$ and the
+  constant test function, $\sum_r M_{i,r}^{(0,\normal)} = 0$.
+  The Schur assembly enforces continuity of $M^{(0,\normal)}$ on each
+  internal interface; summing over pores gives global balance.
+\end{proof}
+
+\begin{remark}[Floating basins and coercivity]\label{rem:floating}
+  Condition (A2) fails for pores that lack a solid-wall facet
+  (\emph{floating basins}).  In the watershed partition, such basins
+  are merged into a neighbour with a larger shared interface area
+  before the Schur assembly.  This merge restores local coercivity
+  (condition A2), but does \emph{not} supply the global anchoring
+  condition (A1), which is ensured separately by the inlet/outlet
+  boundary-pore connections.  The two conditions are distinct:
+  (A2) guarantees $K_i$ is invertible; (A1) eliminates the global
+  constant-pressure kernel of $\Schur$.
+\end{remark}
+
+% ======================================================================
+\appendix
+\section{Error estimate as a Galerkin projection}
+\setcounter{lemma}{0}
+\setcounter{theorem}{0}
+% ======================================================================
+
+We characterise the Affine-DDPNM as a Galerkin restriction of a
+non-overlapping domain-decomposition formulation with \textbf{broken}
+pressure ($Q_h^{\text{br}} = \bigoplus_i Q_{i,h}$).
+This C-DD reference differs from the monolithic continuous-$P_1$
+Taylor--Hood FEM.  The error estimate below refers to the broken-pressure
+C-DD solution; its relation to the monolithic FEM is discussed in
+Remark~\ref{rem:monolithic}.
+
+% ----------------------------------------------------------------------
+\subsection{C-DD formulation (broken pressure)}
+
+On interface $\gamma_{i,r}$, the traction $\stress\normal_{i,r}$ is
+expanded in the FE face basis $\{\psi_\ell\}$ with nodal coefficients
+$\bm{\eta}_{i,r},\bm{\tau}_{i,r}^1,\bm{\tau}_{i,r}^2 \in \R^{m_{i,r}}$.
+The full C-DD traction is
+$\bm{\xi}_{i,r} = (\bm{\eta}_{i,r}; \bm{\tau}_{i,r}^1; \bm{\tau}_{i,r}^2)
+ \in \R^{3m_{i,r}}$.
+
+The Neumann coupling blocks are
+\begin{align*}
+  [N_{i,r}^{\normal}]_{\ell,j} &=
+    \int_{\gamma_{i,r}} \psi_\ell\,(\bm{\phi}_j^{(i)}
+    \cdot \normal_{i,r})\,\mathrm{d}S,\\
+  [N_{i,r}^{\bm{t}_\nu}]_{\ell,j} &=
+    \int_{\gamma_{i,r}} \psi_\ell\,(\bm{\phi}_j^{(i)}
+    \cdot \bm{t}_{i,r}^\nu)\,\mathrm{d}S \quad (\nu=1,2).
+\end{align*}
+Stacking all interfaces \textbf{vertically},
+\[
+  N_i =
+  \begin{bmatrix}
+    N_i^{\normal} \\ N_i^{\bm{t}_1} \\ N_i^{\bm{t}_2}
+  \end{bmatrix}
+  \in \R^{3\sum_r m_{i,r}\,\times\, n_{i,u}}.
+\]
+
+The local C-DD system is
+$K_i [V_i; P_i] = -[N_i^\top \bm{\xi}_i; \bm{0}] + \text{(boundary)}$,
+yielding the local C-DD Schur complement
+$\widehat{\Schur}_i = N_i H_i N_i^\top$.
+Global Boolean assembly with maps $\widehat{R}_i^u$ gives
+\begin{equation}\label{eq:cdd-global}
+  \widehat{\Schur}\,\bm{\xi}^{\text{FE}} = \widehat{\bm{F}},\qquad
+  \widehat{\Schur} = \sum_i (\widehat{R}_i^u)^\top
+    \widehat{\Schur}_i \widehat{R}_i^u.
+\end{equation}
+
+\textbf{Tangential sign convention for C-DD.}
+Unlike the normal direction (where $\normal_{j,r} = -\normal_{i,r}$
+is automatic), the tangential vectors $\bm{t}_{i,r}^\nu$ must have their
+relative orientation explicitly fixed.  We adopt the same side-sign
+convention as the affine basis:
+$\bm{t}_{j,r}^\nu = -\bm{t}_{i,r}^\nu$ for $\nu = 1,2$.
+The Boolean maps $\widehat{R}_i^u$ incorporate a factor $-1$ for
+tangential entries of the second pore, ensuring that a single global
+tangential coefficient produces opposite-signed local tractions.
+This convention is implicit in the standard C-DD formulation (where
+tangential tractions are typically set to zero); making it explicit is
+necessary when tangential modes are retained.
+
+% ----------------------------------------------------------------------
+\subsection{Affine restriction operator}
+
+For interface $\gamma_k$ with face mass matrix $M_k$, define
+$\bm{b}_k^{\alpha,\beta} \in \R^{m_k}$ by
+$(\bm{b}_k^{\alpha,\beta})_\ell
+ = \int_{\gamma_k} \varphi_\alpha \psi_\ell \,\mathrm{d}S$
+and $P_k^{\alpha,\beta} = M_k^{-1}\bm{b}_k^{\alpha,\beta}$.
+Because the $[P_2]^3$ velocity trace on a triangular face exactly
+contains the affine functions $\{1,s,t\}$, the $L^2$-projection is
+exact: $\sum_\ell P_k^{\alpha,\beta}_\ell \psi_\ell = \varphi_\alpha$
+on $\gamma_k$.
+
+For each mode $(\alpha,\beta)$, the \textbf{single non-zero block-row}
+is determined by $\beta$:
+\begin{itemize}[nosep,leftmargin=*]
+  \item $\beta = \normal$: only the first (normal) block-row is non-zero;
+  \item $\beta = \bm{t}_1$: only the second block-row is non-zero;
+  \item $\beta = \bm{t}_2$: only the third block-row is non-zero.
+\end{itemize}
+The local restriction matrix $P_k^{\text{aff}} \in \R^{3m_k \times 9}$ is
+\begin{equation}\label{eq:restriction}
+  P_k^{\text{aff}} =
+  \begin{bmatrix}
+    P_k^{0,\normal} & \bm{0} & \bm{0} &
+    P_k^{s,\normal} & \bm{0} & \bm{0} &
+    P_k^{t,\normal} & \bm{0} & \bm{0} \\[2pt]
+    \bm{0} & P_k^{0,\bm{t}_1} & \bm{0} &
+    \bm{0} & P_k^{s,\bm{t}_1} & \bm{0} &
+    \bm{0} & P_k^{t,\bm{t}_1} & \bm{0} \\[2pt]
+    \bm{0} & \bm{0} & P_k^{0,\bm{t}_2} &
+    \bm{0} & \bm{0} & P_k^{s,\bm{t}_2} &
+    \bm{0} & \bm{0} & P_k^{t,\bm{t}_2}
+  \end{bmatrix}.
+\end{equation}
+The global restriction is
+$\mathcal{P}_{\text{aff}} = \bigoplus_{k=1}^m P_k^{\text{aff}}
+ : \R^{9m} \to \R^{m_\Gamma}$.
+
+% ----------------------------------------------------------------------
+\subsection{Equivalence lemma}
+
+\begin{lemma}[Equivalence of assembled and projected systems]\label{lem:equivalence}
+  $\Schur = \mathcal{P}_{\text{aff}}^\top \widehat{\Schur}\,
+           \mathcal{P}_{\text{aff}}$ and
+  $\bm{F} = \mathcal{P}_{\text{aff}}^\top \widehat{\bm{F}}$.
+\end{lemma}
+
+\begin{proof}
+  For a pore $i$ and internal interface $\gamma$, the primitive load
+  vector~\eqref{eq:load} for mode $(\alpha,\beta)$ equals
+  \[
+    \loadvec_i^{(\gamma,\alpha,\beta)}
+    = (N_{i,\gamma}^\beta)^\top P_{i,\gamma}^{\alpha,\beta},
+  \]
+  where $N_{i,\gamma}^\beta$ is the coupling block for direction $\beta$.
+  (The C-DD right-hand side is $-N_i^\top\bm{\xi}_i$; with the
+  affine convention $-\sigma n = \sum\lambda\varphi\bm{d}$, we have
+  $\bm{\xi}_i = -\mathcal{P}_{\text{aff}}\trac$
+  in the C-DD nodal basis, so the double minus cancels, yielding the
+  positive relation above.)
+
+  The matrix of all internal primitive loads is
+  $L_i^u = (N_i^u)^\top P_i^{\text{aff}}$.
+  Hence $\DtN_i^{uu} = (L_i^u)^\top H_i L_i^u
+   = (P_i^{\text{aff}})^\top \widehat{\Schur}_i^{uu} P_i^{\text{aff}}$.
+  Summing with the Boolean maps $R_i^u$ and $\widehat{R}_i^u$ and using
+  the commutative relation
+  $\widehat{R}_i^u P_i^{\text{aff}}
+   = \mathcal{P}_{\text{aff}}|_{\pore{i}}\, R_i^u$
+  gives the result.  The forcing term follows analogously.
+\end{proof}
+
+% ----------------------------------------------------------------------
+\subsection{Error estimate and discussion}
+
+\begin{theorem}[Error estimate]\label{thm:error}
+  Let $\bm{\xi}^{\text{FE}}$ solve~\eqref{eq:cdd-global}.
+  Let $\trac^{\text{aff}}$ solve $\Schur\,\trac^{\text{aff}} = \bm{F}$ and
+  $\bm{\xi}^{\text{aff}} = \mathcal{P}_{\text{aff}}\,\trac^{\text{aff}}$.
+  Assume $\widehat{\Schur} \succeq 0$ on the full C-DD trace space and
+  that its kernel is eliminated by boundary anchoring (as for $\Schur$
+  in Theorem~\ref{thm:main}, but on the C-DD level).
+  Then $\|\cdot\|_{\widehat{\Schur}}$ is a norm on the quotient space
+  modulo $\ker(\widehat{\Schur})$, and
+  \begin{align}
+    \|\bm{\xi}^{\text{FE}} - \bm{\xi}^{\text{aff}}\|_{\widehat{\Schur}}
+    &= \min_{\bm{\mu}\in\R^{9m}}
+       \|\bm{\xi}^{\text{FE}}
+         - \mathcal{P}_{\text{aff}}\,\bm{\mu}\|_{\widehat{\Schur}},\label{eq:err-est}\\
+    \sum_i \|\respvel_i^{\text{FE}}
+           - \respvel_i^{\text{aff}}\|_{A_i}^2
+    &= \|\bm{\xi}^{\text{FE}}
+       - \bm{\xi}^{\text{aff}}\|_{\widehat{\Schur}}^2.\label{eq:vel-err}
+  \end{align}
+\end{theorem}
+
+\begin{proof}
+  Lemma~\ref{lem:equivalence} reduces the Affine system to the Galerkin
+  restriction.  Galerkin orthogonality and the Pythagorean identity in
+  the $\widehat{\Schur}$-semi-inner-product yield~\eqref{eq:err-est}.
+  Equation~\eqref{eq:vel-err} follows from the C-DD energy identity.
+  The equality case $\bm{\mu} = \trac^{\text{aff}}$ holds by definition
+  of $\bm{\xi}^{\text{aff}}$; injectivity of $\mathcal{P}_{\text{aff}}$
+  is not required for the equality case (it guarantees uniqueness of
+  the representing coefficient).
+\end{proof}
+
+\begin{remark}[Enrichment guarantee]\label{rem:enrichment}
+  $\operatorname{Range}(\mathcal{P}_{\text{P0}})
+   \subset \operatorname{Range}(\mathcal{P}_{\text{aff}})$,
+  so the affine error in $\|\cdot\|_{\widehat{\Schur}}$ never exceeds
+  the classic error.  This monotonicity is restricted to the
+  $\widehat{\Schur}$-energy (semi-)norm and does not automatically
+  extend to the velocity $L^2$, pressure $L^2$, broken $H^1$,
+  or outlet flux.  The 73--90\% $L^2$ reductions observed numerically
+  are \emph{consistent} with the energy-norm enrichment, not formally
+  implied by it.
+\end{remark}
+
+\begin{remark}[Mesh dependence]\label{rem:mesh}
+  Equation~\eqref{eq:err-est} is a discrete optimality statement for
+  a fixed mesh.  A continuum $h \to 0$ limit requires a fixed interface
+  topology, shape-regular refinement with stable trace spaces, and
+  convergence of $\widehat{\Schur}_h$.  Watershed meshes do not satisfy
+  the fixed-topology requirement (basin count varies with mesh size);
+  the observed $h$-insensitivity is therefore a numerical observation,
+  not the consequence of a limiting argument.
+\end{remark}
+
+\begin{remark}[Broken-pressure C-DD versus monolithic FEM]\label{rem:monolithic}
+  The broken-pressure C-DD formulation uses $Q_h^{\text{br}}
+  = \bigoplus_i Q_{i,h}$, whereas the monolithic Taylor--Hood FEM
+  uses $Q_h^c \subset H^1(\dom)$.
+  These are different discrete problems.
+  The ``Exact-FE-Schur'' computation in the companion code compares the
+  primal Schur complement of the \emph{continuous}-pressure global system
+  against the direct monolithic solve; their agreement to $O(10^{-12})$
+  verifies the block-elimination algebra of that single global matrix.
+  It does \emph{not} constitute a comparison between the broken-pressure
+  C-DD formulation and the monolithic FEM.
+  Whether the two reference systems produce identical velocity solutions
+  for the tested geometries is an open question; Theorem~\ref{thm:error}
+  is a statement about the broken-pressure C-DD reference only.
+\end{remark}
+
+% ======================================================================
+\begin{thebibliography}{99}
+
+\bibitem{sun2025ddpnm}
+S.~Sun, Z.~Wang, L.~Zhang, J.~Zhao.
+\newblock A domain decomposition approach to pore-network modeling of porous
+  media flow.
+\newblock \textit{arXiv:2510.13429v2}, 2026.
+
+\end{thebibliography}
+
+\end{document}

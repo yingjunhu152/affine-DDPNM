@@ -1,0 +1,12 @@
+{
+  "partition": "watershed (merged)",
+  "total_mixed_dofs": 38243,
+  "interface_trace_dofs": 9136,
+  "interior_dofs": 12709,
+  "schur_symmetry_error": 1.625810910873099e-16,
+  "schur_relative_residual": 5.4655723414065655e-09,
+  "global_relative_residual": 2.293779018157342e-10,
+  "monolithic_relative_difference": 3.2274798317811503e-07,
+  "schur_seconds": 54.786942399980035,
+  "fem_seconds": 26.221476599981543
+}

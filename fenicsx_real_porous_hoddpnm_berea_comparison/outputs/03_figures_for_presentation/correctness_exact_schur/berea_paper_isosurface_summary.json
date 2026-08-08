@@ -1,0 +1,221 @@
+{
+  "case": "real Berea sandstone crop",
+  "crop": "x=20:36, y=150:166, z=30:46 from OpenPNM berea_100_to_300.npz",
+  "style_source": "D:\\hu\\tongjiproj\\FENICSX\\fenicsx_irregular_hoddpnm\\outputs\\cube_holes_27_taylor_hood_random_style_errors\\cells_9_pressure_error_isosurface.png",
+  "visualization": "IDW interpolation to a tight regular grid, Gaussian smoothing, solid voxels masked from error field, solid rock rendered as a grey translucent isosurface, random-style white-background panels",
+  "grid": 104,
+  "display_domain_shape": [
+    16.0,
+    16.0,
+    16.0
+  ],
+  "velocity_log10_range": [
+    -15.488240934585273,
+    -7.856822658597104
+  ],
+  "pressure_log10_range": [
+    -13.372378959435661,
+    -4.292181117487155
+  ],
+  "case_summary": {
+    "method": "real porous medium Taylor-Hood P2-P1 Stokes HODDPNM via Schur complement",
+    "numerical_structure": "same FEM assembly + interface/interior partition + Schur reconstruction as the random-sphere HODDPNM validation",
+    "validation_scope": "solver-equivalence check against the same discrete FEniCSx Taylor-Hood system; not an analytic or high-resolution true-error study",
+    "pressure_gauge_note": "pressure is compared in the pinned-gauge system imposed by the FEM boundary condition; mean-aligned pressure diagnostics are also reported",
+    "pressure_partition_note": "known Dirichlet/gauge dofs are removed first; only free pressure dofs near decomposition interfaces are kept in the active Schur boundary, while subregion-interior pressure dofs are eliminated",
+    "interface_selection": {
+      "velocity_interface_thickness": 1.05,
+      "pressure_interface_thickness": 1.05,
+      "min_pressure_boundary_dofs": 0
+    },
+    "output_note": "legacy DOF-vector errors are retained for continuity; FEM integral L2/H1 metrics should be preferred for validation",
+    "input_volume": "data\\berea_100_to_300.npz",
+    "hoddpnm_solver": "gmres",
+    "hoddpnm_solver_info": {
+      "type": "matrix_free_gmres_schur_known_fixed",
+      "converged": true,
+      "iterations": 4,
+      "schur_matvecs": 7,
+      "gmres_info": 0,
+      "relative_residual": 1.3926076030984447e-15,
+      "rtol": 1e-10,
+      "atol": 1e-12,
+      "restart": 80,
+      "maxiter": 400,
+      "schur_diagonal_scaling": true,
+      "schur_scale_min": 2.236067975412795e-05,
+      "schur_scale_max": 409196.6036822842,
+      "preconditioner": "exact_schur_lu_validation",
+      "explicit_schur_order": 3976
+    },
+    "region_decomposition": "geodesic Voronoi partition on the connected real pore voxel graph",
+    "domain_shape_voxels": [
+      16,
+      16,
+      16
+    ],
+    "voxel_size": 1.0,
+    "pore_voxels": 1304,
+    "regions": 6,
+    "region_interface_faces": 190,
+    "n_vertices": 2104,
+    "n_tets": 7824,
+    "mixed_dofs": 42532,
+    "velocity_p2_scalar_nodes": 13476,
+    "velocity_dofs": 40428,
+    "pressure_dofs": 2104,
+    "hoddpnm_interface_dofs": 7540,
+    "hoddpnm_known_fixed_dofs": 21940,
+    "hoddpnm_active_boundary_dofs": 3976,
+    "hoddpnm_velocity_boundary_dofs": 3702,
+    "hoddpnm_pressure_boundary_dofs": 274,
+    "hoddpnm_pressure_interface_dofs": 274,
+    "hoddpnm_pressure_interior_dofs_eliminated": 1830,
+    "hoddpnm_interior_dofs_eliminated": 16616,
+    "schur_condition_number": null,
+    "timings_seconds": {
+      "geometry_and_decomposition": 5.809872800018638,
+      "fem_assembly": 0.7659190000267699,
+      "fem_sparse_direct_solve": 7.804217199998675,
+      "hoddpnm_schur_solve": 24.110398999997415,
+      "total_before_output": 38.51824350000243
+    },
+    "memory_trace_mib": {
+      "start": {
+        "working_set_mib": 137.21484375,
+        "peak_working_set_mib": 137.21484375,
+        "pagefile_mib": 2247.96875,
+        "peak_pagefile_mib": 2247.96875
+      },
+      "after_geometry_and_decomposition": {
+        "working_set_mib": 141.18359375,
+        "peak_working_set_mib": 257.08984375,
+        "pagefile_mib": 2250.08984375,
+        "peak_pagefile_mib": 2367.8125
+      },
+      "after_fem_assembly": {
+        "working_set_mib": 263.71484375,
+        "peak_working_set_mib": 294.83984375,
+        "pagefile_mib": 2373.828125,
+        "peak_pagefile_mib": 2406.61328125
+      },
+      "after_fem_sparse_direct_solve": {
+        "working_set_mib": 263.9765625,
+        "peak_working_set_mib": 1027.90625,
+        "pagefile_mib": 2374.06640625,
+        "peak_pagefile_mib": 4883.359375
+      },
+      "after_hoddpnm_schur_solve": {
+        "working_set_mib": 259.08984375,
+        "peak_working_set_mib": 1899.33203125,
+        "pagefile_mib": 2399.703125,
+        "peak_pagefile_mib": 4883.359375
+      }
+    },
+    "errors_mixed_all": {
+      "l2_abs": 0.0028940655920930503,
+      "l2_rel": 1.3433945909227122e-14,
+      "linf_abs": 0.0024635608860990033,
+      "mean_abs": 1.7900407649433967e-07,
+      "median_abs": 0.0
+    },
+    "errors_velocity_p2_all": {
+      "l2_abs": 6.478831636469641e-07,
+      "l2_rel": 1.5188124289029365e-09,
+      "linf_abs": 2.6285903482969794e-07,
+      "linf_rel": 6.0344330067628404e-09,
+      "mean_abs": 6.081470943988979e-10,
+      "median_abs": 0.0
+    },
+    "errors_pressure_p1_all": {
+      "l2_abs": 0.0028940655195735126,
+      "l2_rel": 1.3433945572599111e-14,
+      "linf_abs": 0.0024635608860990033,
+      "mean_abs": 3.6126066919647487e-06,
+      "median_abs": 5.43167288924451e-10
+    },
+    "errors_velocity_vertices": {
+      "l2_abs": 1.890353289960617e-07,
+      "l2_rel": 1.362529484893646e-09,
+      "linf_abs": 1.6167764731267103e-07,
+      "linf_rel": 5.305047072952229e-09,
+      "mean_abs": 3.7751265488287315e-10,
+      "median_abs": 0.0
+    },
+    "errors_pressure_vertices": {
+      "l2_abs": 0.002894065519573513,
+      "l2_rel": 1.343394557259912e-14,
+      "linf_abs": 0.0024635608860990033,
+      "mean_abs": 3.6126066919647487e-06,
+      "median_abs": 5.43167288924451e-10
+    },
+    "fem_integral_validation": {
+      "preferred_for_validation": true,
+      "velocity_l2_abs": 1.9287148081261705e-07,
+      "velocity_l2_rel": 1.2920424182737967e-09,
+      "velocity_h1_seminorm_abs": 9.518083020052247e-07,
+      "velocity_h1_seminorm_rel": 3.3619849063730994e-09,
+      "pressure_l2_abs": 0.0007465774988893476,
+      "pressure_l2_rel": 1.3842492588305805e-14,
+      "pressure_l2_mean_aligned_abs": 0.00074657305797588,
+      "pressure_l2_mean_aligned_rel": 1.3880025712136368e-14,
+      "pressure_mean_gauge_shift": -7.130979041782826e-08,
+      "velocity_coordinate_max_mismatch": 0.0,
+      "pressure_coordinate_max_mismatch": 0.0
+    },
+    "physical_diagnostics": {
+      "diagnostic_note": "Flux/permeability values are boundary-DOF proxy diagnostics for FEM-vs-HODDPNM comparison, not calibrated laboratory permeability.",
+      "inlet_area_proxy": 178.0,
+      "outlet_area_proxy": 127.0,
+      "fem": {
+        "inlet_flux_proxy": 178.0,
+        "outlet_flux_proxy": 96.73343785003365,
+        "flux_imbalance_proxy": 81.26656214996635,
+        "pressure_drop_proxy": 5073959444.47971,
+        "permeability_like": 2.84043380277345e-09,
+        "continuity_row_residual_l2": 1.1374069049018045e-11,
+        "continuity_row_residual_linf": 8.990782311908451e-12,
+        "velocity_magnitude_min": 0.0,
+        "velocity_magnitude_max": 43.5598563336621
+      },
+      "hoddpnm": {
+        "inlet_flux_proxy": 178.0,
+        "outlet_flux_proxy": 96.73343784994188,
+        "flux_imbalance_proxy": 81.26656215005812,
+        "pressure_drop_proxy": 5073959444.479708,
+        "permeability_like": 2.840433802772503e-09,
+        "continuity_row_residual_l2": 2.0271118177268804e-12,
+        "continuity_row_residual_linf": 3.504997527846228e-13,
+        "velocity_magnitude_min": 0.0,
+        "velocity_magnitude_max": 43.55985633394483
+      },
+      "relative_errors": {
+        "inlet_flux_proxy": 0.0,
+        "outlet_flux_proxy": 9.48727780077989e-13,
+        "pressure_drop_proxy": 3.759093177001303e-16,
+        "permeability_like": 3.334426595150467e-13,
+        "continuity_row_residual_l2": 0.8217777816372683
+      }
+    }
+  },
+  "time_comparison": {
+    "status": "solver-internal timing loaded from validation_summary.json",
+    "fem_sparse_direct_solve_seconds": 7.804217199998675,
+    "hoddpnm_schur_solve_seconds": 24.110398999997415,
+    "fem_assembly_seconds": 0.7659190000267699,
+    "geometry_and_decomposition_seconds": 5.809872800018638,
+    "total_before_output_seconds": 38.51824350000243,
+    "fem_checkpoint_working_set_mib": 263.9765625,
+    "fem_checkpoint_peak_working_set_mib": 1027.90625,
+    "hoddpnm_checkpoint_working_set_mib": 259.08984375,
+    "hoddpnm_checkpoint_peak_working_set_mib": 1899.33203125
+  },
+  "outputs": {
+    "velocity": "outputs\\03_figures_for_presentation\\correctness_exact_schur\\berea_velocity_log_error_isosurfaces.png",
+    "pressure": "outputs\\03_figures_for_presentation\\correctness_exact_schur\\berea_pressure_log_error_isosurfaces.png",
+    "combined": "outputs\\03_figures_for_presentation\\correctness_exact_schur\\berea_velocity_pressure_log_error_isosurfaces.png",
+    "velocity_volume": "outputs\\03_figures_for_presentation\\correctness_exact_schur\\berea_velocity_log_error_volume.png",
+    "pressure_volume": "outputs\\03_figures_for_presentation\\correctness_exact_schur\\berea_pressure_log_error_volume.png",
+    "combined_volume": "outputs\\03_figures_for_presentation\\correctness_exact_schur\\berea_velocity_pressure_log_error_volume.png"
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "benchmark": "single-point classic DDPNM vs single-point nine-mode affine DDPNM vs FEM",
+  "interface_space": {
+    "classic": "span{1*n}",
+    "affine": "span{1,s,t} tensor span{n,t1,t2}",
+    "uniform_surface_points_used": false
+  },
+  "common_mesh_seconds": 44.53788009998971,
+  "parameters": {
+    "mesh_size": 0.28,
+    "sphere_size": 0.07,
+    "boundary_size": 0.1,
+    "interface_size": 0.1,
+    "sphere_band": 0.1,
+    "boundary_band": 0.08,
+    "interface_band": 0.08,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0,
+    "pressure_stabilization": 0.0,
+    "reference_iterative_threshold": 100000,
+    "reference_rtol": 1e-09,
+    "reference_restart": 60,
+    "reference_maxiter": 120,
+    "reference_ilu_drop_tolerance": 0.002,
+    "reference_ilu_fill_factor": 6.0,
+    "out_dir": "D:\\hu\\tongjiproj\\20260727\\affine_ddpnm_3d\\outputs\\benchmark"
+  },
+  "counts": {
+    "tetrahedra": 12203,
+    "subdomains": 64,
+    "interfaces": 144
+  },
+  "timings": {
+    "Monolithic-FEM": {
+      "offline_seconds": 0.0,
+      "online_seconds": 81.44498340001155,
+      "first_solve_seconds": 81.44498340001155
+    },
+    "Classic-DDPNM-1": {
+      "offline_seconds": 11.216874499994447,
+      "online_seconds": 0.006001499990816228,
+      "first_solve_seconds": 11.222875999985263
+    },
+    "Affine-DDPNM-9": {
+      "offline_seconds": 13.661600200008252,
+      "online_seconds": 0.19757489999756217,
+      "first_solve_seconds": 13.859175100005814
+    }
+  },
+  "methods": {
+    "Monolithic-FEM": {
+      "global_unknowns": 63955,
+      "primitive_rhs_columns": 0,
+      "velocity_relative_l2": 0.0,
+      "velocity_relative_broken_h1": 0.0,
+      "pressure_relative_l2": 0.0,
+      "outlet_flux_relative_error": 0.0,
+      "speedup_vs_fem_first_solve": 1.0
+    },
+    "Classic-DDPNM-1": {
+      "global_unknowns": 144,
+      "modes_per_interface": 1,
+      "primitive_rhs_columns": 320,
+      "velocity_relative_l2": 0.2108379784453805,
+      "velocity_relative_broken_h1": 0.4482861540440433,
+      "pressure_relative_l2": 0.032078425608600025,
+      "outlet_flux_relative_error": 0.16462599544744286,
+      "speedup_vs_fem_first_solve": 7.25705099121816
+    },
+    "Affine-DDPNM-9": {
+      "global_unknowns": 1296,
+      "modes_per_interface": 9,
+      "primitive_rhs_columns": 2624,
+      "velocity_relative_l2": 0.05629575721909509,
+      "velocity_relative_broken_h1": 0.21612063208037904,
+      "pressure_relative_l2": 0.021709609308998883,
+      "outlet_flux_relative_error": 0.0032331955551127755,
+      "speedup_vs_fem_first_solve": 5.876611184454794
+    }
+  },
+  "reference": {
+    "mixed_dofs": 63955,
+    "relative_linear_residual": 1.731816572996664e-12
+  },
+  "timing_scope": {
+    "offline": "local factorizations and primitive response construction",
+    "online": "global reduced assembly, solve, and local reconstruction",
+    "excluded": "common mesh generation and post-processing validation"
+  }
+}

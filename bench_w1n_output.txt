@@ -1,0 +1,15 @@
+Building geometry (mesh_size=0.28)...
+  12203 cells, 144 interfaces
+FEM reference...
+  63955 DOFs
+Library (factorize once)...
+  9.6s
+W_0n (Classic, Level 0)...
+Traceback (most recent call last):
+  File "D:\hu\tongjiproj\20260727\bench_w1n.py", line 82, in <module>
+    sys_0n = asm.assemble(np.zeros(m, dtype=np.int8)); t_0n = time.perf_counter()-t1
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\hu\tongjiproj\20260727\ddpnm_core\assembler.py", line 105, in assemble
+    self._basis.active_transform(primitives, port_index, lvl)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'HierarchyBasis' object has no attribute 'active_transform'

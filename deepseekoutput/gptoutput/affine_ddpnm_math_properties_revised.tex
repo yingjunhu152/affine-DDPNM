@@ -1,0 +1,576 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{mathtools}
+
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{lemma}[assumption]{Lemma}
+\newtheorem{proposition}[assumption]{Proposition}
+\newtheorem{theorem}[assumption]{Theorem}
+\newtheorem{corollary}[assumption]{Corollary}
+\newtheorem{remark}[assumption]{Remark}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\normal}{\bm n}
+\newcommand{\stress}{\bm\sigma}
+\newcommand{\trac}{\bm\lambda}
+\newcommand{\loadvec}{\bm f}
+\newcommand{\DtN}{\mathbf G}
+\newcommand{\Schur}{\mathbf S}
+\newcommand{\zero}{\bm 0}
+\newcommand{\one}{\bm 1}
+\newcommand{\Range}{\operatorname{Range}}
+\newcommand{\Ker}{\operatorname{Ker}}
+\newcommand{\rank}{\operatorname{rank}}
+\newcommand{\modeset}{\mathcal M}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlength{\emergencystretch}{2em}
+
+\begin{document}
+
+\title{\textbf{Mathematical Properties of Affine-DDPNM: Corrected Statements and Proofs}}
+\author{}
+\date{August 6, 2026}
+\maketitle
+
+\begin{center}
+\fbox{\begin{minipage}{0.92\textwidth}
+The results below are stated at the finite-dimensional discrete level.  The
+local-kernel and global-SPD conclusions are conditional on an explicit rank
+condition.  Galerkin optimality is proved relative to a separately defined
+full traction-trace system and only in its energy seminorm.  Equivalence with
+the monolithic continuous-pressure Taylor--Hood method is not asserted.
+\end{minipage}}
+\end{center}
+
+\section{Discrete setting and sign convention}
+
+For each pore $\Omega_i$, let $A_i\in\R^{n_{u,i}\times n_{u,i}}$ and
+$B_i\in\R^{n_{p,i}\times n_{u,i}}$ be the matrices associated with
+\[
+ a_i(\bm u,\bm v)=\nu\int_{\Omega_i}\nabla\bm u:\nabla\bm v\,dx,
+ \qquad
+ b_i(\bm v,q)=-\int_{\Omega_i}q\,\nabla\cdot\bm v\,dx.
+\]
+Thus a local load $f$ is solved through
+\begin{equation}\label{eq:saddle}
+ K_i\begin{bmatrix}U\\P\end{bmatrix}
+ :=\begin{bmatrix}A_i&B_i^\top\\B_i&0\end{bmatrix}
+ \begin{bmatrix}U\\P\end{bmatrix}
+ =\begin{bmatrix}f\\0\end{bmatrix}.
+\end{equation}
+
+Each planar internal interface $\gamma_k$ has a global frame
+$\{\normal_k,\bm t_{k,1},\bm t_{k,2}\}$.  For the two adjacent pores, use
+oriented directions $\bm d_{i,k,\beta}$ satisfying
+\begin{equation}\label{eq:opposite-d}
+ \bm d_{j,k,\beta}=-\bm d_{i,k,\beta},
+ \qquad \beta\in\{n,t_1,t_2\}.
+\end{equation}
+One code-compatible choice is
+\[
+ \bm d_{i,k,n}=\normal_{i,k},\qquad
+ \bm d_{i,k,t_\nu}=-\sigma_{i,k}\bm t_{k,\nu}.
+\]
+Let $\varphi_0=1$, $\varphi_s=s_k$, and $\varphi_t=t_k$, with
+$\modeset=\{0,s,t\}\times\{n,t_1,t_2\}$.
+
+The coefficients parameterize inward traction:
+\begin{equation}\label{eq:inward-traction}
+ -\stress(\vel_i,\pres_i)\normal_{i,k}
+ =\sum_{(\alpha,\beta)\in\modeset}
+ \lambda_{k,\alpha,\beta}\varphi_\alpha\bm d_{i,k,\beta}.
+\end{equation}
+Since the weak form uses the physical outward traction
+$\stress\normal_{i,k}$, the primitive load column is
+\begin{equation}\label{eq:load}
+ [f_{i,k}^{(\alpha,\beta)}]_j
+ =-\int_{\gamma_k}\varphi_\alpha\,
+ \bm d_{i,k,\beta}\cdot\bm\phi_j^{(i)}\,dS.
+\end{equation}
+Let $L_i\in\R^{n_{u,i}\times n_i}$ collect all local primitive columns,
+including one constant-normal column for each known boundary port.
+
+\begin{assumption}[Local algebraic stability]\label{ass:stability}
+For every pore $i$:
+\begin{enumerate}[label=(\alph*),nosep,leftmargin=*]
+ \item $A_i$ is symmetric positive definite;
+ \item $B_i$ has full row rank;
+ \item the coefficient vector $\mathbf 1_i^p$ of the constant pressure
+ $q_h\equiv1$ belongs to the chosen local pressure space.
+\end{enumerate}
+\end{assumption}
+
+The first item is normally obtained from a nontrivial Dirichlet wall segment.
+The second item is an independent discrete inf-sup/rank requirement and must
+not be inferred from the first item alone.
+
+Define
+\begin{equation}\label{eq:H}
+ M_i=B_iA_i^{-1}B_i^\top,
+ \qquad
+ H_i=A_i^{-1}-A_i^{-1}B_i^\top M_i^{-1}B_iA_i^{-1}.
+\end{equation}
+Under Assumption~\ref{ass:stability}, $M_i$ is SPD.
+
+\section{Local response operator}
+
+\begin{lemma}[Local well-posedness]\label{lem:wellposed}
+Under Assumption~\ref{ass:stability}, the saddle matrix $K_i$ in
+\eqref{eq:saddle} is invertible.  For every $f$, the velocity component is
+$U=H_if$ and satisfies $B_iU=0$.
+\end{lemma}
+
+\begin{proof}
+Since $A_i$ is SPD and $B_i$ has full row rank, the pressure Schur complement
+$M_i=B_iA_i^{-1}B_i^\top$ is SPD.  Standard block elimination gives
+\[
+ P=M_i^{-1}B_iA_i^{-1}f,
+ \qquad
+ U=A_i^{-1}(f-B_i^\top P)=H_if.
+\]
+Hence the solution is unique.  Direct substitution gives $B_iH_i=0$.
+\end{proof}
+
+\begin{lemma}[Structure of $H_i$]\label{lem:H}
+The matrix $H_i$ is symmetric positive semidefinite and satisfies
+\begin{align}
+ H_i^\top A_iH_i&=H_i,\label{eq:HAH}\\
+ \Ker(H_i)&=\Range(B_i^\top).\label{eq:kerH}
+\end{align}
+Moreover, for every $f$,
+\begin{equation}\label{eq:Henergy}
+ f^\top H_if=(H_if)^\top A_i(H_if)\ge0.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Symmetry follows from \eqref{eq:H}.  Expanding $H_iA_iH_i$ and using
+$M_i=B_iA_i^{-1}B_i^\top$ gives \eqref{eq:HAH}; hence
+\eqref{eq:Henergy} and positive semidefiniteness follow.
+
+Also $H_iB_i^\top=0$, so $\Range(B_i^\top)\subseteq\Ker(H_i)$.  Conversely,
+if $H_if=0$, Lemma~\ref{lem:wellposed} gives velocity $U=0$ in
+\eqref{eq:saddle}.  The first block row then yields $f=B_i^\top P$ for the
+corresponding pressure vector $P$.  Therefore
+$\Ker(H_i)\subseteq\Range(B_i^\top)$.
+\end{proof}
+
+Define the local compliance matrix
+\begin{equation}\label{eq:G}
+ \DtN_i=L_i^\top H_iL_i.
+\end{equation}
+For a coefficient vector $\lambda_i$, the reconstructed velocity is
+$U_i=H_iL_i\lambda_i$.
+
+\begin{lemma}[Symmetry, energy identity, and exact kernel formula]
+\label{lem:G}
+The matrix $\DtN_i$ is symmetric positive semidefinite and
+\begin{equation}\label{eq:Genergy}
+ \lambda_i^\top\DtN_i\lambda_i=U_i^\top A_iU_i\ge0.
+\end{equation}
+Its kernel is exactly
+\begin{equation}\label{eq:Gkernel-general}
+ \Ker(\DtN_i)=\Ker(H_iL_i)
+ =\{\lambda_i:\ L_i\lambda_i\in\Range(B_i^\top)\}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Symmetry and \eqref{eq:Genergy} follow from Lemma~\ref{lem:H}:
+\[
+ \lambda_i^\top L_i^\top H_iL_i\lambda_i
+ =(H_iL_i\lambda_i)^\top A_i(H_iL_i\lambda_i).
+\]
+Therefore $\lambda_i\in\Ker(\DtN_i)$ if and only if
+$H_iL_i\lambda_i=0$.  The second equality in
+\eqref{eq:Gkernel-general} follows from \eqref{eq:kerH}.
+No claim that $H_i$ is positive definite on $\Range(L_i)$ is needed; in fact
+that claim would be false whenever the constant-pressure load belongs to
+$\Range(L_i)$.
+\end{proof}
+
+\section{Constant-pressure mode and the conditional local-kernel theorem}
+
+Let $\one_{i,0n}\in\R^{n_i}$ have value one in every constant-normal port
+slot, including known boundary ports, and zero in all affine-linear or
+tangential slots.
+
+\begin{lemma}[Constant-pressure null vector]\label{lem:constant}
+With the load convention \eqref{eq:load},
+\begin{equation}\label{eq:constant-load}
+ L_i\one_{i,0n}=B_i^\top\mathbf 1_i^p.
+\end{equation}
+Consequently $\one_{i,0n}\in\Ker(\DtN_i)$.
+\end{lemma}
+
+\begin{proof}
+For a velocity basis function $\bm\phi_j^{(i)}$, summing all constant-normal
+port columns gives
+\begin{align*}
+ [L_i\one_{i,0n}]_j
+ &=-\int_{\partial\Omega_i}\bm\phi_j^{(i)}\cdot\normal_i\,dS\\
+ &=-\int_{\Omega_i}\nabla\cdot\bm\phi_j^{(i)}\,dx
+ =[B_i^\top\mathbf 1_i^p]_j,
+\end{align*}
+because $B_i$ represents $-\int q\,\nabla\cdot\bm v$.  Now apply
+Lemma~\ref{lem:H}.
+\end{proof}
+
+\begin{assumption}[No nonconstant pressure-load dependency]
+\label{ass:kernel}
+For each pore,
+\begin{equation}\label{eq:kernel-assumption}
+ L_i\lambda_i\in\Range(B_i^\top)
+ \quad\Longrightarrow\quad
+ \lambda_i=c\one_{i,0n}\quad\text{for some }c\in\R.
+\end{equation}
+Equivalently,
+\begin{equation}\label{eq:rank}
+ \rank(H_iL_i)=n_i-1.
+\end{equation}
+\end{assumption}
+
+\begin{theorem}[Conditional local-kernel characterization]
+\label{thm:local-kernel}
+Under Assumptions~\ref{ass:stability} and \ref{ass:kernel},
+\begin{equation}\label{eq:exact-local-kernel}
+ \Ker(\DtN_i)=\operatorname{span}\{\one_{i,0n}\}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Lemma~\ref{lem:constant} gives inclusion of the right-hand side in the left.
+Conversely, Lemma~\ref{lem:G} implies that any
+$\lambda_i\in\Ker(\DtN_i)$ satisfies
+$L_i\lambda_i\in\Range(B_i^\top)$.  Assumption~\ref{ass:kernel} then gives
+$\lambda_i=c\one_{i,0n}$.
+\end{proof}
+
+\begin{remark}[What the rank assumption means]
+Equation \eqref{eq:rank} says that the $n_i$ response columns
+$H_if_i^{(\mu)}$ have exactly one linear dependency.  It does \emph{not} say
+that they have codimension one in the full space $\Range(H_i)$; that
+codimension is generally
+$\rank(H_i)-(n_i-1)$ and may be large.  Independence of the nine functions on
+each individual face is not sufficient for Assumption~\ref{ass:kernel},
+because cross-port dependencies and dependencies introduced by $H_i$ remain
+possible.
+\end{remark}
+
+\section{Global Schur complement, uniqueness, and mass conservation}
+
+Let $\lambda\in\R^{9m}$ collect the shared unknown interface blocks.  For
+pore $i$, write $\lambda_i^u=R_i^u\lambda$.  Let
+$J_i^u:\R^{9m_i^u}\to\R^{n_i}$ be zero extension into all known boundary
+slots:
+\[
+ J_i^uz=(z,0).
+\]
+Then
+\begin{equation}\label{eq:S}
+ \Schur=\sum_{i=1}^N(R_i^u)^\top\DtN_i^{uu}R_i^u
+\end{equation}
+and, for any global vector $z$,
+\begin{equation}\label{eq:Senergy}
+ z^\top\Schur z
+ =\sum_{i=1}^N(J_i^uR_i^uz)^\top\DtN_i(J_i^uR_i^uz).
+\end{equation}
+
+\begin{assumption}[Graph anchoring]\label{ass:anchor}
+Every connected component of the pore adjacency graph contains at least one
+pore with at least one known inlet/outlet traction port.
+\end{assumption}
+
+\begin{theorem}[Global SPD and unique solvability]\label{thm:SPD}
+Under Assumptions~\ref{ass:stability}, \ref{ass:kernel}, and
+\ref{ass:anchor}, the matrix $\Schur$ is symmetric positive definite.
+Therefore the affine Schur system has a unique solution for every right-hand
+side.
+\end{theorem}
+
+\begin{proof}
+Symmetry is immediate.  By \eqref{eq:Senergy} and
+Lemma~\ref{lem:G}, $\Schur$ is positive semidefinite.
+
+Suppose $z^\top\Schur z=0$.  Every nonnegative summand in
+\eqref{eq:Senergy} vanishes, so Theorem~\ref{thm:local-kernel} gives
+\begin{equation}\label{eq:zero-extension-kernel}
+ J_i^uR_i^uz=c_i\one_{i,0n}
+\end{equation}
+for each pore.  If pore $i$ has a known boundary port, the corresponding
+component on the left of \eqref{eq:zero-extension-kernel} is zero, whereas
+that on the right is $c_i$; hence $c_i=0$.
+
+If pores $i$ and $j$ share an internal interface, the same global
+constant-normal coefficient occurs in both restrictions $R_i^uz$ and
+$R_j^uz$.  Equation \eqref{eq:zero-extension-kernel} therefore implies
+$c_i=c_j$.  The constants are thus equal throughout each connected graph
+component.  By Assumption~\ref{ass:anchor}, each component contains a pore
+with a known port, where the constant is zero.  Hence every $c_i=0$ and all
+internal components of $z$ vanish.  Thus $z=0$.
+\end{proof}
+
+\begin{remark}[Necessity of the hypotheses]
+Without graph anchoring, a connected component supports a global uniform
+constant-normal coefficient and $\Schur$ is singular.  Without
+Assumption~\ref{ass:kernel}, additional local null directions can survive and
+may produce global singularity.  Thus the unconditional SPD statement in the
+original methodology is not justified by per-face independence alone.
+\end{remark}
+
+For a local reconstructed velocity, define
+\[
+ M_{i,k}^{(\alpha,\beta)}
+ =\int_{\gamma_k}\varphi_\alpha
+ \vel_{i,h}\cdot\bm d_{i,k,\beta}\,dS.
+\]
+By \eqref{eq:load}, $L_i^\top U_i$ is the negative vector of these moments.
+The assembled Schur equations enforce
+$M_{i,k}^{(\alpha,\beta)}+M_{j,k}^{(\alpha,\beta)}=0$.
+
+\begin{theorem}[Discrete mass conservation]\label{thm:mass}
+Under Assumption~\ref{ass:stability}, every reconstructed local response
+satisfies
+\begin{equation}\label{eq:local-mass}
+ \sum_{k\subset\partial\Omega_i}M_{i,k}^{(0,n)}=0.
+\end{equation}
+If the global Schur equations are solved exactly, internal constant-normal
+moments cancel pairwise and
+\begin{equation}\label{eq:global-mass}
+ \int_{\partial\Omega}\vel_h^{\rm DD}\cdot\normal\,dS=0.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The second block row of \eqref{eq:saddle} gives $B_iU_i=0$.  Testing with the
+constant pressure coefficient $\mathbf1_i^p$ yields
+\[
+ 0=(\mathbf1_i^p)^\top B_iU_i
+ =-\int_{\Omega_i}\nabla\cdot\vel_{i,h}\,dx
+ =-\int_{\partial\Omega_i}\vel_{i,h}\cdot\normal_i\,dS,
+\]
+which is \eqref{eq:local-mass}.  Summing over pores and using the enforced
+interface moment continuity cancels all internal fluxes, leaving only the
+external boundary flux.
+\end{proof}
+
+\section{Full traction-trace reference and affine Galerkin restriction}
+
+This section defines the reference problem needed for a valid enrichment
+statement.  It is a dual traction-trace system using the same local matrices
+$A_i,B_i$ and therefore the same local pressure spaces.  It is not identified
+with the primal exact FE-trace Schur complement of the monolithic
+continuous-pressure problem.
+
+On interface $\gamma_k$, let $X_{k,h}$ be a scalar trace space with basis
+$\{\psi_{k,\ell}\}_{\ell=1}^{m_k}$.  A full vector traction coefficient is
+$\xi_k=(\xi_k^n;\xi_k^{t_1};\xi_k^{t_2})\in\R^{3m_k}$.  Using the same
+oriented directions as in \eqref{eq:opposite-d}, define the local coupling
+blocks
+\begin{equation}\label{eq:N}
+ [N_{i,k}^{\beta}]_{\ell j}
+ =\int_{\gamma_k}\psi_{k,\ell}\,
+ \bm d_{i,k,\beta}\cdot\bm\phi_j^{(i)}\,dS.
+\end{equation}
+The physical weak load for inward-traction coefficients is
+\begin{equation}\label{eq:full-load}
+ \widehat L_i\xi_i=-N_i^\top\xi_i.
+\end{equation}
+The local and assembled full-trace matrices are
+\begin{equation}\label{eq:fullS}
+ \widehat S_i=N_iH_iN_i^\top,
+ \qquad
+ \widehat S=\sum_i(\widehat R_i^u)^\top
+ \widehat S_i^{uu}\widehat R_i^u.
+\end{equation}
+They are symmetric positive semidefinite.  Define
+$\|x\|_{\widehat S}=(x^\top\widehat Sx)^{1/2}$; without an additional
+full-trace kernel theorem this is a seminorm.
+
+\subsection{Correct affine restriction matrix}
+
+Let $M_k$ be the scalar face mass matrix and
+\[
+ [b_k^\alpha]_\ell=\int_{\gamma_k}\varphi_\alpha\psi_{k,\ell}\,dS,
+ \qquad
+ p_k^\alpha=M_k^{-1}b_k^\alpha,
+ \qquad \alpha\in\{0,s,t\}.
+\]
+If the affine scalar functions belong to $X_{k,h}$, this projection represents
+them exactly.  For coefficient order
+\[
+ (0,n),(0,t_1),(0,t_2),(s,n),(s,t_1),(s,t_2),(t,n),(t,t_1),(t,t_2),
+\]
+the correct restriction is
+\begin{equation}\label{eq:Paff}
+ P_k^{\rm aff}=
+ \begin{bmatrix}
+ p_k^0&0&0&p_k^s&0&0&p_k^t&0&0\\
+ 0&p_k^0&0&0&p_k^s&0&0&p_k^t&0\\
+ 0&0&p_k^0&0&0&p_k^s&0&0&p_k^t
+ \end{bmatrix}\in\R^{3m_k\times9}.
+\end{equation}
+In particular, a tangential column has no normal block.  Let
+$P_{\rm aff}=\bigoplus_kP_k^{\rm aff}$.
+
+\begin{lemma}[Algebraic Galerkin equivalence]\label{lem:equivalence}
+Assume the same oriented trace basis and restriction maps are used in the
+full and affine systems.  Then
+\begin{equation}\label{eq:equivalence}
+ \Schur=P_{\rm aff}^\top\widehat SP_{\rm aff},
+ \qquad
+ F=P_{\rm aff}^\top\widehat F.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+On each pore, \eqref{eq:load}, \eqref{eq:N}, and \eqref{eq:Paff} give the
+matrix identity
+\[
+ L_i^u=-(N_i^u)^\top P_i^{\rm aff}.
+\]
+Therefore
+\[
+ \DtN_i^{uu}=(L_i^u)^\top H_iL_i^u
+ =(P_i^{\rm aff})^\top N_i^uH_i(N_i^u)^\top P_i^{\rm aff}.
+\]
+The minus signs cancel in the quadratic matrix.  Signed Boolean assembly
+commutes with the block-diagonal restriction because both descriptions use
+the same globally shared traction coefficients and the same opposite local
+directions.  Summing over pores proves the first identity.  The known-port
+cross term gives the second identity with the same sign convention.
+\end{proof}
+
+\begin{theorem}[Best approximation in the full-trace energy seminorm]
+\label{thm:galerkin}
+Assume the full system
+$\widehat S\xi^{\rm full}=\widehat F$ is consistent.  Let
+$\lambda^{\rm aff}$ solve
+$\Schur\lambda^{\rm aff}=F$ and set
+$\xi^{\rm aff}=P_{\rm aff}\lambda^{\rm aff}$.  Then
+\begin{equation}\label{eq:best}
+ \|\xi^{\rm full}-\xi^{\rm aff}\|_{\widehat S}
+ =\min_{\mu\in\R^{9m}}
+ \|\xi^{\rm full}-P_{\rm aff}\mu\|_{\widehat S}.
+\end{equation}
+Moreover, if $U_i^{\rm full}$ and $U_i^{\rm aff}$ are the corresponding
+local velocities,
+\begin{equation}\label{eq:velocity-energy}
+ \sum_i\|U_i^{\rm full}-U_i^{\rm aff}\|_{A_i}^2
+ =\|\xi^{\rm full}-\xi^{\rm aff}\|_{\widehat S}^2.
+\end{equation}
+The statements remain valid when $\widehat S$ is only semidefinite; in that
+case the minimizer and full solution need not be unique, but the seminorm
+values are well defined.
+\end{theorem}
+
+\begin{proof}
+Lemma~\ref{lem:equivalence} and the full equation imply Galerkin
+orthogonality:
+\[
+ P_{\rm aff}^\top\widehat S
+ (\xi^{\rm full}-\xi^{\rm aff})=0.
+\]
+For any $\mu$, let $e=\xi^{\rm full}-\xi^{\rm aff}$ and
+$v=\xi^{\rm aff}-P_{\rm aff}\mu$.  The cross term vanishes, so the symmetric
+positive semidefinite bilinear form gives
+\[
+ \|e+v\|_{\widehat S}^2
+ =\|e\|_{\widehat S}^2+\|v\|_{\widehat S}^2
+ \ge\|e\|_{\widehat S}^2.
+\]
+Equality is attained at $\mu=\lambda^{\rm aff}$, proving \eqref{eq:best}.
+For a coefficient difference $\delta\xi$, the local load difference is
+$-N_i^\top\delta\xi_i$ and Lemma~\ref{lem:H} gives
+\[
+ \delta\xi^\top\widehat S\delta\xi
+ =\sum_i(H_iN_i^\top\delta\xi_i)^\top
+ A_i(H_iN_i^\top\delta\xi_i),
+\]
+which is \eqref{eq:velocity-energy}; the irrelevant global minus sign drops
+out.
+\end{proof}
+
+\begin{corollary}[Affine versus classic enrichment]\label{cor:enrich}
+Let $P_{\rm P0}$ denote the full-trace restriction containing only constant
+normal modes.  Since
+$\Range(P_{\rm P0})\subset\Range(P_{\rm aff})$,
+\begin{equation}\label{eq:enrich}
+ \|\xi^{\rm full}-\xi^{\rm aff}\|_{\widehat S}
+ \le
+ \|\xi^{\rm full}-\xi^{\rm P0}\|_{\widehat S}.
+\end{equation}
+No analogous monotonicity follows automatically for velocity $L^2$, pressure
+$L^2$, outlet flux, or broken $H^1$ errors.
+\end{corollary}
+
+\section{Statements that are not established}
+
+\begin{enumerate}[leftmargin=*,itemsep=4pt]
+ \item \textbf{Unconditional local rank.}
+ The materials supplied do not prove Assumption~\ref{ass:kernel} for general
+ Lipschitz pores or for all meshes.  Numerical observation of one near-zero
+ eigenvalue is evidence for tested cases, not a general theorem.
+
+ \item \textbf{Per-face independence implies SPD.}
+ This implication is false as a proof principle: per-face independence does
+ not exclude cross-face dependencies or dependencies after applying $H_i$.
+ The valid global theorem is Theorem~\ref{thm:SPD}, conditional on the exact
+ local-kernel property.
+
+ \item \textbf{Broken-pressure traction system equals monolithic FEM.}
+ The full system in Section~6 uses independent local pressure spaces.  The
+ monolithic Taylor--Hood problem uses a globally continuous pressure space.
+ No equivalence proof is available in the supplied material.  The implemented
+ ``Exact FE-trace Schur'' is a primal elimination of the monolithic system and
+ therefore cannot by itself verify equality with the dual broken-pressure
+ system used in Theorem~\ref{thm:galerkin}.
+
+ \item \textbf{Continuum or mesh-independent convergence.}
+ The preceding results are finite-dimensional and mesh-dependent.  A
+ continuum estimate requires stable trace-space limits and a fixed interface
+ topology.  Watershed partitions whose basin count changes with mesh size do
+ not meet that requirement.
+\end{enumerate}
+
+\section{Practical algebraic checks}
+
+For each assembled pore, the following diagnostics directly test the actual
+hypotheses used above:
+\begin{enumerate}[leftmargin=*,nosep]
+ \item verify symmetry and positive definiteness of $A_i$;
+ \item verify the numerical row rank of $B_i$;
+ \item verify
+ $\|L_i\one_{i,0n}-B_i^\top\mathbf1_i^p\|$ at assembly tolerance;
+ \item compute singular values of $H_iL_i$ and check for exactly one null
+ direction aligned with $\one_{i,0n}$;
+ \item after global assembly, verify symmetry and positive definiteness of
+ $\Schur$ rather than inferring it solely from geometry;
+ \item verify local mass, interface moment, and global boundary-flux
+ residuals independently.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{horn}
+R.~A. Horn and C.~R. Johnson.
+\newblock \emph{Matrix Analysis}, 2nd ed.
+\newblock Cambridge University Press, 2012.
+
+\bibitem{sun}
+S.~Sun, Z.~Wang, L.~Zhang, and J.~Zhao.
+\newblock A domain decomposition approach to pore-network modeling of porous
+media flow.
+\newblock \emph{arXiv:2510.13429v2}, 2026.
+\end{thebibliography}
+
+\end{document}

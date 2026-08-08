@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classic vs Affine DDPNM — 3D Comparison</title>
+<style>
+:root {
+  color-scheme: light;
+}
+body {
+  margin: 0; padding: 40px 32px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f9f9f7;
+  color: #0b0b0b;
+  transition: background 0.3s, color 0.3s;
+}
+body.dark {
+  background: #0d0d0d;
+  color: #ffffff;
+}
+figure {
+  max-width: 960px; margin: 0 auto;
+}
+figcaption {
+  font-size: 1.15rem; font-weight: 600;
+  margin-bottom: 24px; color: inherit;
+}
+figcaption span {
+  font-weight: 400; color: #52514e;
+}
+body.dark figcaption span { color: #c3c2b7; }
+
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+@media (max-width: 720px) {
+  .panels { grid-template-columns: 1fr; }
+}
+
+.panel-title {
+  font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: #52514e;
+  margin-bottom: 8px;
+}
+body.dark .panel-title { color: #c3c2b7; }
+
+.viz-root {
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+}
+body.dark .viz-root {
+  --surface-1: #1a1a19;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+}
+
+svg.chart { width: 100%; height: auto; display: block; }
+.chart text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+
+/* Legend */
+.legend { display: flex; gap: 24px; justify-content: center; margin-bottom: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); }
+.legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+.legend-swatch.c { background: var(--series-1); }
+.legend-swatch.a { background: var(--series-2); }
+
+/* Toggle */
+.toggle-row { text-align: right; margin-bottom: 4px; }
+.toggle-row button {
+  font-size: 0.75rem; border: none; background: none; cursor: pointer;
+  color: var(--text-secondary); padding: 4px 8px; border-radius: 4px;
+}
+.toggle-row button:hover { background: rgba(128,128,128,0.12); }
+
+.annotation {
+  font-size: 0.72rem; color: var(--text-muted);
+  line-height: 1.5; margin-top: 12px; max-width: 560px;
+}
+.annotation table { border-collapse: collapse; margin-top: 6px; width: 100%; }
+.annotation td, .annotation th { padding: 3px 8px; text-align: right; font-size: 0.7rem; }
+.annotation th { font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--gridline); }
+.annotation td:first-child, .annotation th:first-child { text-align: left; }
+.annotation .mesh { text-align: left; color: var(--text-muted); font-size: 0.68rem; }
+</style>
+</head>
+<body>
+
+<figure>
+<figcaption>
+  Classic vs Affine DDPNM across three 3D geometries
+  <span>&mdash; same-mesh error &amp; first-solve cost vs monolithic FEM</span>
+</figcaption>
+<div class="toggle-row"><button onclick="document.body.classList.toggle('dark')">☀ / ☾</button></div>
+
+<div class="viz-root">
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch c"></span> Classic-DDPNM (1 mode/face)</div>
+    <div class="legend-item"><span class="legend-swatch a"></span> Affine-DDPNM (9 modes/face)</div>
+  </div>
+
+  <div class="panels">
+    <!-- Left: Velocity L² error -->
+    <div>
+      <div class="panel-title">Velocity L² error (%)</div>
+      <svg class="chart" id="chart-l2" viewBox="0 0 440 320"></svg>
+    </div>
+    <!-- Right: Speedup vs FEM -->
+    <div>
+      <div class="panel-title">First-solve speedup vs monolithic FEM (&times;)</div>
+      <svg class="chart" id="chart-spd" viewBox="0 0 440 320"></svg>
+    </div>
+  </div>
+
+  <div class="annotation">
+    <table>
+      <tr><th>Geometry</th><th>Spheres</th><th>Mesh cells</th><th>Interfaces</th><th>FEM DOFs</th></tr>
+      <tr><td>Uniform</td><td>27 equal (cubic lattice)</td><td class="mesh">12,203</td><td>144</td><td>63,955</td></tr>
+      <tr><td>Random</td><td>27 random (Voronoi)</td><td class="mesh">15,249</td><td>114</td><td>75,954</td></tr>
+      <tr><td>100-sphere</td><td>100 polydisperse (Voronoi, &phi;=85.6%)</td><td class="mesh">45,191</td><td>537</td><td>&mdash;</td></tr>
+    </table>
+    <p style="margin-top:8px;">All methods share identical tetrahedral mesh. Error: 6th-order quadrature, per-element, no interface averaging. Speedup = (monolithic FEM solve time) / (DD first-solve: offline library + online Schur).</p>
+  </div>
+</div>
+</figure>
+
+<script>
+// ── Data ──
+const data = [
+  { geo: "Uniform\nSpheres",   classic_l2: 21.08, affine_l2:  5.63, classic_spd: 7.26, affine_spd: 5.88 },
+  { geo: "Random\nSpheres",    classic_l2: 65.32, affine_l2:  6.51, classic_spd: 9.55, affine_spd: 7.66 },
+  { geo: "100-sphere\nDense",  classic_l2: 95.09, affine_l2: 15.72, classic_spd: 0.35, affine_spd: 0.23 },
+];
+
+// ── Shared SVG helpers ──
+function drawBars(svgId, getC, getA, yMax, yLabel, formatVal, refLine) {
+  const svg = document.getElementById(svgId);
+  const W = 440, H = 320;
+  const ml = 52, mr = 20, mt = 28, mb = 44; // margins
+  const pw = W - ml - mr, ph = H - mt - mb;
+
+  // Clear
+  svg.innerHTML = '';
+
+  // Defs: surface pattern for gap rings
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML = '';
+  svg.appendChild(defs);
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform', `translate(${ml},${mt})`);
+  svg.appendChild(g);
+
+  const x0 = ml, y0 = mt;
+
+  // Y axis
+  const yTicks = 5;
+  const yStep = yMax / yTicks;
+  for (let i = 0; i <= yTicks; i++) {
+    const val = i * yStep;
+    const y = mt + ph - (val / yMax) * ph;
+    // gridline
+    const gl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    gl.setAttribute('x1', x0); gl.setAttribute('x2', x0 + pw);
+    gl.setAttribute('y1', y); gl.setAttribute('y2', y);
+    gl.setAttribute('stroke', 'var(--gridline)'); gl.setAttribute('stroke-width','1');
+    svg.appendChild(gl);
+    // tick label
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', x0 - 6); t.setAttribute('y', y + 4);
+    t.setAttribute('text-anchor','end'); t.setAttribute('font-size','11');
+    t.setAttribute('fill','var(--text-muted)');
+    t.textContent = formatVal(val);
+    svg.appendChild(t);
+  }
+
+  // Y label
+  const yl = document.createElementNS('http://www.w3.org/2000/svg','text');
+  yl.setAttribute('x', 10); yl.setAttribute('y', mt + ph/2);
+  yl.setAttribute('text-anchor','middle');
+  yl.setAttribute('transform', `rotate(-90,10,${mt+ph/2})`);
+  yl.setAttribute('font-size','10'); yl.setAttribute('fill','var(--text-muted)');
+  yl.textContent = yLabel;
+  svg.appendChild(yl);
+
+  // reference line at 1.0 for speedup
+  if (refLine != null) {
+    const ry = mt + ph - (refLine / yMax) * ph;
+    const rl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    rl.setAttribute('x1', x0); rl.setAttribute('x2', x0 + pw);
+    rl.setAttribute('y1', ry); rl.setAttribute('y2', ry);
+    rl.setAttribute('stroke', 'var(--text-muted)'); rl.setAttribute('stroke-width','1');
+    rl.setAttribute('stroke-dasharray','4,3');
+    svg.appendChild(rl);
+    const rt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    rt.setAttribute('x', x0 + pw + 2); rt.setAttribute('y', ry + 4);
+    rt.setAttribute('font-size','9'); rt.setAttribute('fill','var(--text-muted)');
+    rt.textContent = '1×';
+    svg.appendChild(rt);
+  }
+
+  // Baseline
+  const bl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  bl.setAttribute('x1', x0); bl.setAttribute('x2', x0 + pw);
+  bl.setAttribute('y1', mt + ph); bl.setAttribute('y2', mt + ph);
+  bl.setAttribute('stroke', 'var(--baseline)'); bl.setAttribute('stroke-width','1');
+  svg.appendChild(bl);
+
+  // Bars
+  const n = data.length;
+  const groupW = pw / n;
+  const gap = 4;
+  const barW = Math.min(22, (groupW - 28) / 2);
+  const groupCenter = (i) => x0 + groupW * i + groupW/2;
+
+  for (let i = 0; i < n; i++) {
+    const cx = groupCenter(i);
+    const cv = getC(data[i]);
+    const av = getA(data[i]);
+
+    // Classic bar
+    const cH = (cv / yMax) * ph;
+    const cY = mt + ph - cH;
+    const cr = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    cr.setAttribute('x', cx - barW - gap/2);
+    cr.setAttribute('y', cY);
+    cr.setAttribute('width', barW);
+    cr.setAttribute('height', cH);
+    cr.setAttribute('rx','3'); cr.setAttribute('ry','3');
+    cr.setAttribute('fill','var(--series-1)');
+    svg.appendChild(cr);
+
+    // value label on Classic
+    const cl = document.createElementNS('http://www.w3.org/2000/svg','text');
+    cl.setAttribute('x', cx - barW - gap/2 + barW/2);
+    cl.setAttribute('y', cY - 6);
+    cl.setAttribute('text-anchor','middle'); cl.setAttribute('font-size','9');
+    cl.setAttribute('fill','var(--text-secondary)');
+    cl.textContent = formatVal(cv);
+    svg.appendChild(cl);
+
+    // Affine bar
+    const aH = (av / yMax) * ph;
+    const aY = mt + ph - aH;
+    const ar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    ar.setAttribute('x', cx + gap/2);
+    ar.setAttribute('y', aY);
+    ar.setAttribute('width', barW);
+    ar.setAttribute('height', aH);
+    ar.setAttribute('rx','3'); ar.setAttribute('ry','3');
+    ar.setAttribute('fill','var(--series-2)');
+    svg.appendChild(ar);
+
+    // value label on Affine
+    const al = document.createElementNS('http://www.w3.org/2000/svg','text');
+    al.setAttribute('x', cx + gap/2 + barW/2);
+    al.setAttribute('y', aY - 6);
+    al.setAttribute('text-anchor','middle'); al.setAttribute('font-size','9');
+    al.setAttribute('fill','var(--text-secondary)');
+    al.textContent = formatVal(av);
+    svg.appendChild(al);
+
+    // Geo label
+    const lines = data[i].geo.split('\n');
+    lines.forEach((ln, j) => {
+      const gl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      gl.setAttribute('x', cx);
+      gl.setAttribute('y', mt + ph + 16 + j * 13);
+      gl.setAttribute('text-anchor','middle'); gl.setAttribute('font-size','10');
+      gl.setAttribute('fill','var(--text-secondary)');
+      gl.textContent = ln;
+      svg.appendChild(gl);
+    });
+  }
+}
+
+// ── Draw ──
+drawBars('chart-l2',
+  d => d.classic_l2, d => d.affine_l2,
+  110, 'Velocity L² error (%)',
+  v => v >= 10 ? Math.round(v) + '%' : v.toFixed(1) + '%'
+);
+
+drawBars('chart-spd',
+  d => d.classic_spd, d => d.affine_spd,
+  11, 'Speedup vs FEM (×)',
+  v => v.toFixed(1) + '×',
+  1.0  // reference line
+);
+</script>
+</figure>
+
+</body>
+</html>

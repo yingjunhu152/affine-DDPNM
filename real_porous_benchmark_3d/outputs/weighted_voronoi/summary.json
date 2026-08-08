@@ -1,0 +1,13 @@
+{
+  "n_spheres": 120,
+  "porosity": 0.9086988907016037,
+  "r_min": 0.04011728372650831,
+  "r_max": 0.08432465718531977,
+  "n_interfaces": 216,
+  "n_4simplices": 1784,
+  "saddle_median": 0.14895101766118057,
+  "saddle_min": 0.09049832387191718,
+  "saddle_max": 0.27057063287405647,
+  "displacement_median": 0.002313202579550004,
+  "displacement_max": 0.014792337966011246
+}

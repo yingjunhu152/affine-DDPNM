@@ -1,0 +1,58 @@
+{
+  "partition": "voronoi",
+  "mesh_size": 0.12,
+  "mesh_cells": 31982,
+  "n_interfaces": 308,
+  "n_regions": 60,
+  "methods": {
+    "Classic-DDPNM": {
+      "global_unknowns": 308,
+      "velocity_relative_l2": 0.6296130666013503,
+      "velocity_relative_broken_h1": 0.8539196398308294,
+      "pressure_relative_l2": 0.1090596742286736,
+      "outlet_flux_relative_error": 0.7173789421338493,
+      "schur_symmetry_error": 0.0,
+      "max_mass_residual": 3.3621109368775492e-16
+    },
+    "Affine-DDPNM": {
+      "global_unknowns": 2772,
+      "velocity_relative_l2": 0.08404392167737931,
+      "velocity_relative_broken_h1": 0.2139616953743656,
+      "pressure_relative_l2": 0.024444419605491114,
+      "outlet_flux_relative_error": 0.041356494611433786,
+      "schur_symmetry_error": 0.0,
+      "max_mass_residual": 5.109167212566379e-16
+    },
+    "Monolithic-FEM": {
+      "global_unknowns": "-",
+      "velocity_relative_l2": 0.0,
+      "velocity_relative_broken_h1": 0.0,
+      "pressure_relative_l2": 0.0,
+      "outlet_flux_relative_error": 0.0
+    }
+  },
+  "timings": {
+    "mesh_seconds": 47.06876840000041,
+    "Classic-DDPNM": {
+      "offline_library_s": 105.92964409996988,
+      "online_assemble_solve_s": 0.01,
+      "first_solve_seconds": 105.93964409996988,
+      "peak_memory_mib": 61.1261682510376
+    },
+    "Affine-DDPNM": {
+      "first_solve_seconds": 120.35647669999162,
+      "peak_memory_mib": 661.6197738647461
+    },
+    "Monolithic-FEM": {
+      "first_solve_seconds": 14.393253699992783,
+      "peak_memory_mib": 284.31025886535645
+    }
+  },
+  "parameters": {
+    "sphere_count": 60,
+    "porosity": 0.9386448073700305,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0
+  }
+}

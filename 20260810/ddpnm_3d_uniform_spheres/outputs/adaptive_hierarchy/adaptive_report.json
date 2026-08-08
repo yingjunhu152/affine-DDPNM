@@ -1,0 +1,1007 @@
+{
+  "method": "3D adaptive DDPNM -> DDPNMT -> HODDPNM",
+  "geometry": "unit cube minus a uniform 3x3x3 array of 27 spheres",
+  "interface_spaces": {
+    "DDPNM": "one P0 normal-traction coefficient per interface",
+    "DDPNMT": "P0 normal plus two P0 tangential-traction coefficients per interface",
+    "HODDPNM": "three vector components times the complete facewise P1 basis {1,s,t}: nine coefficients per interface; local FE interiors are Schur-condensed"
+  },
+  "adaptive_estimator": "two-stage embedded hierarchy on reconstructed interface/vertex fields; traditional FEM is excluded from marking",
+  "parameters": {
+    "mesh_size": 0.2,
+    "sphere_size": 0.04,
+    "boundary_size": 0.07,
+    "interface_size": 0.055,
+    "sphere_band": 0.1,
+    "boundary_band": 0.08,
+    "interface_band": 0.08,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0,
+    "pressure_stabilization": 0.0,
+    "target_tolerance": 0.01,
+    "marking_theta": 0.65,
+    "max_marked_per_iteration": 12,
+    "max_iterations_per_phase": 40,
+    "reference_iterative_threshold": 100000,
+    "reference_rtol": 1e-09,
+    "reference_restart": 60,
+    "reference_maxiter": 120,
+    "reference_ilu_drop_tolerance": 0.002,
+    "reference_ilu_fill_factor": 6.0,
+    "out_dir": "outputs\\adaptive_hierarchy"
+  },
+  "counts": {
+    "solid_spheres": 27,
+    "subdomains": 64,
+    "interfaces": 144,
+    "tetrahedra": 34341,
+    "vertices": 8654,
+    "final_DDPNM_interfaces": 0,
+    "final_DDPNMT_interfaces": 2,
+    "final_HODDPNM_interfaces": 142
+  },
+  "systems": {
+    "DDPNM": {
+      "method": "DDPNM",
+      "interface_unknowns": 144,
+      "minimum_schur_eigenvalue": 0.00016728792423150026,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 4.369324559986292e-16,
+      "maximum_interface_moment_residual": 1.194790794079026e-16,
+      "inlet_outward_flux": -0.002314835309413548,
+      "outlet_outward_flux": 0.002314835309413096,
+      "relative_mass_imbalance": 1.9521711270532328e-13
+    },
+    "DDPNMT": {
+      "method": "DDPNMT",
+      "interface_unknowns": 432,
+      "minimum_schur_eigenvalue": 0.00016495932569943905,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 7.357448613844464e-16,
+      "maximum_interface_moment_residual": 1.721713049906981e-16,
+      "inlet_outward_flux": -0.002289154942196007,
+      "outlet_outward_flux": 0.0022891549421955562,
+      "relative_mass_imbalance": 1.968387611424874e-13
+    },
+    "HODDPNM": {
+      "method": "HODDPNM",
+      "interface_unknowns": 1296,
+      "minimum_schur_eigenvalue": 7.035025508884497e-05,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 1.1575502282677524e-15,
+      "maximum_interface_moment_residual": 1.7271340607694086e-16,
+      "inlet_outward_flux": -0.0019959825593468096,
+      "outlet_outward_flux": 0.001995982559346338,
+      "relative_mass_imbalance": 2.3639724869149934e-13
+    },
+    "adaptive_final": {
+      "method": "adaptive-DDPNM/DDPNMT/HODDPNM",
+      "interface_unknowns": 1284,
+      "minimum_schur_eigenvalue": 7.035130932382693e-05,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 1.2591791678384912e-15,
+      "maximum_interface_moment_residual": 1.7226617268079059e-16,
+      "inlet_outward_flux": -0.001996099891153204,
+      "outlet_outward_flux": 0.0019960998911527352,
+      "relative_mass_imbalance": 2.3486250435693265e-13
+    }
+  },
+  "final_error_to_full_HODDPNM": {
+    "velocity": 0.002119734164461794,
+    "pressure": 0.0005155562332459672,
+    "combined": 0.002119734164461794,
+    "pressure_shift": 2.27001662239477e-05
+  },
+  "strict_errors_to_identical_mesh_FEM": {
+    "DDPNM": {
+      "same_parent_mesh_object": true,
+      "quadrature_degree": 6,
+      "maximum_global_to_local_dof_coordinate_mismatch": 5.20740757162067e-16,
+      "velocity_absolute_l2": 0.0005348650585934791,
+      "velocity_reference_l2": 0.0024463882969630304,
+      "velocity_relative_l2": 0.21863457213945373,
+      "velocity_relative_broken_h1_seminorm": 0.4531067978811719,
+      "pressure_raw_absolute_l2": 0.01608742954158641,
+      "pressure_raw_relative_l2": 0.02877585717904291,
+      "pressure_mean_difference_ddpnm_minus_fem": -0.00015477053869579225,
+      "pressure_reference_mean": 0.5003935563936447,
+      "pressure_mean_aligned_relative_l2": 0.052652389440845146,
+      "ddpnm_broken_divergence_l2": 0.007939021577013344,
+      "fem_divergence_l2": 0.008784192928065088,
+      "ddpnm_outlet_flux": 0.002314835309413096,
+      "fem_outlet_flux": 0.00194984813654925,
+      "outlet_flux_relative_error": 0.18718748707772867,
+      "cell_error_integral_sum_velocity": 2.860806309042058e-07,
+      "cell_error_integral_sum_pressure": 0.0002588053892555072
+    },
+    "DDPNMT": {
+      "same_parent_mesh_object": true,
+      "quadrature_degree": 6,
+      "maximum_global_to_local_dof_coordinate_mismatch": 5.20740757162067e-16,
+      "velocity_absolute_l2": 0.0005095868490265529,
+      "velocity_reference_l2": 0.0024463882969630304,
+      "velocity_relative_l2": 0.20830170323294905,
+      "velocity_relative_broken_h1_seminorm": 0.44011362132155335,
+      "pressure_raw_absolute_l2": 0.016216861633296484,
+      "pressure_raw_relative_l2": 0.029007374549534313,
+      "pressure_mean_difference_ddpnm_minus_fem": -0.000153812366101541,
+      "pressure_reference_mean": 0.5003935563936447,
+      "pressure_mean_aligned_relative_l2": 0.05307606676832561,
+      "ddpnm_broken_divergence_l2": 0.007920340624016631,
+      "fem_divergence_l2": 0.008784192928065088,
+      "ddpnm_outlet_flux": 0.0022891549421955562,
+      "fem_outlet_flux": 0.00194984813654925,
+      "outlet_flux_relative_error": 0.17401704229478887,
+      "cell_error_integral_sum_velocity": 2.5967875670081076e-07,
+      "cell_error_integral_sum_pressure": 0.00026298660123348346
+    },
+    "HODDPNM": {
+      "same_parent_mesh_object": true,
+      "quadrature_degree": 6,
+      "maximum_global_to_local_dof_coordinate_mismatch": 5.20740757162067e-16,
+      "velocity_absolute_l2": 0.0001644288889023995,
+      "velocity_reference_l2": 0.0024463882969630304,
+      "velocity_relative_l2": 0.0672129150987695,
+      "velocity_relative_broken_h1_seminorm": 0.20141771967233862,
+      "pressure_raw_absolute_l2": 0.00797422574132719,
+      "pressure_raw_relative_l2": 0.014263632387803505,
+      "pressure_mean_difference_ddpnm_minus_fem": -4.376793157780125e-05,
+      "pressure_reference_mean": 0.5003935563936447,
+      "pressure_mean_aligned_relative_l2": 0.026099477995758326,
+      "ddpnm_broken_divergence_l2": 0.008472585168219247,
+      "fem_divergence_l2": 0.008784192928065088,
+      "ddpnm_outlet_flux": 0.001995982559346338,
+      "fem_outlet_flux": 0.00194984813654925,
+      "outlet_flux_relative_error": 0.023660521007925376,
+      "cell_error_integral_sum_velocity": 2.7036859505677634e-08,
+      "cell_error_integral_sum_pressure": 6.358827617364518e-05
+    },
+    "adaptive_final": {
+      "same_parent_mesh_object": true,
+      "quadrature_degree": 6,
+      "maximum_global_to_local_dof_coordinate_mismatch": 5.20740757162067e-16,
+      "velocity_absolute_l2": 0.00016470692340236312,
+      "velocity_reference_l2": 0.0024463882969630304,
+      "velocity_relative_l2": 0.0673265661084268,
+      "velocity_relative_broken_h1_seminorm": 0.20154890033078596,
+      "pressure_raw_absolute_l2": 0.007977096003679936,
+      "pressure_raw_relative_l2": 0.014268766474595648,
+      "pressure_mean_difference_ddpnm_minus_fem": -2.2152089286839336e-05,
+      "pressure_reference_mean": 0.5003935563936447,
+      "pressure_mean_aligned_relative_l2": 0.026109128462684227,
+      "ddpnm_broken_divergence_l2": 0.00847139533583645,
+      "fem_divergence_l2": 0.008784192928065088,
+      "ddpnm_outlet_flux": 0.0019960998911527352,
+      "fem_outlet_flux": 0.00194984813654925,
+      "outlet_flux_relative_error": 0.02372069585139042,
+      "cell_error_integral_sum_velocity": 2.7128370616671913e-08,
+      "cell_error_integral_sum_pressure": 6.363406065192641e-05
+    }
+  },
+  "traditional_fem": {
+    "mixed_dofs": 181427,
+    "matrix_nonzeros": 15754423,
+    "solver": "SciPy GMRES with scalar-P2 ILU and exact P1-mass block preconditioner",
+    "iterations": 188,
+    "relative_linear_residual": 1.0562369456690966e-10,
+    "relative_mass_imbalance": 2.254655579075274e-10,
+    "relative_energy_residual": 8.3028774948298e-11
+  },
+  "iterations": [
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 0,
+      "error": {
+        "velocity": 0.028568718072182874,
+        "pressure": 0.006524762184414569,
+        "combined": 0.028568718072182874,
+        "pressure_shift": 3.298584907743241e-06
+      },
+      "level_counts": [
+        144,
+        0,
+        0
+      ],
+      "interface_unknowns": 144,
+      "marked_interfaces": [
+        123,
+        17,
+        139,
+        7,
+        131,
+        134,
+        125,
+        57,
+        138,
+        127,
+        137,
+        22
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 1,
+      "error": {
+        "velocity": 0.025431269914525562,
+        "pressure": 0.00637611292021314,
+        "combined": 0.025431269914525562,
+        "pressure_shift": -3.3078859019954543e-07
+      },
+      "level_counts": [
+        132,
+        12,
+        0
+      ],
+      "interface_unknowns": 168,
+      "marked_interfaces": [
+        87,
+        47,
+        11,
+        68,
+        79,
+        4,
+        97,
+        42,
+        29,
+        109,
+        106,
+        50
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 2,
+      "error": {
+        "velocity": 0.022821913314156037,
+        "pressure": 0.00590056162502399,
+        "combined": 0.022821913314156037,
+        "pressure_shift": -4.636467682377459e-06
+      },
+      "level_counts": [
+        120,
+        24,
+        0
+      ],
+      "interface_unknowns": 192,
+      "marked_interfaces": [
+        44,
+        108,
+        91,
+        62,
+        51,
+        69,
+        74,
+        119,
+        2,
+        84,
+        102,
+        66
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 3,
+      "error": {
+        "velocity": 0.020857389981199237,
+        "pressure": 0.005451057397156675,
+        "combined": 0.020857389981199237,
+        "pressure_shift": -8.41143893161236e-06
+      },
+      "level_counts": [
+        108,
+        36,
+        0
+      ],
+      "interface_unknowns": 216,
+      "marked_interfaces": [
+        39,
+        114,
+        26,
+        90,
+        10,
+        34,
+        82,
+        28,
+        61,
+        76,
+        48,
+        112
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 4,
+      "error": {
+        "velocity": 0.016180216752263887,
+        "pressure": 0.004260848041721639,
+        "combined": 0.016180216752263887,
+        "pressure_shift": 6.899539774972404e-05
+      },
+      "level_counts": [
+        96,
+        48,
+        0
+      ],
+      "interface_unknowns": 240,
+      "marked_interfaces": [
+        116,
+        8,
+        21,
+        118,
+        5,
+        88,
+        101,
+        72,
+        45,
+        32,
+        36,
+        24
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 5,
+      "error": {
+        "velocity": 0.01071001055317621,
+        "pressure": 0.0028064784861703412,
+        "combined": 0.01071001055317621,
+        "pressure_shift": -6.174029470279433e-05
+      },
+      "level_counts": [
+        84,
+        60,
+        0
+      ],
+      "interface_unknowns": 264,
+      "marked_interfaces": [
+        78,
+        85,
+        13,
+        38,
+        104,
+        64,
+        53,
+        93,
+        92,
+        1,
+        52
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 6,
+      "error": {
+        "velocity": 0.00544690582836871,
+        "pressure": 0.0006463383669714921,
+        "combined": 0.00544690582836871,
+        "pressure_shift": -1.0276692575022563e-06
+      },
+      "level_counts": [
+        73,
+        71,
+        0
+      ],
+      "interface_unknowns": 286,
+      "marked_interfaces": []
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 0,
+      "error": {
+        "velocity": 0.2038545344789937,
+        "pressure": 0.03502537764909775,
+        "combined": 0.2038545344789937,
+        "pressure_shift": -0.00023170630245607237
+      },
+      "level_counts": [
+        73,
+        71,
+        0
+      ],
+      "interface_unknowns": 286,
+      "marked_interfaces": [
+        76,
+        45,
+        48,
+        61,
+        78,
+        72,
+        53,
+        64,
+        88,
+        116,
+        32,
+        96
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 1,
+      "error": {
+        "velocity": 0.19664370062124753,
+        "pressure": 0.034842850964770765,
+        "combined": 0.19664370062124753,
+        "pressure_shift": 5.367200595955794e-05
+      },
+      "level_counts": [
+        72,
+        61,
+        11
+      ],
+      "interface_unknowns": 354,
+      "marked_interfaces": [
+        67,
+        56,
+        59,
+        70,
+        42,
+        96,
+        107,
+        85,
+        50,
+        21,
+        74,
+        118
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 2,
+      "error": {
+        "velocity": 0.1915640219520442,
+        "pressure": 0.03492211784781391,
+        "combined": 0.1915640219520442,
+        "pressure_shift": 0.0009003340110688809
+      },
+      "level_counts": [
+        67,
+        59,
+        18
+      ],
+      "interface_unknowns": 406,
+      "marked_interfaces": [
+        67,
+        59,
+        56,
+        70,
+        107,
+        99,
+        93,
+        112,
+        110,
+        104,
+        101,
+        38
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 3,
+      "error": {
+        "velocity": 0.18065437998116607,
+        "pressure": 0.03512049394559477,
+        "combined": 0.18065437998116607,
+        "pressure_shift": 0.002300998444616949
+      },
+      "level_counts": [
+        65,
+        51,
+        28
+      ],
+      "interface_unknowns": 470,
+      "marked_interfaces": [
+        99,
+        110,
+        79,
+        82,
+        36,
+        8,
+        114,
+        81,
+        113,
+        111,
+        46,
+        117
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 4,
+      "error": {
+        "velocity": 0.17443067416468172,
+        "pressure": 0.03517668140768648,
+        "combined": 0.17443067416468172,
+        "pressure_shift": 0.003040876020744229
+      },
+      "level_counts": [
+        60,
+        49,
+        35
+      ],
+      "interface_unknowns": 522,
+      "marked_interfaces": [
+        119,
+        90,
+        5,
+        86,
+        81,
+        111,
+        46,
+        89,
+        113,
+        117,
+        40,
+        41
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 5,
+      "error": {
+        "velocity": 0.16713346405829219,
+        "pressure": 0.034270907816177414,
+        "combined": 0.16713346405829219,
+        "pressure_shift": 0.003632046043099759
+      },
+      "level_counts": [
+        56,
+        45,
+        43
+      ],
+      "interface_unknowns": 578,
+      "marked_interfaces": [
+        63,
+        40,
+        89,
+        80,
+        75,
+        83,
+        24,
+        60,
+        52,
+        49,
+        103,
+        115
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 6,
+      "error": {
+        "velocity": 0.16330823787787696,
+        "pressure": 0.03331690982277701,
+        "combined": 0.16330823787787696,
+        "pressure_shift": 0.0031072260105975014
+      },
+      "level_counts": [
+        48,
+        49,
+        47
+      ],
+      "interface_unknowns": 618,
+      "marked_interfaces": [
+        63,
+        75,
+        83,
+        60,
+        103,
+        115,
+        100,
+        43,
+        19,
+        16,
+        27,
+        34
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 7,
+      "error": {
+        "velocity": 0.15628789567221066,
+        "pressure": 0.03158037116694943,
+        "combined": 0.15628789567221066,
+        "pressure_shift": 0.00298746599718997
+      },
+      "level_counts": [
+        43,
+        47,
+        54
+      ],
+      "interface_unknowns": 670,
+      "marked_interfaces": [
+        19,
+        16,
+        27,
+        77,
+        39,
+        71,
+        86,
+        30,
+        80,
+        41,
+        13,
+        49
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 8,
+      "error": {
+        "velocity": 0.14496353376370075,
+        "pressure": 0.029745358276131346,
+        "combined": 0.14496353376370075,
+        "pressure_shift": 0.0009826959775901135
+      },
+      "level_counts": [
+        40,
+        41,
+        63
+      ],
+      "interface_unknowns": 730,
+      "marked_interfaces": [
+        30,
+        77,
+        71,
+        73,
+        100,
+        43,
+        92,
+        69,
+        91,
+        47,
+        68,
+        97
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 9,
+      "error": {
+        "velocity": 0.13326216028972682,
+        "pressure": 0.02642129184536016,
+        "combined": 0.13326216028972682,
+        "pressure_shift": 7.07234786414043e-05
+      },
+      "level_counts": [
+        39,
+        31,
+        74
+      ],
+      "interface_unknowns": 798,
+      "marked_interfaces": [
+        73,
+        66,
+        33,
+        62,
+        106,
+        105,
+        102,
+        55,
+        54,
+        94,
+        84,
+        44
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 10,
+      "error": {
+        "velocity": 0.12727400359937865,
+        "pressure": 0.02435887921596465,
+        "combined": 0.12727400359937865,
+        "pressure_shift": -0.00016223062436421042
+      },
+      "level_counts": [
+        34,
+        29,
+        81
+      ],
+      "interface_unknowns": 850,
+      "marked_interfaces": [
+        105,
+        54,
+        55,
+        94,
+        58,
+        95,
+        98,
+        17,
+        65,
+        108,
+        125,
+        51
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 11,
+      "error": {
+        "velocity": 0.12133644862668311,
+        "pressure": 0.02222726322149051,
+        "combined": 0.12133644862668311,
+        "pressure_shift": -0.00013551518432108322
+      },
+      "level_counts": [
+        30,
+        25,
+        89
+      ],
+      "interface_unknowns": 906,
+      "marked_interfaces": [
+        58,
+        139,
+        120,
+        98,
+        121,
+        1,
+        135,
+        33,
+        31,
+        6,
+        37,
+        126
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 12,
+      "error": {
+        "velocity": 0.11596994457985657,
+        "pressure": 0.021027590476982647,
+        "combined": 0.11596994457985657,
+        "pressure_shift": -0.0005970001367263784
+      },
+      "level_counts": [
+        23,
+        27,
+        94
+      ],
+      "interface_unknowns": 950,
+      "marked_interfaces": [
+        120,
+        121,
+        135,
+        31,
+        6,
+        37,
+        126,
+        123,
+        29,
+        141,
+        140,
+        134
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 13,
+      "error": {
+        "velocity": 0.10057722226659035,
+        "pressure": 0.018212869527708335,
+        "combined": 0.10057722226659035,
+        "pressure_shift": -0.00020157988857793607
+      },
+      "level_counts": [
+        21,
+        19,
+        104
+      ],
+      "interface_unknowns": 1014,
+      "marked_interfaces": [
+        140,
+        87,
+        57,
+        4,
+        109,
+        95,
+        65,
+        22,
+        138,
+        143,
+        137,
+        11
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 14,
+      "error": {
+        "velocity": 0.08570384501017002,
+        "pressure": 0.014737557222612685,
+        "combined": 0.08570384501017002,
+        "pressure_shift": 0.00016148189879679407
+      },
+      "level_counts": [
+        20,
+        9,
+        115
+      ],
+      "interface_unknowns": 1082,
+      "marked_interfaces": [
+        26,
+        131,
+        127,
+        7,
+        128,
+        133,
+        28,
+        35,
+        20,
+        124,
+        9,
+        3
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 15,
+      "error": {
+        "velocity": 0.0792213304985868,
+        "pressure": 0.013791053273603963,
+        "combined": 0.0792213304985868,
+        "pressure_shift": 5.53722809119261e-05
+      },
+      "level_counts": [
+        13,
+        11,
+        120
+      ],
+      "interface_unknowns": 1126,
+      "marked_interfaces": [
+        124,
+        9,
+        141,
+        23,
+        133,
+        143,
+        128,
+        142,
+        0,
+        122,
+        35,
+        12
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 16,
+      "error": {
+        "velocity": 0.06266662107284297,
+        "pressure": 0.010351461769497498,
+        "combined": 0.06266662107284297,
+        "pressure_shift": 0.0009224793727365232
+      },
+      "level_counts": [
+        8,
+        9,
+        127
+      ],
+      "interface_unknowns": 1178,
+      "marked_interfaces": [
+        23,
+        142,
+        0,
+        122,
+        12,
+        20,
+        3,
+        129,
+        15,
+        136
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 17,
+      "error": {
+        "velocity": 0.03719266141963325,
+        "pressure": 0.005559258923261459,
+        "combined": 0.03719266141963325,
+        "pressure_shift": 2.4715582864074225e-05
+      },
+      "level_counts": [
+        5,
+        5,
+        134
+      ],
+      "interface_unknowns": 1226,
+      "marked_interfaces": [
+        15,
+        132,
+        129,
+        25,
+        14,
+        136
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 18,
+      "error": {
+        "velocity": 0.02934472952172909,
+        "pressure": 0.004375064554716794,
+        "combined": 0.02934472952172909,
+        "pressure_shift": 0.00012015311402678842
+      },
+      "level_counts": [
+        2,
+        5,
+        137
+      ],
+      "interface_unknowns": 1250,
+      "marked_interfaces": [
+        18,
+        25,
+        14
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 19,
+      "error": {
+        "velocity": 0.02225215591850035,
+        "pressure": 0.0033330851806266425,
+        "combined": 0.02225215591850035,
+        "pressure_shift": -7.648403463806658e-05
+      },
+      "level_counts": [
+        1,
+        4,
+        139
+      ],
+      "interface_unknowns": 1264,
+      "marked_interfaces": [
+        130,
+        132
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 20,
+      "error": {
+        "velocity": 0.017540920079885503,
+        "pressure": 0.0027264224340835075,
+        "combined": 0.017540920079885503,
+        "pressure_shift": 2.2167229048334196e-05
+      },
+      "level_counts": [
+        0,
+        4,
+        140
+      ],
+      "interface_unknowns": 1272,
+      "marked_interfaces": [
+        130,
+        18
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 21,
+      "error": {
+        "velocity": 0.002119734164461794,
+        "pressure": 0.0005155562332459672,
+        "combined": 0.002119734164461794,
+        "pressure_shift": 2.27001662239477e-05
+      },
+      "level_counts": [
+        0,
+        2,
+        142
+      ],
+      "interface_unknowns": 1284,
+      "marked_interfaces": []
+    }
+  ],
+  "timings_seconds": {
+    "mesh": 156.89884080000047,
+    "local_response_library": 53.74015679999866,
+    "adaptive_hierarchy": 45.95172850000017,
+    "traditional_fem": 37.617413599997235,
+    "strict_validation": 53.129228599998896,
+    "total": 347.4158626999997
+  }
+}

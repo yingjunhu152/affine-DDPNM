@@ -1,0 +1,447 @@
+\documentclass[11pt]{ctexart}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\setlength{\parskip}{0.35em}
+
+\title{\textbf{为什么改变子区域的画法\\ 数学与可行性论证}}
+\author{DDPNM 数值实验工程}
+\date{2026 年 8 月}
+
+\begin{document}
+
+\maketitle
+
+\begin{quotation}
+\noindent\textbf{范围}：2D 工程（\texttt{ddpnm\_2d\_random\_porous}，连心线间隙段
+切口）$\rightarrow$ 3D 工程（\texttt{affine\_ddpnm\_3d\_random\_porous}，球心垂直平分面）。
+本文论证这一画法改变的必然性、当前 3D 画法的数学局限、替代画法的必要性与
+可行性，并给出明确的``是否改、怎么改、预期收益''结论。所有数值均为当前
+27 球算例（种子 20260804，\texttt{random\_porous.py} 的 \texttt{SPHERES} 表）
+的实测几何数据。
+\end{quotation}
+
+\section{结论先行（TL;DR）}
+
+\begin{enumerate}
+  \item \textbf{画法必须改变是数学必然，不是风格选择}：2D 的界面是``连心线上
+  的 1D 间隙段''，是 2D 中余维 1 的对象；在 3D 中同样一个 1D 对象余维 2，
+  按拓扑学无法分割体积。实测（\texttt{\_smoke\_geometry.py} 演化过程）确认
+  OCC fragment 对 1D 切口不切分。因此 3D 界面\textbf{必须}是分隔相邻孔体的
+  2D 曲面，``球心连线''的角色从``切口本体''（2D）降级为``切口的法向与
+  位置基准''（3D）——这就是画法改变的数学根据。
+
+  \item \textbf{当前 Voronoi 垂直平分面画法是正确的过渡选型，但不是数学正确
+  的最终形态}。它的界面是``球心垂直平分面''，而方法学上（论文 2.4 节、
+  2D 实现）界面应该落在\textbf{净距鞍点}（到两球壁距离相等的点）。两者在
+  半径不等时不重合：\textbf{界面在鞍点处偏离等净距曲面
+  $|r_a-r_b|/2$}。当前算例实测（126 个候选喉道，最终 114 条界面为其
+  子集）：中位位移 0.0073（间隙的 2.8\%），最差一对位移 0.0218——
+  \textbf{间隙宽度的 28.5\%}。这是与界面尺度同阶的系统几何误差。
+
+  \item \textbf{替代画法分两级，都可行}：
+  \begin{itemize}
+    \item 近期（网格级，零 CAD 风险）：\textbf{净距 watershed 孔体识别 +
+    facet 级界面}，孔体由几何定义（最大球思想），界面 $=$ 相邻孔体共享的
+    网格面，完全不需要 OCC fragment；\texttt{ddpnm\_core} 管线零改动。
+    \item 论文期（CAD 级，数学精确）：\textbf{等净距双曲面（Apollonius 图）
+    界面}，界面 $=$ 到两球壁等距的双曲面片，按构造永不穿过球体（无半径
+    约束），消除系统位置偏差；OCC fragment 需要原型验证。
+  \end{itemize}
+
+  \item \textbf{结论}：当前基准的误差结论（Affine 6.51\%）在 Voronoi 画法
+  下仍然有效（几何画法偏差 $<$ 界面空间误差主导项），\textbf{不必为已出
+  结果返工}；但\textbf{应该改}——近期做网格级 watershed 孔体识别（低成本、
+  方法学对齐），论文期做等净距曲面界面（解锁极限精度、几何科学量可比）。
+  不改的代价是孔体几何量（体积/配位数/孔喉直径）在科学上不可信、以及一个
+  不随网格收敛而消失的 $O(\delta)$ 系统误差。
+\end{enumerate}
+
+\section{问题框架：DDPNM 里``界面画法''到底是什么、有多大的自由度}
+
+DDPNM 的分区 $=$ 把多孔介质流体域切成互不重叠的子区域（孔体），相邻子区域
+的公共边界 $=$ 界面（孔喉截面）。子区域上独立解局部 Stokes，静态凝聚后
+只剩下\textbf{界面牵引系数}的 Schur 系统。界面空间的选取决定精度与成本。
+
+\textbf{关键事实（决定论证的自由度）}：\texttt{ddpnm\_core} 管线消费的界面
+数据全部是\textbf{网格级}的（见 \texttt{ddpnm\_core/basis.py} 的
+\texttt{\_interface\_nodes}、\texttt{run\_random\_benchmark.py} 的装配器）：
+\begin{itemize}
+  \item \texttt{facet\_interface\_ids}：每个网格 facet 属于哪个界面；
+  \item \texttt{interface\_pairs}、\texttt{interface\_centers}（面积加权
+  重心）、\texttt{interface\_normals}、\texttt{interface\_areas}；
+  \item 界面基的切向量 $t_1,t_2$ 由界面顶点拟合
+  （\texttt{basis\_3d.py} 的 \texttt{\_interface\_frames\_and\_scales}）。
+\end{itemize}
+
+管线\textbf{不知道也不关心}界面在 CAD 层面是平面、双曲面还是任意网格刻痕。
+这意味着：只要新画法能产出``一个共形网格 + 正确的 facet 标签 + 中心/法向/
+面积''，管线就完全兼容——\textbf{换画法不需要动一行求解代码}。这个自由度
+是本论证成立的前提。
+
+物理上，界面应该放在哪里？界面牵引耦合要求界面两侧的局部解共享``截断处''
+的物理状态。在多孔介质方法学（Blunt 最大球方法、论文 2.4 节）中，孔喉截面
+位于\textbf{净距函数的鞍点}——即到两侧壁面距离相等的曲面（等净距曲面）。
+2D 实现忠实于此：切口中心 $=$ 间隙段中点（\texttt{geometry.py} 的
+\texttt{saddle\_distance\_from\_a = 0.5*(d + r\_a - r\_b)}，正是等净距点）。
+3D 实现是否同样忠实，是第 4 节的核心问题。
+
+\section{为什么必须改变画法：2D 切口升维的拓扑学必然性}
+
+\subsection{2D 画法回顾}
+
+2D 界面（\texttt{ddpnm2d/geometry.py}）：对 Delaunay 邻接的圆对 $(i,j)$，
+界面 $=$ \textbf{两圆壁之间、连心线上的间隙段}，两端点是两圆壁上的最近点，
+中点 $=$ 等净距鞍点。这是一条 1D 线段，把 2D 区域一分为二（余维 1）。
+
+2D 画法在数学上是精确的：
+\begin{itemize}
+  \item 间隙段端点恰在两圆壁上（切口从壁到壁）；
+  \item 中点恰是等净距点（$|x-a|-r_a = |x-b|-r_b$ 在连心线上的解）——与
+  论文 2.4 节的``孔喉鞍点''定义一致；
+  \item 切口与圆不相交（按构造，$gap>0$ 时线段在圆外）。
+\end{itemize}
+
+\subsection{三种天真升维全部失败（数学原因 + 实测依据）}
+
+3D 中需要把``连心线切口''升维，天真的尝试有三种，逐一失败：
+
+\begin{center}
+\begin{tabular}{p{4.2cm}p{6.2cm}p{5.2cm}}
+\toprule
+尝试 & 数学缺陷 & 实测结果 \\
+\midrule
+(a) 连心线 1D 线段 &
+3D 中余维 2，不能把体积分成两半（拓扑学：去掉 1D 集连通域不变） &
+OCC fragment 不切分体积（开发期实测，记录于 \texttt{random\_porous.py}
+docstring） \\
+(b) 连心线膨胀成管/柱 &
+柱面必须从壁到壁，会切进球壁（柱面与球面相交处无法形成干净切口）；且
+柱的``半径''没有物理意义，与净距鞍点概念脱节 &
+未进入实现 \\
+(c) 三球心 Delaunay 三角形平面 &
+三角形平面穿过孔体内部（它连接三个球心，而孔体在球之间的开阔区），且
+面族不闭合 &
+fragment 切进孔体、不闭合（实测） \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+结论：\textbf{3D 界面必须是``分隔两个相邻孔体的 2D 曲面''，且其几何基准
+只能取``两球连心线''的法向与位置}——连心线从``切口本体''变成``切口的
+法向基准与位置基准''。这就是``画法改变''的数学必然性：改变的不是风格，
+而是界面对象的\textbf{余维数}，这是由目标空间维度决定的强制升级。
+
+\section{当前 3D Voronoi 画法：为什么它是正确的过渡选型}
+
+\subsection{定义（\texttt{random\_porous.py} 的 \texttt{voronoi\_throat\_faces}）}
+
+对每个有效 Delaunay 对 $(i,j)$，界面 $=$ \textbf{两球心的垂直平分面}被相邻
+平分面和立方体窗口裁剪出的多边形——即球心点集 Voronoi 图的脊（ridge）。
+实现用 scipy \texttt{Voronoi}（27 球心 + 6 个虚种子保证有限）直接产出
+多边形，再经 OCC fragment 嵌入流体域。
+
+\subsection{它为什么``能工作''——闭合性（这是关键性质）}
+
+一个能分割空间的曲面族必须\textbf{全局闭合}：每个曲面的边界必须与相邻
+曲面共享，不能悬空。球心 Voronoi 脊恰好满足——它们是球心胞的公共边界，
+天然构成胞结构的闭合外壳（实现注释明确这一点：dropping one face leaves
+neighbours' boundary edges dangling, fragment 不切分）。
+
+\textbf{为什么不能简单地``把平面平移到鞍点''？} 每个对 $(i,j)$ 有自己的
+等净距鞍点（在连心线上偏移 $(r_i-r_j)/2$），平移后的平面族在两两之间互相
+穿越、边界不匹配（三球心两两对的鞍点不共面），无法构成闭合曲面组，
+fragment 必然失败。\textbf{``每对种子一个半空间''的闭合结构只有两种自洽
+选择}：
+\begin{itemize}
+  \item 球心垂直平分面（普通 Voronoi / 幂图）——闭合，但界面位置基于球心
+  而非壁面；
+  \item 等净距曲面（加法加权 Voronoi，即 Apollonius 图）——闭合，界面位置
+  基于壁面，但界面是双曲面而非平面。
+\end{itemize}
+
+当前实现选择了前者：\textbf{以``平面可构造 + 整体闭合''换取了``鞍点位置
+精确''}。这是工程上正确的取舍——它是当时唯一能落地 OCC fragment 的选项。
+
+\subsection{它沿用了 2D 的全部筛选逻辑}
+
+Delaunay 邻接 $\rightarrow$ 间隙段存在 $\rightarrow$ 间隙段不穿越第三球
+$\rightarrow$ 鞍点净距达标——与 2D 完全同构（\texttt{analytic\_throat\_
+candidates} 与 2D \texttt{analytic\_throat\_cuts} 逐行对应）。2D 与 3D 的
+差异\textbf{只在最后一步}：2D 把``间隙段''当切口本体，3D 把``间隙段的法向
+基准（连心线）''当切口法向。
+
+\section{当前画法的数学局限（量化）}
+
+\subsection{L1：与等净距曲面的偏差——界面位置系统性错误}
+
+\textbf{数学事实}：等净距曲面（到两球壁距离相等：$|x-a|-r_a = |x-b|-r_b$）
+不是平面，是\textbf{双叶双曲面的一叶}。以连心线为 $x$ 轴、球心连线中点为
+原点，记 $d = |b-a|$、$\delta = r_a - r_b$，$\rho$ $=$ 到连心线的距离：
+\begin{equation}
+\frac{x^2}{(\delta/2)^2} - \frac{\rho^2}{(d^2-\delta^2)/4} = 1.
+\end{equation}
+\begin{itemize}
+  \item $\delta = 0$（等半径）：退化为垂直平分面 $\rightarrow$ \textbf{当前
+  画法精确}；
+  \item $\delta \neq 0$：曲面顶点在 $x = \delta/2$——正是净距鞍点（$=$ 2D
+  实现的 \texttt{saddle}），与垂直平分面（$x=0$）\textbf{相距 $|\delta|/2$}，
+  且随 $\rho$ 进一步弯曲（向小球侧凸出）：
+  \begin{equation}
+    x(\rho) - x(0) \approx \frac{\delta\,\rho^2}{d^2-\delta^2}.
+  \end{equation}
+\end{itemize}
+
+\textbf{两个后果}：
+\begin{enumerate}
+  \item \textbf{位置偏差}：Voronoi 界面整体偏离净距鞍点 $|r_a-r_b|/2$（沿
+  连心线方向）。2D 画法没有这个问题（切口中心就是鞍点）；3D 画法有。
+  \item \textbf{曲率偏差}：即使把平面平移到鞍点，平面仍不是双曲面（差
+  $\delta\rho^2/(d^2-\delta^2)$）。位置偏差是主项。
+\end{enumerate}
+
+\textbf{当前算例实测}（27 球，126 个候选喉道；``远端偏差''以
+$\rho_{\max} \approx d/2$ 为界面上限估算，偏保守）：
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+量 & 中位 & 最大 \\
+\midrule
+半径差 $\delta$ & 0.0146 & 0.0546 \\
+界面鞍点位移 $\delta/2$ & \textbf{0.0073} & \textbf{0.0273} \\
+位移 $/$ 间隙 & 2.8\% & \textbf{28.5\%}（对 (4,22)：$r=0.129/0.085$，$gap=0.076$） \\
+远端总偏差估算 & 0.015 & 0.055 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+最差喉道的界面位移达到\textbf{间隙宽度的 28.5\%}——界面几乎偏出了窄喉道
+的四分之一。由于间隙段长度 $\sim$ 界面半宽量级，这个偏差是\textbf{与界面
+尺度同阶的系统几何误差}，直接表现为：局部 Stokes 解的``截断位置''不在
+物理鞍点、界面两侧的净距不相等（一侧流道比另一侧宽）。它不随网格加密、
+不随模态升阶而消失——是\textbf{除界面空间误差之外的第二个收敛钳制源}。
+
+（计算脚本：Delaunay 对 + 间隙段/穿越检验 $\rightarrow$ 对每对算 $\delta/2$
+与相对偏差，与 \texttt{random\_porous.py} 的筛选逻辑逐项一致。）
+
+\subsection{L2：孔体识别缺失——``一球一孔体''的人为对应}
+
+当前孔体 $=$ \textbf{球心 Voronoi 胞 $\cap$ 立方体}，标签 $=$ ``体积质心离
+哪个球心最近''（\texttt{generate\_partition\_mesh} 中的 argmin 分配）。
+\texttt{maximal\_balls} 只是事后在每胞内找 clearance 最大点
+（\texttt{build\_partition}），\textbf{分区本身没有跑最大球/净距 watershed
+算法}。数学上的错位：
+\begin{enumerate}
+  \item \textbf{真实孔体由净距函数的拓扑定义}（局部极大盆地 $=$ 孔体、鞍点
+  $=$ 孔喉，Blunt 最大球方法）：一个宽间隙（多球共围的开阔区）是一个孔体，
+  球心 Voronoi 却把它切给最近球；反之窄间隙两侧是``同一个''鞍点，Voronoi
+  的两个胞都能覆盖它。\textbf{胞边界（垂直平分面）$\neq$ 净距鞍面}（除等
+  半径退化）。
+  \item \textbf{边界球}：18 个边界球心伸出立方体，其``孔体'' $=$ 立方体内部
+  一块区域，形状由球心胞裁剪决定；真实孔体 $=$ 由窗口内壁与球壁围出的
+  凹腔。两种几何在边界处系统性不一致。
+  \item \textbf{科学后果}：孔体体积、配位数、孔喉直径等下游量在科学上不可
+  信——它们不是``多孔介质的孔体''，而是``球心胞的裁剪''。论文若报告这些
+  量，与标准方法（最大球）没有可比性。
+\end{enumerate}
+
+\subsection{L3：半径约束——画法合法性的硬边界}
+
+垂直平分面穿过球 $b$ $\iff$ 平分面到 $b$ 球心的距离 $d/2 \le r_b$
+$\iff$ \textbf{$\delta \ge gap$}（设 $r_b > r_a$）。即半径差达到间隙量级时，
+Voronoi 面直接切进固体，画法失效。当前算例靠选材规避（$r_{\max} -
+r_{\min} \le gap/2$，已实测 1 对逼近该边界），但真实介质半径分布任意——
+\textbf{这个约束是画法本身的数学边界，不是实现细节}。
+
+对照：等净距曲面\textbf{按构造永不穿过球}（等净距面上若有点同时到两球壁
+等距且在某球面上，则两球必相切；$gap>0$ 时不可能）。故 Apollonius 画法
+无此约束。这一点是对``是否必须改''的最强论证之一。
+
+\section{替代画法：数学必要性与实现可行性}
+
+\subsection{画法 A（推荐近期）：网格级净距 watershed 孔体识别 + facet 界面}
+
+\textbf{数学定义}（与论文 2.4 节 / 2D 实现同构，Blunt 最大球思想）：
+\begin{itemize}
+  \item 孔体 $=$ clearance 函数（\texttt{sphere\_clearance}，已实现）的局部
+  极大盆地；
+  \item 种子 $=$ clearance 的局部极大点（即最大球），或沿网格胞中心排序的
+  前 $N$ 个；
+  \item 孔喉/界面 $=$ 相邻孔体盆地的公共边界（含净距鞍点）。
+\end{itemize}
+
+\textbf{实现路径}：
+\begin{enumerate}
+  \item 网格先在\textbf{无界面}下生成（去掉 \texttt{\_add\_planar\_face} +
+  fragment，网格生成更快更稳）；
+  \item 对网格胞中心算 clearance $\rightarrow$ 局部极大种子 $\rightarrow$
+  marker-based watershed（scipy \texttt{ndimage.watershed\_ift} 或自写标记
+  传播）$\rightarrow$ 每胞标签；
+  \item 界面 $=$ 相邻标签的 facet 集合 $\rightarrow$
+  \texttt{facet\_interface\_ids}、\texttt{interface\_centers}（面积加权
+  重心，已有）、\texttt{interface\_normals}（facet 法向面积加权平均，替代
+  连心线方向）、$t_1/t_2$（界面顶点主成分，已有逻辑
+  \texttt{\_interface\_frames\_and\_scales} 直接复用）。
+\end{enumerate}
+
+\textbf{可行性评估}：
+\begin{itemize}
+  \item \textbf{管线兼容性：零改动}（第 2 节已论证，管线只消费网格级数据）；
+  \item 无 OCC 依赖：fragment 阶段删除，消除当前最脆弱的环节（面族闭合性、
+  曲面剪切的鲁棒性）；
+  \item 孔体数与球数可能不同（宽间隙合并 / 尖角拆分）——这是\textbf{正确}
+  的代价，管线按标签索引（pore\_id 只是整数标签），无需改动；
+  \item 界面不再是平面：界面基的法向模态假设法向 $\approx$ 常数
+  （\texttt{AffineFaceBasis} 的 normal 模态用 \texttt{interface\_normals}
+  单一方向）——对曲面界面是 P0 级近似，法向变化被摊入误差。需要实验评估
+  （见第 7 节实验 3）。
+\end{itemize}
+
+\subsection{画法 B（推荐论文期）：等净距双曲面界面（Apollonius 图）}
+
+\textbf{数学必要性}：4.1 节已证，唯一``闭合 + 鞍点精确''的分区是加法加权
+Voronoi（Apollonius）图——每对球一叶双曲面，三胞交于三球等净距点。它同时
+消除 L1（界面在鞍点、形状正确）、L2（孔体 $=$ 壁面等净距胞，即真实的``净距
+盆地''）、L3（无半径约束）。
+
+\textbf{实现可行性}：
+\begin{itemize}
+  \item 双曲面有解析参数化（式 (1)），可由一族等净距轮廓线（给定 $\rho$ 的
+  法向圆环）构造 B-spline 面，gmsh OCC 的 \texttt{addThruSections}/NURBS
+  可行；
+  \item 风险点：曲面 fragment 的鲁棒性（曲率 $\delta/(d^2-\delta^2)$ 处网格
+  需要加密）、面族闭合性需要与 Voronoi 图同等的拓扑处理（三胞交点必须精确
+  共点）；
+  \item 网格共形与 facet 标签输出与现管线完全一致；
+  \item 建议以画法 A 的网格级结果为\textbf{对照基线}，先验证单个界面实体
+  的 CAD 构造（复用 \texttt{affine\_ddpnm\_3d} 的单界面框架），再全量替换。
+\end{itemize}
+
+\subsection{画法 C（排除）：幂图（加权垂直平分面）}
+
+幂图界面也是平面（CAD 友好），但位置按半径\textbf{平方}加权：
+$x_{\mathrm{power}} \approx (d^2 - r_a^2 + r_b^2)/(2d)$。数值试验
+（$r_a=0.13$, $r_b=0.08$, $gap=0.10$）：幂图面位置 0.138 vs 等净距鞍点
+0.025——\textbf{偏差比球心 Voronoi 还大一个量级}（半径差被放大
+$d/(r_a+r_b)$ 倍）。幂图把权重平方化，远离``壁面等距''的物理定义。排除。
+
+\subsection{汇总表}
+
+\begin{center}
+\small
+\begin{tabular}{p{2.6cm}p{1.7cm}p{1.7cm}p{1.9cm}p{1.9cm}p{1.5cm}p{1.5cm}}
+\toprule
+画法 & 界面几何 & 鞍点精确 & 闭合性 & 孔体识别 & 半径约束 & 管线改动 \\
+\midrule
+现状：球心 Voronoi 平面 & 平面 & $\times$（偏 $\delta/2$） & $\checkmark$ &
+$\times$ 一球一孔体 & $\delta < gap$ & 无 \\
+A：watershed + facet & 网格刻痕 & $\checkmark$（盆地边界） &
+$\checkmark$（网格） & $\checkmark$ 几何定义 & 无 & \textbf{无 OCC} & 无 \\
+B：Apollonius 双曲面 & 双曲面 & $\checkmark$ & $\checkmark$ & $\checkmark$ &
+无 & 中高（需原型） & 无 \\
+C：幂图 & 平面 & $\times$（更差） & $\checkmark$ & $\times$ & — & 低 & 无 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{结论：是否改、怎么改、预期收益}
+
+\subsection{是否改——分三层回答}
+
+\begin{enumerate}
+  \item \textbf{不改（已出结果）}：当前 27 球基准的误差结论（Classic 65.32\%
+  vs Affine 6.51\%、FE-trace Schur 基线）在 Voronoi 画法下\textbf{仍然有效}
+  ——几何画法的系统偏差（$\sim$间隙的 3\%，最差 28.5\%）远小于界面空间误差
+  （Classic 65\% / Affine 6.5\%）的主导项，结论的\textbf{方向性}不受影响。
+  但必须在 \texttt{RESULTS.md} 的谨慎表述中补一句几何声明（界面位置近似，
+  偏差 $\le \delta/2$）。
+
+  \item \textbf{应改（近期，画法 A）}：网格级 watershed 孔体识别。成本约
+  一个模块（$\sim$50--100 行）+ 删除 fragment 流程；收益：孔体由几何定义
+  （方法学对齐论文）、去掉 OCC 脆弱环节、消除半径约束、边界球自然处理。
+  \textbf{管线零改动是决定性的}——它几乎是无风险收益。
+
+  \item \textbf{值得改（论文期，画法 B）}：等净距双曲面界面。数学上这是唯一
+  ``闭合 + 鞍点精确''的分区；消除不随 $h$ 收敛的 $O(\delta)$ 系统误差，解锁
+  极限精度；孔体/配位数/孔喉直径等科学量与标准最大球方法可比。需要一次
+  CAD 原型验证（第 7 节实验 2）后决定。
+\end{enumerate}
+
+\subsection{怎么改——路线图}
+
+\begin{itemize}
+  \item \textbf{Phase 1（一周内）}：画法 A 原型。复用
+  \texttt{clearance}/\texttt{sphere\_clearance}；watershed 后对比与现状的
+  孔体数、孔体体积、界面位置偏差分布（第 7 节实验 1）；产出 A vs 现状的
+  误差对比（同一网格密度，Classic/Affine 两套）。
+  \item \textbf{Phase 2（论文前）}：画法 B 单界面 CAD 冒烟（第 7 节实验 2）；
+  若 fragment 稳定，全量替换并重跑基准；若不稳定，论文中画法 A 为正式方法
+  + 声明``曲面界面为后续工作''。
+  \item \textbf{Phase 3}：网格收敛 + 模态升阶实验（衔接四、1--2 改进项），
+  在画法 B 下验证``极限精度不受几何钳制''。
+\end{itemize}
+
+\subsection{预期收益}
+
+\begin{itemize}
+  \item \textbf{几何科学量可信}：孔体体积、配位数、孔喉直径分布与标准方法
+  可比（画法 A 即刻获得，B 完全对齐）；
+  \item \textbf{极限精度解锁}：消除 $O(\delta)$ 系统误差后，误差随 $h$、模态
+  单调收敛到 Schur 截断极限（可被网格收敛实验证实）；
+  \item \textbf{稳健性}：无半径约束、无 fragment 依赖、边界球自然处理；
+  \item \textbf{方法学自洽}：分区实现与论文 2.4 节的``最大球孔体 + 孔喉
+  截面''逻辑完全一致，2D/3D 画法统一为``净距盆地分区''（2D 的连心线切口是
+  2D Apollonius 的特例，第 3.1 节已证其鞍点精确性——改后 2D/3D 方法学
+  \textbf{反而更一致}）。
+\end{itemize}
+
+\section{验证实验提案（待批准后执行）}
+
+\begin{enumerate}
+  \item \textbf{偏差量化（已完成，第 5.1 节表格）}：公式代入当前球数据，给出
+  $\delta/2$ 与相对间隙分布——论证部分已含。
+  \item \textbf{watershed 对照（画法 A 冒烟）}：同一 15k 网格上跑
+  watershed，输出孔体数、孔体体积分布、界面位置 vs 现状 Voronoi 界面的
+  Hausdorff 距离；验证``宽间隙合并''假设。
+  \item \textbf{单界面实体对比（画法 B 冒烟）}：\texttt{affine\_ddpnm\_3d}
+  框架下，同一对球，平面界面 vs 等净距双曲面界面，对比局部 Stokes 误差与
+  牵引系数——隔离几何画法因素，量化 L1 的实际精度代价。
+  \item \textbf{网格收敛}（衔接改进项 1）：2--3 层网格密度，确认 Affine 误差
+  随 $h$ 收敛或停滞于界面空间误差（画法 B 下应无几何停滞）。
+\end{enumerate}
+
+\section*{附录：关键代码位置}
+
+\begin{center}
+\small
+\begin{tabular}{p{6.5cm}p{9cm}}
+\toprule
+组件 & 位置 \\
+\midrule
+球心 Voronoi 界面构造 &
+\texttt{affine\_ddpnm\_3d\_random\_porous/random\_porous.py}
+\texttt{voronoi\_throat\_faces}、\texttt{analytic\_throat\_candidates} \\
+一球一孔体标签分配 & 同上 \texttt{generate\_partition\_mesh}（argmin 最近球心） \\
+事后 maximal balls & 同上 \texttt{build\_partition} \\
+2D 连心线切口（鞍点精确） &
+\texttt{ddpnm\_2d\_random\_porous/ddpnm2d/geometry.py}
+\texttt{analytic\_throat\_cuts} \\
+管线界面消费（网格级） &
+\texttt{ddpnm\_core/basis.py} \texttt{\_interface\_nodes}；
+\texttt{ddpnm\_3d\_uniform\_spheres/ddpnm3d/basis\_3d.py}
+\texttt{\_interface\_frames\_and\_scales} \\
+界面基（法向/切向模态） &
+\texttt{affine\_ddpnm\_3d\_random\_porous/affine\_face\_basis.py}
+\texttt{AffineFaceBasis} \\
+净距函数（watershed 输入） &
+\texttt{random\_porous.py} \texttt{clearance}/\texttt{sphere\_clearance} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

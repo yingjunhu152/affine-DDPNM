@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf Version="3.0" xmlns:xi="https://www.w3.org/2001/XInclude">
+  <Domain>
+    <Grid Name="mesh" GridType="Uniform">
+      <Topology TopologyType="Tetrahedron" NumberOfElements="34341" NodesPerElement="4">
+        <DataItem Dimensions="34341 4" NumberType="Int" Format="HDF">ddpnm_3d_fields.h5:/Mesh/mesh/topology</DataItem>
+      </Topology>
+      <Geometry GeometryType="XYZ">
+        <DataItem Dimensions="8654 3" Format="HDF">ddpnm_3d_fields.h5:/Mesh/mesh/geometry</DataItem>
+      </Geometry>
+    </Grid>
+    <Grid Name="u_ddpnm_trace_average_visualization" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="u_ddpnm_trace_average_visualization" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="u_ddpnm_trace_average_visualization" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8654 3" Format="HDF">ddpnm_3d_fields.h5:/Function/u_ddpnm_trace_average_visualization/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="p_ddpnm_trace_average_visualization" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="p_ddpnm_trace_average_visualization" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="p_ddpnm_trace_average_visualization" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8654 1" Format="HDF">ddpnm_3d_fields.h5:/Function/p_ddpnm_trace_average_visualization/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="u_reference" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="u_reference" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="u_reference" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8654 3" Format="HDF">ddpnm_3d_fields.h5:/Function/u_reference/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="p_reference" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="p_reference" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="p_reference" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8654 1" Format="HDF">ddpnm_3d_fields.h5:/Function/p_reference/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="u_ddpnm_piecewise_p1_cell_mean" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="u_ddpnm_piecewise_p1_cell_mean" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="u_ddpnm_piecewise_p1_cell_mean" AttributeType="Vector" Center="Cell">
+          <DataItem Dimensions="34341 3" Format="HDF">ddpnm_3d_fields.h5:/Function/u_ddpnm_piecewise_p1_cell_mean/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="p_ddpnm_piecewise_p1_cell_mean" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="p_ddpnm_piecewise_p1_cell_mean" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="p_ddpnm_piecewise_p1_cell_mean" AttributeType="Scalar" Center="Cell">
+          <DataItem Dimensions="34341 1" Format="HDF">ddpnm_3d_fields.h5:/Function/p_ddpnm_piecewise_p1_cell_mean/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="velocity_error_cell_rms" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="velocity_error_cell_rms" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="velocity_error_cell_rms" AttributeType="Scalar" Center="Cell">
+          <DataItem Dimensions="34341 1" Format="HDF">ddpnm_3d_fields.h5:/Function/velocity_error_cell_rms/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+    <Grid Name="pressure_error_cell_rms" GridType="Collection" CollectionType="Temporal">
+      <Grid Name="pressure_error_cell_rms" GridType="Uniform">
+        <xi:include xpointer="xpointer(/Xdmf/Domain/Grid[@GridType='Uniform'][1]/*[self::Topology or self::Geometry])" />
+        <Time Value="0" />
+        <Attribute Name="pressure_error_cell_rms" AttributeType="Scalar" Center="Cell">
+          <DataItem Dimensions="34341 1" Format="HDF">ddpnm_3d_fields.h5:/Function/pressure_error_cell_rms/0</DataItem>
+        </Attribute>
+      </Grid>
+    </Grid>
+  </Domain>
+</Xdmf>

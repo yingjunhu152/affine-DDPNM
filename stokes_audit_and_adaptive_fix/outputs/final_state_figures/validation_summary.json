@@ -1,0 +1,239 @@
+{
+  "method": "adaptive FEniCSx Taylor-Hood P2-P1 Stokes on real Berea pore mesh",
+  "important_note": "Every adaptive level solves a restricted subspace of the same FEniCSx Taylor-Hood Stokes matrix. No graph pressure equation is used.",
+  "linear_solver": {
+    "restricted_solver": "schur-gmres",
+    "schur_preconditioner": "ilu",
+    "ilu_drop_tol": 0.0001,
+    "ilu_fill_factor": 12.0,
+    "schur_rtol": 1e-08,
+    "schur_atol": 1e-12,
+    "schur_restart": 80,
+    "schur_maxiter": 300
+  },
+  "adaptive_policy": {
+    "strategy": "staged-proportional-hoddpnm",
+    "upgrade_fraction": 0.25,
+    "hoddpnm_region_fraction": 0.125,
+    "ddpnmt_region_fraction": 0.0,
+    "ddpnm_region_fraction": 0.25,
+    "active_dof_cap": 0.995,
+    "indicator": "posterior-defect",
+    "error_tolerance": 1e-10,
+    "error_metric": "posterior-defect",
+    "dorfler_theta": 0.85,
+    "max_upgrades_per_cycle": 4,
+    "minimum_stop_stage": 4,
+    "initial_stage": 0,
+    "interface_fractions": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "proportional_node_set": "interface-plus-interior",
+    "pressure_indicator_weight": 0.05,
+    "geometry_prior_weights": [
+      1.0,
+      1.1,
+      0.9,
+      0.65,
+      0.75,
+      0.7,
+      0.55
+    ],
+    "geometry_stage_tail": [
+      1.0,
+      0.62,
+      0.42,
+      0.28,
+      0.16,
+      0.07,
+      0.015
+    ],
+    "spectral_boundary_max_nodes": 72,
+    "spectral_tail_modes": 24,
+    "spectral_weight": 1.25,
+    "spectral_ridge": 1e-10,
+    "posterior_defect_weights": [
+      1.0,
+      0.75,
+      0.65,
+      0.25
+    ],
+    "note": "tolerance-driven starts from all-PNM, checks a global error target, and upgrades high-indicator regions by one fidelity level using Doerfler marking until the target is reached or cycles are exhausted. proportional-interface upgrades the released interface-DOF fraction instead of only changing whole-region method levels."
+  },
+  "level_meaning": {
+    "PNM": "global low-order Stokes subspace: P1-like velocity vertices plus P1 pressure",
+    "DDPNM": "adds all P2 velocity dofs in selected regions",
+    "DDPNMT": "adds selected regions plus adjacent-interface P2 dofs",
+    "HODDPNM": "adds selected regions with one-neighbor overlap"
+  },
+  "crop": "20:36,150:166,30:46",
+  "domain_shape_voxels": [
+    16,
+    16,
+    16
+  ],
+  "pore_voxels": 1304,
+  "regions": 16,
+  "n_vertices": 2104,
+  "n_tets": 7824,
+  "mixed_dofs": 42532,
+  "velocity_dofs": 40428,
+  "pressure_dofs": 2104,
+  "timings_seconds": {
+    "fem_sparse_direct_reference": 9.417496600002778,
+    "final_adaptive_restricted_stokes": 0.21871290000126464,
+    "total_wall_time": 65.13520989999961
+  },
+  "memory_trace_mib": {
+    "start": {
+      "working_set_mib": 164.1328125,
+      "peak_working_set_mib": 164.1328125,
+      "pagefile_mib": 2274.86328125,
+      "peak_pagefile_mib": 2274.86328125
+    },
+    "after_fenicsx_assembly": {
+      "working_set_mib": 221.203125,
+      "peak_working_set_mib": 247.70703125,
+      "pagefile_mib": 2332.10546875,
+      "peak_pagefile_mib": 2364.375
+    },
+    "after_fem_reference": {
+      "working_set_mib": 228.98828125,
+      "peak_working_set_mib": 990.17578125,
+      "pagefile_mib": 2340.0234375,
+      "peak_pagefile_mib": 4845.19921875
+    },
+    "end": {
+      "working_set_mib": 432.078125,
+      "peak_working_set_mib": 990.17578125,
+      "pagefile_mib": 2496.40625,
+      "peak_pagefile_mib": 4845.19921875
+    }
+  },
+  "final": {
+    "cycle": 4,
+    "active_dofs": 28423,
+    "active_dof_ratio": 0.6682733001034515,
+    "active_free_dofs": 6483,
+    "active_free_dof_ratio": 0.15242640835135898,
+    "known_fixed_dofs": 21940,
+    "pressure_time_seconds": 0.21871290000126464,
+    "working_set_mib": 225.6015625,
+    "peak_working_set_mib": 297.6953125,
+    "pagefile_mib": 2338.4765625,
+    "peak_pagefile_mib": 2515.44921875,
+    "velocity_rel_l2_error": NaN,
+    "pressure_rel_l2_error": NaN,
+    "target_error": 5.74277658195386e-06,
+    "error_tolerance": 1e-10,
+    "converged_to_tolerance": false,
+    "mixed_residual_rel_l2": 1558.2072529818324,
+    "estimated_residual_relative_to_initial": 4.95624357100686e-06,
+    "indicator": "posterior-defect",
+    "max_residual_indicator": 1.0,
+    "max_posterior_defect_indicator": 1.0,
+    "max_true_error_indicator": 0.0,
+    "max_geometry_prior_indicator": 1.0,
+    "posterior_defect_error": 670.4769870110667,
+    "posterior_defect_relative_to_initial": 5.74277658195386e-06,
+    "geometry_prior_error": 0.542014851674048,
+    "geometry_prior_relative_to_initial": 0.8426366121094483,
+    "solver": "restricted_matrix_free_schur_gmres_known_fixed",
+    "schur_preconditioner": "ilu_of_diagonal_approximate_schur",
+    "schur_boundary_dofs": 3213,
+    "schur_interior_dofs": 3270,
+    "schur_converged": true,
+    "schur_iterations": 35,
+    "schur_gmres_info": 0,
+    "schur_relative_residual": 3.509094140332753e-13,
+    "schur_operator_relative_residual": 5.349076069473319e-13,
+    "mean_interface_fraction": 0.0,
+    "released_interface_nodes": 0,
+    "total_interface_nodes": 5253,
+    "released_interface_node_ratio": 0.0,
+    "n_stage_pnm": 8,
+    "n_stage_ddpnm": 8,
+    "n_stage_ddpnmt": 0,
+    "n_stage_hoddpnm_25": 0,
+    "fraction_stage_3": 0.25,
+    "n_stage_hoddpnm_50": 0,
+    "fraction_stage_4": 0.5,
+    "n_stage_hoddpnm_75": 0,
+    "fraction_stage_5": 0.75,
+    "n_stage_hoddpnm_100": 0,
+    "fraction_stage_6": 1.0,
+    "n_PNM": 8,
+    "n_DDPNM": 8,
+    "n_DDPNMT": 0,
+    "n_HODDPNM": 0,
+    "validation_velocity_rel_l2_error": 5.0450720553396415,
+    "validation_pressure_rel_l2_error": 1.88244502393993e-06
+  },
+  "history": [],
+  "history_omitted_from_outputs": true,
+  "geometry_prior": {
+    "type": "geometry-only prior; no FEM solution or true-error information is used for marking",
+    "feature_names": [
+      "solid_surface_density",
+      "interface_density",
+      "neighbor_degree",
+      "bbox_void_deficit",
+      "constriction_risk",
+      "x_section_risk",
+      "x_interface_cut_fraction"
+    ],
+    "weights": [
+      1.0,
+      1.1,
+      0.9,
+      0.65,
+      0.75,
+      0.7,
+      0.55
+    ],
+    "stage_tail": [
+      1.0,
+      0.62,
+      0.42,
+      0.28,
+      0.16,
+      0.07,
+      0.015
+    ],
+    "complexity_min": 0.05,
+    "complexity_max": 1.0,
+    "complexity_mean": 0.5723704150490627
+  },
+  "errors_velocity_vertices": {
+    "l2_abs": 699.9458480448284,
+    "l2_rel": 5.0450720553396415,
+    "linf_abs": 110.96127615456086,
+    "linf_rel": 3.640916373160651,
+    "mean_abs": 7.0975246296261005,
+    "median_abs": 0.0
+  },
+  "errors_pressure_vertices": {
+    "l2_abs": 405533.81780772365,
+    "l2_rel": 1.88244502393993e-06,
+    "linf_abs": 59025.64044705426,
+    "mean_abs": 6752.865344987907,
+    "median_abs": 5565.10804765335
+  },
+  "outputs": {
+    "vtu": "real_porous_hoddpnm_solution.vtu",
+    "final_figures": {
+      "final_region_methods": "outputs\\final_state_figures\\final_region_methods.png",
+      "final_velocity_magnitude": "outputs\\final_state_figures\\final_velocity_magnitude.png",
+      "final_pressure": "outputs\\final_state_figures\\final_pressure.png",
+      "final_velocity_log_error": "outputs\\final_state_figures\\final_velocity_log_error.png",
+      "final_pressure_log_error": "outputs\\final_state_figures\\final_pressure_log_error.png",
+      "final_state_overview": "outputs\\final_state_figures\\final_state_overview.png"
+    },
+    "method_map_legacy": null,
+    "iteration_artifacts": "saved only with --save-iteration-artifacts"
+  }
+}

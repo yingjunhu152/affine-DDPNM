@@ -1,0 +1,23 @@
+\contentsline {section}{\numberline {1}问题设置：把什么分给谁}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}流体域与固体}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}分区的数学表述}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}净距场、活动支撑与维数计数}{4}{subsection.1.3}%
+\contentsline {section}{\numberline {2}四种分区方法的数学构造}{5}{section.2}%
+\contentsline {subsection}{\numberline {2.1}规则阵列解析分区：64 个最大空球}{5}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}球心 Voronoi 平面基线：27 个孔体}{6}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}固定球对的等净距曲面：双曲面}{7}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}持久性净距 watershed：82 个孔体}{7}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}四种方法的数学身份对照}{9}{subsection.2.5}%
+\contentsline {section}{\numberline {3}手算例题}{9}{section.3}%
+\contentsline {subsection}{\numberline {3.1}例 1：连通细胞图上的净距 watershed 全流程}{9}{subsection.3.1}%
+\contentsline {paragraph}{洪水标记（$\tau _{\rm abs}=0.02$ 情形，手算）}{10}{paragraph*.2}%
+\contentsline {subsection}{\numberline {3.2}例 2：两个不等半径球——三种方法的差异}{11}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}例 3：支撑数维数计数}{12}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}例 4：规则 $3\times 3\times 3$ 阵列——64 个孔体，不是 27}{12}{subsection.3.4}%
+\contentsline {paragraph}{最大空球}{12}{paragraph*.3}%
+\contentsline {paragraph}{喉道鞍点}{13}{paragraph*.4}%
+\contentsline {paragraph}{对照：球心 Voronoi 会给出什么}{13}{paragraph*.5}%
+\contentsline {subsection}{\numberline {3.5}例 5：浮游盆判别（思维练习）}{14}{subsection.3.5}%
+\contentsline {section}{\numberline {4}分区与求解器的接口}{14}{section.4}%
+\contentsline {section}{\numberline {5}延伸阅读}{14}{section.5}%
+\contentsline {section}{\numberline {A}源码位置对照}{15}{appendix.A}%

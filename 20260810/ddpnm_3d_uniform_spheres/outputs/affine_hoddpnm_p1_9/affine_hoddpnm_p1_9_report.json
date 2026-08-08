@@ -1,0 +1,43 @@
+{
+  "method": "HODDPNM-P1(9), reduced vector-affine trace Schur complement",
+  "mode_groups_per_interface": {
+    "constant_vector": 3,
+    "linear_normal": 2,
+    "linear_tangential": 4,
+    "total": 9
+  },
+  "interfaces": 144,
+  "global_interface_unknowns": 1296,
+  "system_diagnostics": {
+    "method": "HODDPNM",
+    "interface_unknowns": 1296,
+    "minimum_schur_eigenvalue": 7.035025508884497e-05,
+    "schur_symmetry_error": 0.0,
+    "relative_linear_residual": 1.1575502282677524e-15,
+    "maximum_interface_moment_residual": 1.7271340607694086e-16,
+    "inlet_outward_flux": -0.0019959825593468096,
+    "outlet_outward_flux": 0.001995982559346338,
+    "relative_mass_imbalance": 2.3639724869149934e-13
+  },
+  "strict_errors_to_identical_mesh_fem": {
+    "same_parent_mesh_object": true,
+    "quadrature_degree": 6,
+    "maximum_global_to_local_dof_coordinate_mismatch": 5.20740757162067e-16,
+    "velocity_absolute_l2": 0.0001644288889023995,
+    "velocity_reference_l2": 0.0024463882969630304,
+    "velocity_relative_l2": 0.0672129150987695,
+    "velocity_relative_broken_h1_seminorm": 0.20141771967233862,
+    "pressure_raw_absolute_l2": 0.00797422574132719,
+    "pressure_raw_relative_l2": 0.014263632387803505,
+    "pressure_mean_difference_ddpnm_minus_fem": -4.376793157780125e-05,
+    "pressure_reference_mean": 0.5003935563936447,
+    "pressure_mean_aligned_relative_l2": 0.026099477995758326,
+    "ddpnm_broken_divergence_l2": 0.008472585168219247,
+    "fem_divergence_l2": 0.008784192928065088,
+    "ddpnm_outlet_flux": 0.001995982559346338,
+    "fem_outlet_flux": 0.00194984813654925,
+    "outlet_flux_relative_error": 0.023660521007925376,
+    "cell_error_integral_sum_velocity": 2.7036859505677634e-08,
+    "cell_error_integral_sum_pressure": 6.358827617364518e-05
+  }
+}

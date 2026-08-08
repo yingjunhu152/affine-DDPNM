@@ -1,0 +1,1888 @@
+{
+  "n_spheres": 27,
+  "n_tetrahedra": 84,
+  "n_tetrahedra_with_dummies": 131,
+  "n_interfaces": 151,
+  "n_real_interfaces_with_dummies": 111,
+  "n_boundary_interfaces_with_dummies": 46,
+  "corners_inside_hull": 0,
+  "corners_outside_hull": 8,
+  "face_coverage": [
+    {
+      "axis": 0,
+      "value": 0.0,
+      "n_outside_of_100": 88
+    },
+    {
+      "axis": 0,
+      "value": 1.0,
+      "n_outside_of_100": 84
+    },
+    {
+      "axis": 1,
+      "value": 0.0,
+      "n_outside_of_100": 86
+    },
+    {
+      "axis": 1,
+      "value": 1.0,
+      "n_outside_of_100": 90
+    },
+    {
+      "axis": 2,
+      "value": 0.0,
+      "n_outside_of_100": 85
+    },
+    {
+      "axis": 2,
+      "value": 1.0,
+      "n_outside_of_100": 93
+    }
+  ],
+  "penetrated_count": 151,
+  "no_channel_count": 0,
+  "saddle_clearance_min": 0.06052247280298949,
+  "saddle_clearance_median": 0.15464354107614176,
+  "saddle_clearance_max": 0.24831117465055097,
+  "centroid_clearance_min": -0.06649766916319147,
+  "centroid_clearance_median": 0.10153874580897816,
+  "centroid_clearance_max": 0.19757058486598483,
+  "voronoi_saddle_median": 0.0073,
+  "saddle_histogram_bins": [
+    -0.05,
+    -0.02,
+    0.0,
+    0.005,
+    0.01,
+    0.02,
+    0.05,
+    0.1,
+    0.15,
+    0.25
+  ],
+  "saddle_histogram_counts": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    7,
+    57,
+    87
+  ],
+  "interfaces": [
+    {
+      "face_verts": [
+        0,
+        24,
+        2
+      ],
+      "area": 0.09101137161233387,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17600604590905092,
+      "saddle_clearance": 0.17600604590905092
+    },
+    {
+      "face_verts": [
+        24,
+        2,
+        7
+      ],
+      "area": 0.1290666174730142,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.21599320149236464,
+      "saddle_clearance": 0.21599320149236464
+    },
+    {
+      "face_verts": [
+        7,
+        0,
+        24
+      ],
+      "area": 0.12846890133483552,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.21808832963449465,
+      "saddle_clearance": 0.21808832963449465
+    },
+    {
+      "face_verts": [
+        18,
+        15,
+        17
+      ],
+      "area": 0.0644584798706149,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13925027510531185,
+      "saddle_clearance": 0.13925027510531185
+    },
+    {
+      "face_verts": [
+        17,
+        16,
+        18
+      ],
+      "area": 0.05262020466307603,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1029184243497858,
+      "saddle_clearance": 0.1029184243497858
+    },
+    {
+      "face_verts": [
+        16,
+        18,
+        15
+      ],
+      "area": 0.06470600573374442,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14145293284545796,
+      "saddle_clearance": 0.14145293284545796
+    },
+    {
+      "face_verts": [
+        0,
+        24,
+        15
+      ],
+      "area": 0.14041416519485111,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.2605512847261934,
+      "saddle_clearance": 0.24831117465055097
+    },
+    {
+      "face_verts": [
+        24,
+        15,
+        9
+      ],
+      "area": 0.13899167590686176,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.21268278536338062,
+      "saddle_clearance": 0.1974189940041436
+    },
+    {
+      "face_verts": [
+        9,
+        0,
+        24
+      ],
+      "area": 0.12993271449070426,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.24303673925418975,
+      "saddle_clearance": 0.24271482204566397
+    },
+    {
+      "face_verts": [
+        8,
+        6,
+        19
+      ],
+      "area": 0.05656246481112589,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.11423674149551086,
+      "saddle_clearance": 0.11423674149551086
+    },
+    {
+      "face_verts": [
+        6,
+        19,
+        7
+      ],
+      "area": 0.08059871792645194,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1454940163589755,
+      "saddle_clearance": 0.1454940163589755
+    },
+    {
+      "face_verts": [
+        19,
+        7,
+        8
+      ],
+      "area": 0.05974425006854068,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12284473854364525,
+      "saddle_clearance": 0.12284473854364525
+    },
+    {
+      "face_verts": [
+        18,
+        8,
+        6
+      ],
+      "area": 0.07812698360543316,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15464354107614176,
+      "saddle_clearance": 0.15464354107614176
+    },
+    {
+      "face_verts": [
+        6,
+        19,
+        18
+      ],
+      "area": 0.09307155374625022,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16889874312306613,
+      "saddle_clearance": 0.16622916341054492
+    },
+    {
+      "face_verts": [
+        19,
+        18,
+        8
+      ],
+      "area": 0.07759799890484323,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16245162449346895,
+      "saddle_clearance": 0.16117973064853497
+    },
+    {
+      "face_verts": [
+        0,
+        24,
+        19
+      ],
+      "area": 0.10909196160154,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.22478697325850838,
+      "saddle_clearance": 0.21709020196500015
+    },
+    {
+      "face_verts": [
+        24,
+        19,
+        7
+      ],
+      "area": 0.07523283145786315,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17228511414866554,
+      "saddle_clearance": 0.17228511414866554
+    },
+    {
+      "face_verts": [
+        19,
+        7,
+        0
+      ],
+      "area": 0.0946077755782794,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18863444737409396,
+      "saddle_clearance": 0.18863444737409396
+    },
+    {
+      "face_verts": [
+        24,
+        2,
+        19
+      ],
+      "area": 0.11325936369960186,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.21246955218703262,
+      "saddle_clearance": 0.21246955218703262
+    },
+    {
+      "face_verts": [
+        2,
+        19,
+        7
+      ],
+      "area": 0.08881154788874868,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18656156541490893,
+      "saddle_clearance": 0.17446030958029832
+    },
+    {
+      "face_verts": [
+        6,
+        3,
+        18
+      ],
+      "area": 0.0930992136058584,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15209594298424814,
+      "saddle_clearance": 0.15209594298424814
+    },
+    {
+      "face_verts": [
+        3,
+        18,
+        8
+      ],
+      "area": 0.09036379369422899,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1555303262432921,
+      "saddle_clearance": 0.15464354107614176
+    },
+    {
+      "face_verts": [
+        18,
+        17,
+        6
+      ],
+      "area": 0.08001033615012174,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1596941966983092,
+      "saddle_clearance": 0.14472792188961206
+    },
+    {
+      "face_verts": [
+        3,
+        18,
+        17
+      ],
+      "area": 0.070580182996484,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14979306104349943,
+      "saddle_clearance": 0.14979306104349943
+    },
+    {
+      "face_verts": [
+        3,
+        16,
+        18
+      ],
+      "area": 0.08489223303689822,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18184203852236347,
+      "saddle_clearance": 0.18184203852236347
+    },
+    {
+      "face_verts": [
+        16,
+        18,
+        5
+      ],
+      "area": 0.07319948963680228,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13294997161999222,
+      "saddle_clearance": 0.13294997161999222
+    },
+    {
+      "face_verts": [
+        18,
+        5,
+        3
+      ],
+      "area": 0.09111589997191509,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14712727991407382,
+      "saddle_clearance": 0.14712727991407382
+    },
+    {
+      "face_verts": [
+        18,
+        5,
+        20
+      ],
+      "area": 0.0697966316253343,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14990807639633508,
+      "saddle_clearance": 0.14990807639633508
+    },
+    {
+      "face_verts": [
+        5,
+        20,
+        16
+      ],
+      "area": 0.05833486261854928,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12362405455609074,
+      "saddle_clearance": 0.12362405455609074
+    },
+    {
+      "face_verts": [
+        20,
+        16,
+        18
+      ],
+      "area": 0.08185385352071138,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15112918666357633,
+      "saddle_clearance": 0.15112918666357633
+    },
+    {
+      "face_verts": [
+        18,
+        6,
+        21
+      ],
+      "area": 0.04794444923322502,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.11988293076289235,
+      "saddle_clearance": 0.11988293076289235
+    },
+    {
+      "face_verts": [
+        6,
+        21,
+        19
+      ],
+      "area": 0.06815016292673773,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1389124208731317,
+      "saddle_clearance": 0.1389124208731317
+    },
+    {
+      "face_verts": [
+        21,
+        19,
+        18
+      ],
+      "area": 0.06451794975677859,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1535353434732266,
+      "saddle_clearance": 0.1535353434732266
+    },
+    {
+      "face_verts": [
+        19,
+        18,
+        24
+      ],
+      "area": 0.07227965034019736,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1608494348908856,
+      "saddle_clearance": 0.1608494348908856
+    },
+    {
+      "face_verts": [
+        18,
+        24,
+        21
+      ],
+      "area": 0.04725326279370233,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.10260234390170732,
+      "saddle_clearance": 0.10260234390170732
+    },
+    {
+      "face_verts": [
+        24,
+        21,
+        19
+      ],
+      "area": 0.07025417975657014,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14570325585933114,
+      "saddle_clearance": 0.14570325585933114
+    },
+    {
+      "face_verts": [
+        0,
+        24,
+        21
+      ],
+      "area": 0.07966718982568158,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16136219335756752,
+      "saddle_clearance": 0.16136219335756752
+    },
+    {
+      "face_verts": [
+        21,
+        19,
+        0
+      ],
+      "area": 0.10460751419810713,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.21685776674424898,
+      "saddle_clearance": 0.19931158715436068
+    },
+    {
+      "face_verts": [
+        17,
+        6,
+        21
+      ],
+      "area": 0.06317106947482233,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14472792188961206,
+      "saddle_clearance": 0.14472792188961206
+    },
+    {
+      "face_verts": [
+        6,
+        21,
+        0
+      ],
+      "area": 0.0679030327399084,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14824698478400425,
+      "saddle_clearance": 0.14824698478400425
+    },
+    {
+      "face_verts": [
+        21,
+        0,
+        17
+      ],
+      "area": 0.07005385900318949,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1476776236506073,
+      "saddle_clearance": 0.1476776236506073
+    },
+    {
+      "face_verts": [
+        21,
+        18,
+        17
+      ],
+      "area": 0.05033860669702568,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.10458646324577109,
+      "saddle_clearance": 0.10458646324577109
+    },
+    {
+      "face_verts": [
+        6,
+        21,
+        7
+      ],
+      "area": 0.08085542416743624,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16402986131746447,
+      "saddle_clearance": 0.16402986131746447
+    },
+    {
+      "face_verts": [
+        21,
+        7,
+        0
+      ],
+      "area": 0.11250118818576416,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18221039487476906,
+      "saddle_clearance": 0.18221039487476906
+    },
+    {
+      "face_verts": [
+        21,
+        19,
+        7
+      ],
+      "area": 0.08048498983828216,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16402018866616327,
+      "saddle_clearance": 0.16402018866616327
+    },
+    {
+      "face_verts": [
+        15,
+        17,
+        21
+      ],
+      "area": 0.07234156892302447,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1428491738687997,
+      "saddle_clearance": 0.1428491738687997
+    },
+    {
+      "face_verts": [
+        21,
+        0,
+        15
+      ],
+      "area": 0.1333728552611982,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.24831117465055097,
+      "saddle_clearance": 0.24831117465055097
+    },
+    {
+      "face_verts": [
+        24,
+        15,
+        21
+      ],
+      "area": 0.09531532518653937,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18953148580853085,
+      "saddle_clearance": 0.1869530397528496
+    },
+    {
+      "face_verts": [
+        21,
+        18,
+        15
+      ],
+      "area": 0.07482639114255302,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1795624918994613,
+      "saddle_clearance": 0.14579876224129984
+    },
+    {
+      "face_verts": [
+        8,
+        14,
+        19
+      ],
+      "area": 0.06714585242819293,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15385380582521635,
+      "saddle_clearance": 0.15385380582521635
+    },
+    {
+      "face_verts": [
+        14,
+        19,
+        7
+      ],
+      "area": 0.061840417303511856,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1314232106288617,
+      "saddle_clearance": 0.1314232106288617
+    },
+    {
+      "face_verts": [
+        5,
+        4,
+        23
+      ],
+      "area": 0.08753523002853733,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1577332932391755,
+      "saddle_clearance": 0.1577332932391755
+    },
+    {
+      "face_verts": [
+        4,
+        23,
+        3
+      ],
+      "area": 0.07012729981458903,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15600535719291084,
+      "saddle_clearance": 0.15600535719291084
+    },
+    {
+      "face_verts": [
+        23,
+        3,
+        5
+      ],
+      "area": 0.07818545631179696,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15865797148181837,
+      "saddle_clearance": 0.15865797148181837
+    },
+    {
+      "face_verts": [
+        18,
+        5,
+        23
+      ],
+      "area": 0.08260553801053792,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16204102562865602,
+      "saddle_clearance": 0.16204102562865602
+    },
+    {
+      "face_verts": [
+        23,
+        3,
+        18
+      ],
+      "area": 0.056224919512559694,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.10923565673191715,
+      "saddle_clearance": 0.10923565673191715
+    },
+    {
+      "face_verts": [
+        20,
+        5,
+        4
+      ],
+      "area": 0.059008117399560314,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.09976369051881771,
+      "saddle_clearance": 0.09976369051881771
+    },
+    {
+      "face_verts": [
+        4,
+        23,
+        20
+      ],
+      "area": 0.0857757185764332,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18052621114625783,
+      "saddle_clearance": 0.18052621114625783
+    },
+    {
+      "face_verts": [
+        23,
+        20,
+        5
+      ],
+      "area": 0.08167805370486526,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18052621114625783,
+      "saddle_clearance": 0.18052621114625783
+    },
+    {
+      "face_verts": [
+        23,
+        20,
+        18
+      ],
+      "area": 0.08084536236716239,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18052621114625783,
+      "saddle_clearance": 0.18052621114625783
+    },
+    {
+      "face_verts": [
+        20,
+        22,
+        4
+      ],
+      "area": 0.043286865613648105,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.09195462710098776,
+      "saddle_clearance": 0.09195462710098776
+    },
+    {
+      "face_verts": [
+        22,
+        4,
+        23
+      ],
+      "area": 0.06354767772411551,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1396997888869934,
+      "saddle_clearance": 0.1396997888869934
+    },
+    {
+      "face_verts": [
+        23,
+        20,
+        22
+      ],
+      "area": 0.0763001724188005,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18503988677879105,
+      "saddle_clearance": 0.18052621114625783
+    },
+    {
+      "face_verts": [
+        4,
+        23,
+        14
+      ],
+      "area": 0.0995546070996826,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18228610290155,
+      "saddle_clearance": 0.1664049774281982
+    },
+    {
+      "face_verts": [
+        23,
+        14,
+        3
+      ],
+      "area": 0.03622197391459465,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12617648040662574,
+      "saddle_clearance": 0.12617648040662574
+    },
+    {
+      "face_verts": [
+        18,
+        8,
+        23
+      ],
+      "area": 0.0695612341843371,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15464354107614176,
+      "saddle_clearance": 0.15464354107614176
+    },
+    {
+      "face_verts": [
+        8,
+        23,
+        19
+      ],
+      "area": 0.05606156534560241,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.10397866140167084,
+      "saddle_clearance": 0.10397866140167084
+    },
+    {
+      "face_verts": [
+        23,
+        19,
+        18
+      ],
+      "area": 0.06448836699789566,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15317562373501925,
+      "saddle_clearance": 0.15317562373501925
+    },
+    {
+      "face_verts": [
+        8,
+        23,
+        3
+      ],
+      "area": 0.06167214186479853,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.10316815934748857,
+      "saddle_clearance": 0.10316815934748857
+    },
+    {
+      "face_verts": [
+        18,
+        24,
+        23
+      ],
+      "area": 0.06228110431140141,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16123386777574883,
+      "saddle_clearance": 0.16123386777574883
+    },
+    {
+      "face_verts": [
+        24,
+        23,
+        19
+      ],
+      "area": 0.07698473981923785,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1710128992814017,
+      "saddle_clearance": 0.1710128992814017
+    },
+    {
+      "face_verts": [
+        8,
+        23,
+        14
+      ],
+      "area": 0.08888071865981254,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17272266509604484,
+      "saddle_clearance": 0.16028280903415504
+    },
+    {
+      "face_verts": [
+        23,
+        14,
+        19
+      ],
+      "area": 0.07221660832083833,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1367781658467824,
+      "saddle_clearance": 0.1367781658467824
+    },
+    {
+      "face_verts": [
+        18,
+        15,
+        26
+      ],
+      "area": 0.07022944178627451,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15063368264582833,
+      "saddle_clearance": 0.15063368264582833
+    },
+    {
+      "face_verts": [
+        15,
+        26,
+        16
+      ],
+      "area": 0.06332253162509062,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13621065253145337,
+      "saddle_clearance": 0.13621065253145337
+    },
+    {
+      "face_verts": [
+        26,
+        16,
+        18
+      ],
+      "area": 0.06871005262201756,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13863582440260575,
+      "saddle_clearance": 0.13863582440260575
+    },
+    {
+      "face_verts": [
+        20,
+        16,
+        15
+      ],
+      "area": 0.07031057041289687,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15626757327006274,
+      "saddle_clearance": 0.15484952143508143
+    },
+    {
+      "face_verts": [
+        15,
+        26,
+        20
+      ],
+      "area": 0.05659457762663242,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1462386321407002,
+      "saddle_clearance": 0.1462386321407002
+    },
+    {
+      "face_verts": [
+        26,
+        20,
+        16
+      ],
+      "area": 0.060639832842327206,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1348582372860063,
+      "saddle_clearance": 0.1348582372860063
+    },
+    {
+      "face_verts": [
+        18,
+        26,
+        20
+      ],
+      "area": 0.0490276714450405,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13912025848574744,
+      "saddle_clearance": 0.13912025848574744
+    },
+    {
+      "face_verts": [
+        24,
+        15,
+        26
+      ],
+      "area": 0.0497897722598384,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13166863297243628,
+      "saddle_clearance": 0.13166863297243628
+    },
+    {
+      "face_verts": [
+        15,
+        26,
+        21
+      ],
+      "area": 0.09967449755701904,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.197309104165569,
+      "saddle_clearance": 0.17744999122083582
+    },
+    {
+      "face_verts": [
+        26,
+        21,
+        24
+      ],
+      "area": 0.044173267160856684,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1124882574364193,
+      "saddle_clearance": 0.1124882574364193
+    },
+    {
+      "face_verts": [
+        26,
+        21,
+        18
+      ],
+      "area": 0.050906769998093064,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12847121988349575,
+      "saddle_clearance": 0.1124882574364193
+    },
+    {
+      "face_verts": [
+        18,
+        24,
+        26
+      ],
+      "area": 0.04268374694707898,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.09642036442442475,
+      "saddle_clearance": 0.09642036442442475
+    },
+    {
+      "face_verts": [
+        15,
+        26,
+        9
+      ],
+      "area": 0.08928485541651965,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1974189940041436,
+      "saddle_clearance": 0.1974189940041436
+    },
+    {
+      "face_verts": [
+        26,
+        9,
+        24
+      ],
+      "area": 0.0583168684352024,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1519246603382226,
+      "saddle_clearance": 0.1519246603382226
+    },
+    {
+      "face_verts": [
+        24,
+        26,
+        23
+      ],
+      "area": 0.06657304424459085,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18010375427791314,
+      "saddle_clearance": 0.16123386777574883
+    },
+    {
+      "face_verts": [
+        26,
+        23,
+        18
+      ],
+      "area": 0.06089211076643876,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1428248273649078,
+      "saddle_clearance": 0.1428248273649078
+    },
+    {
+      "face_verts": [
+        26,
+        23,
+        20
+      ],
+      "area": 0.07398988983560942,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.19134010221355435,
+      "saddle_clearance": 0.18355555601855394
+    },
+    {
+      "face_verts": [
+        23,
+        22,
+        24
+      ],
+      "area": 0.11967163474762019,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.2077910872820967,
+      "saddle_clearance": 0.2049642349418376
+    },
+    {
+      "face_verts": [
+        22,
+        24,
+        26
+      ],
+      "area": 0.0545157264218775,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15709855881475746,
+      "saddle_clearance": 0.15709855881475746
+    },
+    {
+      "face_verts": [
+        26,
+        23,
+        22
+      ],
+      "area": 0.10349380340610932,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.19999348407034132,
+      "saddle_clearance": 0.19999348407034132
+    },
+    {
+      "face_verts": [
+        20,
+        22,
+        26
+      ],
+      "area": 0.042143061546131205,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.11690361647768709,
+      "saddle_clearance": 0.11690361647768709
+    },
+    {
+      "face_verts": [
+        15,
+        10,
+        20
+      ],
+      "area": 0.0837416082043004,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18498574690147512,
+      "saddle_clearance": 0.1462386321407002
+    },
+    {
+      "face_verts": [
+        10,
+        20,
+        16
+      ],
+      "area": 0.05809105397983821,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14386661531104972,
+      "saddle_clearance": 0.14386661531104972
+    },
+    {
+      "face_verts": [
+        5,
+        10,
+        20
+      ],
+      "area": 0.007214424265727076,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.06052247280298949,
+      "saddle_clearance": 0.06052247280298949
+    },
+    {
+      "face_verts": [
+        15,
+        10,
+        26
+      ],
+      "area": 0.06186083683832433,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14020502068196786,
+      "saddle_clearance": 0.14020502068196786
+    },
+    {
+      "face_verts": [
+        10,
+        26,
+        9
+      ],
+      "area": 0.053248270183967494,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.116379765812167,
+      "saddle_clearance": 0.116379765812167
+    },
+    {
+      "face_verts": [
+        10,
+        26,
+        20
+      ],
+      "area": 0.04076341118893182,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.07887830644133896,
+      "saddle_clearance": 0.07887830644133896
+    },
+    {
+      "face_verts": [
+        4,
+        10,
+        20
+      ],
+      "area": 0.05757902316516953,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1265075073500075,
+      "saddle_clearance": 0.09141017504911506
+    },
+    {
+      "face_verts": [
+        20,
+        22,
+        10
+      ],
+      "area": 0.04408886539258196,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.08559198816486688,
+      "saddle_clearance": 0.08559198816486688
+    },
+    {
+      "face_verts": [
+        22,
+        10,
+        26
+      ],
+      "area": 0.055140421981923246,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12749857157774447,
+      "saddle_clearance": 0.11701362006147414
+    },
+    {
+      "face_verts": [
+        26,
+        9,
+        11
+      ],
+      "area": 0.06480447570486983,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15031018043009864,
+      "saddle_clearance": 0.11854091433967068
+    },
+    {
+      "face_verts": [
+        11,
+        10,
+        26
+      ],
+      "area": 0.06092982818962973,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.11496864833949925,
+      "saddle_clearance": 0.11496864833949925
+    },
+    {
+      "face_verts": [
+        4,
+        12,
+        23
+      ],
+      "area": 0.10038136705393895,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1654101226119497,
+      "saddle_clearance": 0.1654101226119497
+    },
+    {
+      "face_verts": [
+        12,
+        23,
+        22
+      ],
+      "area": 0.102061148641963,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17916156780842662,
+      "saddle_clearance": 0.17476708035634003
+    },
+    {
+      "face_verts": [
+        12,
+        23,
+        14
+      ],
+      "area": 0.06163662521367049,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14576069322899654,
+      "saddle_clearance": 0.14576069322899654
+    },
+    {
+      "face_verts": [
+        24,
+        2,
+        13
+      ],
+      "area": 0.10396048627815307,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1986490294804171,
+      "saddle_clearance": 0.1986490294804171
+    },
+    {
+      "face_verts": [
+        2,
+        13,
+        19
+      ],
+      "area": 0.08712588153981944,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17446030958029832,
+      "saddle_clearance": 0.17446030958029832
+    },
+    {
+      "face_verts": [
+        13,
+        19,
+        24
+      ],
+      "area": 0.09625575546730714,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.19457480461570234,
+      "saddle_clearance": 0.19457480461570234
+    },
+    {
+      "face_verts": [
+        13,
+        19,
+        7
+      ],
+      "area": 0.07604071261491202,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13114965644639245,
+      "saddle_clearance": 0.13114965644639245
+    },
+    {
+      "face_verts": [
+        13,
+        14,
+        19
+      ],
+      "area": 0.08689925236063203,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15013203476330605,
+      "saddle_clearance": 0.15013203476330605
+    },
+    {
+      "face_verts": [
+        19,
+        24,
+        25
+      ],
+      "area": 0.08339296231254806,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17883233783117664,
+      "saddle_clearance": 0.17883233783117664
+    },
+    {
+      "face_verts": [
+        24,
+        25,
+        23
+      ],
+      "area": 0.09982944049244565,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.20761792522343683,
+      "saddle_clearance": 0.20761792522343683
+    },
+    {
+      "face_verts": [
+        25,
+        23,
+        19
+      ],
+      "area": 0.0952798576302657,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.20770702097317062,
+      "saddle_clearance": 0.20770702097317062
+    },
+    {
+      "face_verts": [
+        14,
+        19,
+        25
+      ],
+      "area": 0.0950716876228582,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17634904370500318,
+      "saddle_clearance": 0.17634904370500318
+    },
+    {
+      "face_verts": [
+        25,
+        23,
+        14
+      ],
+      "area": 0.10757096294575334,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.20761792522343683,
+      "saddle_clearance": 0.20761792522343683
+    },
+    {
+      "face_verts": [
+        24,
+        25,
+        13
+      ],
+      "area": 0.0880962111009333,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18635967756141789,
+      "saddle_clearance": 0.18635967756141789
+    },
+    {
+      "face_verts": [
+        25,
+        13,
+        19
+      ],
+      "area": 0.09497796759839862,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17661843000432995,
+      "saddle_clearance": 0.17661843000432995
+    },
+    {
+      "face_verts": [
+        25,
+        13,
+        14
+      ],
+      "area": 0.0947981369726699,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15164953152476385,
+      "saddle_clearance": 0.15164953152476385
+    },
+    {
+      "face_verts": [
+        14,
+        25,
+        12
+      ],
+      "area": 0.05493045985124357,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12477651109631395,
+      "saddle_clearance": 0.12477651109631395
+    },
+    {
+      "face_verts": [
+        25,
+        12,
+        23
+      ],
+      "area": 0.10621565632088183,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.20761792522343683,
+      "saddle_clearance": 0.20761792522343683
+    },
+    {
+      "face_verts": [
+        25,
+        13,
+        12
+      ],
+      "area": 0.09013390521996047,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18215371417419998,
+      "saddle_clearance": 0.15288776254933797
+    },
+    {
+      "face_verts": [
+        22,
+        24,
+        25
+      ],
+      "area": 0.08786068575149088,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1909083987270833,
+      "saddle_clearance": 0.17495190307332423
+    },
+    {
+      "face_verts": [
+        25,
+        23,
+        22
+      ],
+      "area": 0.1136388662484056,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.21015061960738451,
+      "saddle_clearance": 0.21015061960738451
+    },
+    {
+      "face_verts": [
+        22,
+        25,
+        12
+      ],
+      "area": 0.07807708941568868,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.13918342598594335,
+      "saddle_clearance": 0.13918342598594335
+    },
+    {
+      "face_verts": [
+        12,
+        11,
+        25
+      ],
+      "area": 0.06542265701208837,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.11811235066019944,
+      "saddle_clearance": 0.11811235066019944
+    },
+    {
+      "face_verts": [
+        11,
+        25,
+        13
+      ],
+      "area": 0.059331066509167696,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12941727126528182,
+      "saddle_clearance": 0.12941727126528182
+    },
+    {
+      "face_verts": [
+        22,
+        11,
+        25
+      ],
+      "area": 0.08463061530929715,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17462973765430312,
+      "saddle_clearance": 0.16341048883883874
+    },
+    {
+      "face_verts": [
+        24,
+        2,
+        25
+      ],
+      "area": 0.10303962891337085,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18864186538231983,
+      "saddle_clearance": 0.18580407997404505
+    },
+    {
+      "face_verts": [
+        2,
+        25,
+        13
+      ],
+      "area": 0.08605578351152644,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17289011875164675,
+      "saddle_clearance": 0.15758824245848507
+    },
+    {
+      "face_verts": [
+        24,
+        25,
+        26
+      ],
+      "area": 0.052124309436657135,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14613730911918774,
+      "saddle_clearance": 0.14613730911918774
+    },
+    {
+      "face_verts": [
+        25,
+        26,
+        22
+      ],
+      "area": 0.08902647769930941,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16969949070767423,
+      "saddle_clearance": 0.16969949070767423
+    },
+    {
+      "face_verts": [
+        9,
+        11,
+        24
+      ],
+      "area": 0.07687136528990729,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1840685480201943,
+      "saddle_clearance": 0.18122855885726766
+    },
+    {
+      "face_verts": [
+        11,
+        24,
+        25
+      ],
+      "area": 0.07509984457721056,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16928583583498027,
+      "saddle_clearance": 0.16928583583498027
+    },
+    {
+      "face_verts": [
+        24,
+        25,
+        9
+      ],
+      "area": 0.0986269769088011,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1836813289337967,
+      "saddle_clearance": 0.1836813289337967
+    },
+    {
+      "face_verts": [
+        25,
+        9,
+        11
+      ],
+      "area": 0.05334410489194872,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.11399608728403461,
+      "saddle_clearance": 0.11399608728403461
+    },
+    {
+      "face_verts": [
+        25,
+        26,
+        9
+      ],
+      "area": 0.1037132305933077,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.17923449554077237,
+      "saddle_clearance": 0.17679409653118622
+    },
+    {
+      "face_verts": [
+        11,
+        25,
+        26
+      ],
+      "area": 0.09190196117877203,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18279816093382048,
+      "saddle_clearance": 0.16986303370082914
+    },
+    {
+      "face_verts": [
+        11,
+        25,
+        10
+      ],
+      "area": 0.0725001334380559,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14805518231477496,
+      "saddle_clearance": 0.14805518231477496
+    },
+    {
+      "face_verts": [
+        25,
+        10,
+        22
+      ],
+      "area": 0.07603727832120084,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15984879060618704,
+      "saddle_clearance": 0.15984879060618704
+    },
+    {
+      "face_verts": [
+        25,
+        10,
+        26
+      ],
+      "area": 0.07767076781071297,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.16963706261120196,
+      "saddle_clearance": 0.16963706261120196
+    },
+    {
+      "face_verts": [
+        2,
+        1,
+        25
+      ],
+      "area": 0.07108667477957517,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.15212664589095504,
+      "saddle_clearance": 0.15212664589095504
+    },
+    {
+      "face_verts": [
+        1,
+        25,
+        13
+      ],
+      "area": 0.091667129858893,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.14557663805150403,
+      "saddle_clearance": 0.14557663805150403
+    },
+    {
+      "face_verts": [
+        11,
+        1,
+        25
+      ],
+      "area": 0.07629019087886699,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.12753528361420963,
+      "saddle_clearance": 0.12753528361420963
+    },
+    {
+      "face_verts": [
+        24,
+        2,
+        1
+      ],
+      "area": 0.08349160055361747,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1780962848806378,
+      "saddle_clearance": 0.1780962848806378
+    },
+    {
+      "face_verts": [
+        1,
+        25,
+        24
+      ],
+      "area": 0.0840974211552879,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1657075046113885,
+      "saddle_clearance": 0.1657075046113885
+    },
+    {
+      "face_verts": [
+        11,
+        24,
+        1
+      ],
+      "area": 0.11282176569890863,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.1958613470531434,
+      "saddle_clearance": 0.17314002364977746
+    },
+    {
+      "face_verts": [
+        24,
+        1,
+        9
+      ],
+      "area": 0.11954368779291256,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.18863087784696903,
+      "saddle_clearance": 0.18863087784696903
+    },
+    {
+      "face_verts": [
+        1,
+        0,
+        24
+      ],
+      "area": 0.1208494865779638,
+      "penetrated": true,
+      "no_channel": false,
+      "max_clearance_3v": 0.19400651495224017,
+      "saddle_clearance": 0.1854216225120169
+    }
+  ]
+}
