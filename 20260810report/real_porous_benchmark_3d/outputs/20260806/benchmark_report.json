@@ -1,0 +1,61 @@
+{
+  "partition": "voronoi",
+  "mesh_cells": 45191,
+  "n_interfaces": 537,
+  "n_regions": 100,
+  "sphere_count": 100,
+  "porosity": 0.8555170335175117,
+  "r_min": 0.055078893137,
+  "r_max": 0.096540994393,
+  "r_max_minus_r_min": 0.041462101256,
+  "parameters": {
+    "mesh_size": 0.12,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0
+  },
+  "methods": {
+    "Classic-DDPNM": {
+      "global_unknowns": 537,
+      "velocity_relative_l2": 0.9509174192612219,
+      "velocity_relative_broken_h1": 1.1560979589000882,
+      "pressure_relative_l2": 0.1117408230336445,
+      "outlet_flux_relative_error": 1.3221497025824536
+    },
+    "Affine-DDPNM": {
+      "global_unknowns": 4833,
+      "velocity_relative_l2": 0.15723567714155837,
+      "velocity_relative_broken_h1": 0.3021513909074345,
+      "pressure_relative_l2": 0.025136749901340686,
+      "outlet_flux_relative_error": 0.08713346980900298
+    },
+    "Monolithic-FEM": {
+      "global_unknowns": "-",
+      "velocity_relative_l2": 0,
+      "velocity_relative_broken_h1": 0,
+      "pressure_relative_l2": 0,
+      "outlet_flux_relative_error": 0
+    }
+  },
+  "timings": {
+    "mesh_s": 72.7,
+    "Classic-DDPNM": {
+      "offline_s": 67.7,
+      "online_s": 0.2274,
+      "total_s": 68.0,
+      "offline_memory_mib": 81.0,
+      "online_memory_mib": 34.0
+    },
+    "Affine-DDPNM": {
+      "offline_s": 89.2,
+      "online_s": 13.8313,
+      "total_s": 103.0,
+      "offline_memory_mib": 496.0,
+      "online_memory_mib": 660.0
+    },
+    "Monolithic-FEM": {
+      "total_s": 23.8,
+      "peak_memory_mib": 404.0
+    }
+  }
+}

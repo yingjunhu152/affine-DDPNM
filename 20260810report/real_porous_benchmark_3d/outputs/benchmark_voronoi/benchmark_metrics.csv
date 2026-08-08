@@ -1,0 +1,4 @@
+method,global_unknowns,velocity_relative_l2,velocity_relative_broken_h1,pressure_relative_l2,outlet_flux_relative_error,schur_symmetry_error,max_mass_residual,time_s,mem_mib
+Classic-DDPNM,308,0.6296130666013503,0.8539196398308294,0.1090596742286736,0.7173789421338493,0.0,3.3621109368775492e-16,105.94,61.1
+Affine-DDPNM,2772,0.08404392167737931,0.2139616953743656,0.024444419605491114,0.041356494611433786,0.0,5.109167212566379e-16,120.36,661.6
+Monolithic-FEM,-,0.0,0.0,0.0,0.0,,,14.39,284.3
