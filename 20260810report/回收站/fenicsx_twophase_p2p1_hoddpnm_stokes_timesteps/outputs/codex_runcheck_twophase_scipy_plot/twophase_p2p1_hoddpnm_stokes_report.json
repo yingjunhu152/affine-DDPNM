@@ -1,0 +1,87 @@
+{
+  "method": "two-phase P2-P1 Taylor-Hood Stokes Schur/HODDPNM consistency demo, pure SciPy assembly",
+  "equation": "-div(mu(S2) grad(u)) + grad(p) = 0, div(u) = 0 for the single-phase Stokes solve at each saturation state",
+  "discretization": "P2 velocity on tetrahedron vertices+edge midpoints, P1 pressure on vertices",
+  "linear_solver": "minres",
+  "error_scope": "reported velocity/pressure differences compare the Schur-reconstructed solution against the full solve of the same assembled discrete linear system; they are not physical errors against a true 3D two-phase Stokes reference solution",
+  "transport_scope": "S2 is advanced by an explicit graph-edge demonstration transport model driven by the Schur velocity; this is not a verified conservative two-phase flow discretization",
+  "dependency_scope": "mesh helper is imported from the copied local run_cube_holes_hoddpnm_validation.py file in this folder; no absolute source tree path is injected",
+  "holes": 8,
+  "cells_per_axis": 3,
+  "vertices": 64,
+  "tets": 162,
+  "p2_velocity_nodes": 343,
+  "pressure_nodes": 64,
+  "steps": 2,
+  "frame_steps": [
+    0,
+    1,
+    2
+  ],
+  "history": [
+    {
+      "step": 1,
+      "mean_injected_saturation": 0.28017161175899075,
+      "assemble_time_seconds": 0.24490160000277683,
+      "full_stokes_solve_time_seconds": 0.015572500007692724,
+      "hoddpnm_schur_solve_time_seconds": 0.026066699996590614,
+      "velocity_l2_rel_difference_vs_full_discrete": 1.316794721845708e-07,
+      "pressure_l2_rel_difference_vs_full_discrete": 1.493941752536524e-08,
+      "full_linear_solve": {
+        "label": "full_dirichlet_free_system",
+        "solver": "minres",
+        "info": 0,
+        "rtol": 1e-10,
+        "maxiter": 20000,
+        "relative_residual": 1.1173640210307121e-07,
+        "residual_rtol": 2e-06
+      },
+      "schur_linear_solve": {
+        "label": "hoddpnm_schur_boundary_system",
+        "solver": "minres",
+        "info": 0,
+        "rtol": 1e-10,
+        "maxiter": 20000,
+        "relative_residual": 9.718805640853414e-08,
+        "residual_rtol": 2e-06
+      },
+      "p2_velocity_nodes": 343,
+      "pressure_nodes": 64,
+      "mixed_dofs": 1093,
+      "hoddpnm_interface_dofs": 555,
+      "hoddpnm_eliminated_dofs": 30
+    },
+    {
+      "step": 2,
+      "mean_injected_saturation": 0.28534293640754604,
+      "assemble_time_seconds": 0.24311070001567714,
+      "full_stokes_solve_time_seconds": 0.01688430001377128,
+      "hoddpnm_schur_solve_time_seconds": 0.02622749999864027,
+      "velocity_l2_rel_difference_vs_full_discrete": 1.1294800344164775e-07,
+      "pressure_l2_rel_difference_vs_full_discrete": 1.3502860602693097e-08,
+      "full_linear_solve": {
+        "label": "full_dirichlet_free_system",
+        "solver": "minres",
+        "info": 0,
+        "rtol": 1e-10,
+        "maxiter": 20000,
+        "relative_residual": 6.611166514227662e-08,
+        "residual_rtol": 2e-06
+      },
+      "schur_linear_solve": {
+        "label": "hoddpnm_schur_boundary_system",
+        "solver": "minres",
+        "info": 0,
+        "rtol": 1e-10,
+        "maxiter": 20000,
+        "relative_residual": 1.1248134295238633e-07,
+        "residual_rtol": 2e-06
+      },
+      "p2_velocity_nodes": 343,
+      "pressure_nodes": 64,
+      "mixed_dofs": 1093,
+      "hoddpnm_interface_dofs": 555,
+      "hoddpnm_eliminated_dofs": 30
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+{
+  "method": "2D DD-PNM with P2-P1 local Stokes DtN maps and P1 interface traction modes",
+  "geometry": "fixed seed-20260802 unit-square circular-particle medium",
+  "partition": "analytic Delaunay-neighbor circular throat saddle sections",
+  "parameters": {
+    "mesh_size": 0.06,
+    "wall_size": 0.03,
+    "throat_size": 0.018,
+    "wall_band": 0.065,
+    "throat_band": 0.045,
+    "interface_order": 1,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0,
+    "pressure_stabilization": 1e-10
+  },
+  "counts": {
+    "particles": 17,
+    "analytic_throat_cuts": 35,
+    "pore_subdomains": 27,
+    "internal_interfaces": 35,
+    "global_triangles": 2390,
+    "global_vertices": 1394,
+    "sum_local_mixed_dofs": 13116
+  },
+  "interface_system": {
+    "size": 70,
+    "modes_per_interface": 2,
+    "minimum_eigenvalue": 9.76596661077948e-05,
+    "maximum_flux_balance_residual": 1.870790848623738e-16,
+    "relative_linear_residual": 3.7863908458667425e-16
+  },
+  "validation": {
+    "vertex_velocity_relative_l2": 0.03629304821017703,
+    "vertex_pressure_mean_aligned_relative_l2": 0.008650329751520957,
+    "pressure_alignment_shift": -0.0004792922692421768,
+    "vertex_velocity_max_abs": 0.0002421095902547887,
+    "vertex_pressure_max_abs": 0.016696980274713114
+  },
+  "local_subdomains": [
+    {
+      "pore_id": 0,
+      "ports": 1,
+      "traction_flux_modes": 2,
+      "mixed_dofs": 176,
+      "dtn_symmetry_error": 2.9759531994705557e-14,
+      "dtn_uniform_traction_kernel_error": 2.600010231972643e-09
+    },
+    {
+      "pore_id": 1,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 518,
+      "dtn_symmetry_error": 3.4121414167714165e-14,
+      "dtn_uniform_traction_kernel_error": 7.889531546078628e-10
+    },
+    {
+      "pore_id": 2,
+      "ports": 3,
+      "traction_flux_modes": 5,
+      "mixed_dofs": 493,
+      "dtn_symmetry_error": 2.3503813422972544e-14,
+      "dtn_uniform_traction_kernel_error": 6.886068219979399e-10
+    },
+    {
+      "pore_id": 3,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 456,
+      "dtn_symmetry_error": 3.452585239973638e-14,
+      "dtn_uniform_traction_kernel_error": 4.848900582561001e-10
+    },
+    {
+      "pore_id": 4,
+      "ports": 2,
+      "traction_flux_modes": 4,
+      "mixed_dofs": 584,
+      "dtn_symmetry_error": 2.5849355410979004e-14,
+      "dtn_uniform_traction_kernel_error": 1.2733492749637088e-09
+    },
+    {
+      "pore_id": 5,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 666,
+      "dtn_symmetry_error": 6.316936032603755e-14,
+      "dtn_uniform_traction_kernel_error": 4.3682354979440544e-10
+    },
+    {
+      "pore_id": 6,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 607,
+      "dtn_symmetry_error": 4.580675432545905e-14,
+      "dtn_uniform_traction_kernel_error": 1.621279136938212e-10
+    },
+    {
+      "pore_id": 7,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 664,
+      "dtn_symmetry_error": 2.366323043070918e-14,
+      "dtn_uniform_traction_kernel_error": 1.6837038477742133e-10
+    },
+    {
+      "pore_id": 8,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 516,
+      "dtn_symmetry_error": 2.3774675340631732e-14,
+      "dtn_uniform_traction_kernel_error": 2.26109215657209e-10
+    },
+    {
+      "pore_id": 9,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 634,
+      "dtn_symmetry_error": 4.0119570328128807e-14,
+      "dtn_uniform_traction_kernel_error": 2.0820865432164813e-10
+    },
+    {
+      "pore_id": 10,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 664,
+      "dtn_symmetry_error": 3.314673456974742e-14,
+      "dtn_uniform_traction_kernel_error": 5.001778115624552e-10
+    },
+    {
+      "pore_id": 11,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 680,
+      "dtn_symmetry_error": 1.0948596624764531e-14,
+      "dtn_uniform_traction_kernel_error": 2.435754289942074e-10
+    },
+    {
+      "pore_id": 12,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 459,
+      "dtn_symmetry_error": 3.709554922049747e-14,
+      "dtn_uniform_traction_kernel_error": 1.0615268023900842e-09
+    },
+    {
+      "pore_id": 13,
+      "ports": 2,
+      "traction_flux_modes": 3,
+      "mixed_dofs": 373,
+      "dtn_symmetry_error": 9.815046548322815e-15,
+      "dtn_uniform_traction_kernel_error": 1.818919497409878e-11
+    },
+    {
+      "pore_id": 14,
+      "ports": 2,
+      "traction_flux_modes": 4,
+      "mixed_dofs": 664,
+      "dtn_symmetry_error": 3.494606855715157e-14,
+      "dtn_uniform_traction_kernel_error": 1.3396458162489136e-09
+    },
+    {
+      "pore_id": 15,
+      "ports": 1,
+      "traction_flux_modes": 2,
+      "mixed_dofs": 146,
+      "dtn_symmetry_error": 3.126887196513368e-14,
+      "dtn_uniform_traction_kernel_error": 4.208158332713697e-09
+    },
+    {
+      "pore_id": 16,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 377,
+      "dtn_symmetry_error": 1.7207005077758322e-14,
+      "dtn_uniform_traction_kernel_error": 5.040518684158035e-10
+    },
+    {
+      "pore_id": 17,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 580,
+      "dtn_symmetry_error": 3.997725055993116e-14,
+      "dtn_uniform_traction_kernel_error": 3.3174437388548174e-10
+    },
+    {
+      "pore_id": 18,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 477,
+      "dtn_symmetry_error": 3.718752766930421e-14,
+      "dtn_uniform_traction_kernel_error": 3.2897981948493687e-10
+    },
+    {
+      "pore_id": 19,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 322,
+      "dtn_symmetry_error": 3.5095010431813074e-14,
+      "dtn_uniform_traction_kernel_error": 8.353583761206381e-10
+    },
+    {
+      "pore_id": 20,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 363,
+      "dtn_symmetry_error": 2.4588650332094774e-14,
+      "dtn_uniform_traction_kernel_error": 4.3830079390109247e-10
+    },
+    {
+      "pore_id": 21,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 377,
+      "dtn_symmetry_error": 2.996977526950127e-14,
+      "dtn_uniform_traction_kernel_error": 5.593290908242073e-10
+    },
+    {
+      "pore_id": 22,
+      "ports": 3,
+      "traction_flux_modes": 5,
+      "mixed_dofs": 352,
+      "dtn_symmetry_error": 2.6118504033840405e-14,
+      "dtn_uniform_traction_kernel_error": 4.807981166574994e-10
+    },
+    {
+      "pore_id": 23,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 386,
+      "dtn_symmetry_error": 3.8237465632510294e-14,
+      "dtn_uniform_traction_kernel_error": 6.9316125864275e-10
+    },
+    {
+      "pore_id": 24,
+      "ports": 3,
+      "traction_flux_modes": 5,
+      "mixed_dofs": 831,
+      "dtn_symmetry_error": 5.3906035060750514e-14,
+      "dtn_uniform_traction_kernel_error": 7.631262485249212e-10
+    },
+    {
+      "pore_id": 25,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 395,
+      "dtn_symmetry_error": 6.561610984168808e-14,
+      "dtn_uniform_traction_kernel_error": 5.879119895646332e-10
+    },
+    {
+      "pore_id": 26,
+      "ports": 3,
+      "traction_flux_modes": 6,
+      "mixed_dofs": 356,
+      "dtn_symmetry_error": 3.0748287094062715e-14,
+      "dtn_uniform_traction_kernel_error": 6.66795684428139e-10
+    }
+  ],
+  "caveat": "Reported field errors are vertex-sampled relative norms. Analytic saddle segments are exact Gmsh geometry constraints; their circular endpoints and adjacent solid walls are represented by the locally refined straight-sided mesh.",
+  "wall_time_seconds": 42.73226749999958
+}

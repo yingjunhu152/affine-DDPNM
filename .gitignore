@@ -1,1 +1,13 @@
+# Backup archives
 ddpnm_3d_uniform_spheres.zip
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Claude Code local settings (machine-specific permissions)
+.claude/settings.local.json
+
+# Verification runs and run logs
+**/outputs/verify_run/
+*.log

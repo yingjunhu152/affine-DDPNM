@@ -1,0 +1,352 @@
+{
+  "method": "adaptive DDPNM -> DDPNMT -> HODDPNM hierarchy",
+  "interface_spaces": {
+    "DDPNM": "one P0 normal traction coefficient per interface",
+    "DDPNMT": "P0 normal plus P0 tangential traction per interface",
+    "HODDPNM": "P1 nodal normal plus P1 nodal tangential traction; local Schur condensation"
+  },
+  "parameters": {
+    "mesh_size": 0.04,
+    "wall_size": 0.018,
+    "throat_size": 0.01,
+    "wall_band": 0.065,
+    "throat_band": 0.045,
+    "viscosity": 1.0,
+    "inlet_pressure": 1.0,
+    "outlet_pressure": 0.0,
+    "pressure_stabilization": 1e-10,
+    "target_tolerance": 0.01,
+    "marking_theta": 0.65,
+    "max_marked_per_iteration": 3,
+    "max_iterations_per_phase": 30
+  },
+  "target_tolerance": 0.01,
+  "marking_theta": 0.65,
+  "counts": {
+    "subdomains": 27,
+    "interfaces": 35,
+    "final_DDPNM_interfaces": 18,
+    "final_DDPNMT_interfaces": 4,
+    "final_HODDPNM_interfaces": 13
+  },
+  "systems": {
+    "DDPNM": {
+      "interface_unknowns": 35,
+      "minimum_schur_eigenvalue": 9.661517855955322e-05,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 2.5178043950998553e-16,
+      "maximum_interface_moment_residual": 3.0731710579101623e-16
+    },
+    "DDPNMT": {
+      "interface_unknowns": 70,
+      "minimum_schur_eigenvalue": 9.626267847363626e-05,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 1.563087174909326e-16,
+      "maximum_interface_moment_residual": 3.0791341698588326e-16
+    },
+    "HODDPNM": {
+      "interface_unknowns": 918,
+      "minimum_schur_eigenvalue": 1.910909195025071e-06,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 8.398769927760847e-16,
+      "maximum_interface_moment_residual": 5.003254212841701e-17
+    },
+    "adaptive_final": {
+      "interface_unknowns": 498,
+      "minimum_schur_eigenvalue": 2.6910730422017054e-06,
+      "schur_symmetry_error": 0.0,
+      "relative_linear_residual": 2.885887877319714e-15,
+      "maximum_interface_moment_residual": 3.1043418703691206e-16
+    }
+  },
+  "local_response_library": {
+    "maximum_symmetry_error": 1.8617816866976835e-13,
+    "sum_local_mixed_dofs": 27821
+  },
+  "final_error_to_full_HODDPNM": {
+    "velocity": 0.009730354615942086,
+    "pressure": 0.0015970623327392858,
+    "combined": 0.009730354615942086,
+    "pressure_shift": -8.607709041711104e-06
+  },
+  "final_error_to_monolithic_FEM": {
+    "velocity": 0.009792842175776474,
+    "pressure": 0.0016733123242657318,
+    "combined": 0.009792842175776474,
+    "pressure_shift": -9.492494362951383e-06
+  },
+  "iterations": [
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 0,
+      "error": {
+        "velocity": 0.03123003200927823,
+        "pressure": 0.0023059719242334324,
+        "combined": 0.03123003200927823,
+        "pressure_shift": 2.438182092486553e-07
+      },
+      "level_counts": [
+        35,
+        0,
+        0
+      ],
+      "marked_interfaces": [
+        18,
+        6,
+        25
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 1,
+      "error": {
+        "velocity": 0.016824591778882708,
+        "pressure": 0.001528961717969305,
+        "combined": 0.016824591778882708,
+        "pressure_shift": 2.016342374109444e-05
+      },
+      "level_counts": [
+        32,
+        3,
+        0
+      ],
+      "marked_interfaces": [
+        10,
+        29,
+        15
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 2,
+      "error": {
+        "velocity": 0.011287161478553725,
+        "pressure": 0.0010996928108492092,
+        "combined": 0.011287161478553725,
+        "pressure_shift": -2.0367156500497633e-05
+      },
+      "level_counts": [
+        29,
+        6,
+        0
+      ],
+      "marked_interfaces": [
+        17,
+        7,
+        34
+      ]
+    },
+    {
+      "phase": "DDPNM_to_DDPNMT",
+      "iteration": 3,
+      "error": {
+        "velocity": 0.007593011369526093,
+        "pressure": 0.0008889754715272719,
+        "combined": 0.007593011369526093,
+        "pressure_shift": -4.8450149675175396e-05
+      },
+      "level_counts": [
+        26,
+        9,
+        0
+      ],
+      "marked_interfaces": []
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 0,
+      "error": {
+        "velocity": 0.04873109445362335,
+        "pressure": 0.0035499400582761275,
+        "combined": 0.04873109445362335,
+        "pressure_shift": 0.0008454205271843909
+      },
+      "level_counts": [
+        26,
+        9,
+        0
+      ],
+      "marked_interfaces": [
+        14,
+        15,
+        18
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 1,
+      "error": {
+        "velocity": 0.03447544500119902,
+        "pressure": 0.0032915907786478854,
+        "combined": 0.03447544500119902,
+        "pressure_shift": 0.00045277031676565387
+      },
+      "level_counts": [
+        25,
+        8,
+        2
+      ],
+      "marked_interfaces": [
+        14,
+        7,
+        24
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 2,
+      "error": {
+        "velocity": 0.023035530710916463,
+        "pressure": 0.002517421742474257,
+        "combined": 0.023035530710916463,
+        "pressure_shift": 3.306828155719732e-05
+      },
+      "level_counts": [
+        24,
+        7,
+        4
+      ],
+      "marked_interfaces": [
+        24,
+        6,
+        17
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 3,
+      "error": {
+        "velocity": 0.01821513636641622,
+        "pressure": 0.002197479626269707,
+        "combined": 0.01821513636641622,
+        "pressure_shift": 4.207796469347485e-05
+      },
+      "level_counts": [
+        24,
+        4,
+        7
+      ],
+      "marked_interfaces": [
+        8,
+        32,
+        12
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 4,
+      "error": {
+        "velocity": 0.017777915849624435,
+        "pressure": 0.0021701337653248676,
+        "combined": 0.017777915849624435,
+        "pressure_shift": 4.3350113830262494e-05
+      },
+      "level_counts": [
+        21,
+        7,
+        7
+      ],
+      "marked_interfaces": [
+        8,
+        12,
+        32
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 5,
+      "error": {
+        "velocity": 0.013422118495609998,
+        "pressure": 0.0019461165720130458,
+        "combined": 0.013422118495609998,
+        "pressure_shift": -2.2084561992611133e-05
+      },
+      "level_counts": [
+        21,
+        4,
+        10
+      ],
+      "marked_interfaces": [
+        20,
+        10,
+        16
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 6,
+      "error": {
+        "velocity": 0.011823124959416792,
+        "pressure": 0.0018481910505733568,
+        "combined": 0.011823124959416792,
+        "pressure_shift": -8.86668117971009e-05
+      },
+      "level_counts": [
+        19,
+        5,
+        11
+      ],
+      "marked_interfaces": [
+        20,
+        29,
+        9
+      ]
+    },
+    {
+      "phase": "DDPNMT_to_HODDPNM",
+      "iteration": 7,
+      "error": {
+        "velocity": 0.009730354615942086,
+        "pressure": 0.0015970623327392858,
+        "combined": 0.009730354615942086,
+        "pressure_shift": -8.607709041711104e-06
+      },
+      "level_counts": [
+        18,
+        4,
+        13
+      ],
+      "marked_interfaces": []
+    }
+  ],
+  "interpretation": "A difference above tolerance promotes the marked interface to the richer space. Retaining DDPNM when that difference is large would reverse the usual adaptive accuracy logic. The comparison is a hierarchical (fine-level) estimator, analogous to the oracle diagnostic branch of the 3D reference.",
+  "errors_to_exact_FE_schur": {
+    "DDPNM": {
+      "velocity": 0.058290395130898676,
+      "pressure": 0.004223166458138433,
+      "combined": 0.058290395130898676,
+      "pressure_shift": 0.0008932297097475747
+    },
+    "DDPNMT": {
+      "velocity": 0.04788393515699797,
+      "pressure": 0.0035400937382108135,
+      "combined": 0.04788393515699797,
+      "pressure_shift": 0.000892985891538326
+    },
+    "HODDPNM": {
+      "velocity": 0.000525964865761063,
+      "pressure": 0.0004927456114739864,
+      "combined": 0.000525964865761063,
+      "pressure_shift": -8.847853212402754e-07
+    },
+    "adaptive_final": {
+      "velocity": 0.009792842175776474,
+      "pressure": 0.0016733123242657318,
+      "combined": 0.009792842175776474,
+      "pressure_shift": -9.492494362951383e-06
+    }
+  },
+  "exact_FE_trace_schur": {
+    "total_mixed_dofs": 25596,
+    "fixed_velocity_dofs": 2276,
+    "interface_trace_dofs": 2085,
+    "interior_dofs": 21235,
+    "schur_symmetry_error": 1.141217879863325e-14,
+    "schur_relative_residual": 3.250364277767842e-15,
+    "interior_relative_residual": 2.8206509501125222e-16,
+    "global_relative_residual": 3.0753409147758035e-16,
+    "relative_difference_from_monolithic": 1.7108750405693627e-13,
+    "note": "Exact correctness Schur; the mixed P2-P1 Schur matrix is symmetric but not required to be positive definite."
+  },
+  "wall_time_seconds": 40.8960661000001
+}

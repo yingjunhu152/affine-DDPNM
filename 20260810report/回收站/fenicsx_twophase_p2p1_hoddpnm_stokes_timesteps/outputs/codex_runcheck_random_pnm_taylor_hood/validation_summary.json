@@ -1,0 +1,144 @@
+{
+  "method": "FEniCSx Taylor-Hood P2-P1 Stokes HODDPNM via Schur complement",
+  "equation": "-Delta u + grad p = 0, div u = 0",
+  "assembly": "FEniCSx/dolfinx UFL assembly with Basix P2 vector velocity and P1 scalar pressure",
+  "error_scope": "Schur/full consistency for the same FEniCSx-assembled discrete matrix; not a physical error against a higher-accuracy Stokes or two-phase reference",
+  "reduction_scope": "known Dirichlet dofs are removed first; the active Schur boundary contains only free PNM-interface velocity dofs and free retained pressure dofs, while free interior dofs are statically reconstructed",
+  "timestep_scope": "steady Stokes reduction validation only; this script is not the two-phase timestep solver",
+  "conditioning_scope": "large Schur condition numbers and large absolute pressure ranges indicate a numerically ill-conditioned reduced pressure system; small relative Schur/full differences should be interpreted together with these scale diagnostics",
+  "pressure_stabilization": 1e-10,
+  "pressure_boundary_mode": "interface-anchors",
+  "schur_solver": "gmres",
+  "schur_preconditioner": "ilu",
+  "dense_schur_used": false,
+  "schur_iterations": 7,
+  "schur_relative_residual": 2.4988432802113838e-08,
+  "assembly_time_seconds": 0.0697877999919001,
+  "full_solve_time_seconds": 0.007722000009380281,
+  "hoddpnm_solve_time_seconds": 0.003230200003599748,
+  "total_time_seconds": 0.08074259999557398,
+  "holes": 8,
+  "cells_per_axis": 3,
+  "n_vertices": 64,
+  "n_tets": 162,
+  "mixed_dofs": 1093,
+  "velocity_p2_scalar_nodes": 343,
+  "velocity_dofs": 1029,
+  "pressure_dofs": 64,
+  "velocity_interface_dofs": 180,
+  "pressure_boundary_dofs": 7,
+  "pressure_interface_dofs": 6,
+  "pressure_anchor_dofs": 1,
+  "pressure_interior_dofs_eliminated": 57,
+  "hoddpnm_interface_dofs": 187,
+  "hoddpnm_active_schur_dofs": 7,
+  "hoddpnm_active_dof_ratio": 0.006404391582799634,
+  "hoddpnm_known_fixed_dofs": 985,
+  "hoddpnm_free_interior_dofs_eliminated": 101,
+  "hoddpnm_interior_dofs_eliminated": 101,
+  "pnm_edges": 19,
+  "pnm_target_degree": 4,
+  "pnm_max_edge_length": 2.35,
+  "schur_condition_number": null,
+  "errors_mixed_all": {
+    "l2_abs": 1305.613009216026,
+    "l2_rel": 4.919317126901096e-08,
+    "linf_abs": 344.89648818969727,
+    "mean_abs": 7.804299212142247,
+    "median_abs": 0.0
+  },
+  "errors_velocity_p2_all": {
+    "l2_abs": 3.642225213465059e-06,
+    "l2_rel": 2.0824897964639337e-07,
+    "linf_abs": 1.5865904841680725e-06,
+    "linf_rel": 2.1387309301715225e-07,
+    "mean_abs": 3.4690608881794084e-08,
+    "median_abs": 0.0
+  },
+  "errors_pressure_p1_all": {
+    "l2_abs": 1305.613009216026,
+    "l2_rel": 4.919317126901097e-08,
+    "linf_abs": 344.89648818969727,
+    "mean_abs": 133.28279720313947,
+    "median_abs": 119.08866393566132
+  },
+  "errors_pressure_p1_mean_aligned": {
+    "l2_abs": 1108.4677522505337,
+    "l2_rel": 5.162241947749593e-08,
+    "linf_abs": 258.66238021850586,
+    "mean_abs": 128.80247453786433,
+    "median_abs": 142.126859664917
+  },
+  "errors_velocity_vertices": {
+    "l2_abs": 0.0,
+    "l2_rel": 0.0,
+    "linf_abs": 0.0,
+    "linf_rel": 0.0,
+    "mean_abs": 0.0,
+    "median_abs": 0.0
+  },
+  "errors_pressure_vertices": {
+    "l2_abs": 1305.613009216026,
+    "l2_rel": 4.919317126901096e-08,
+    "linf_abs": 344.89648818969727,
+    "mean_abs": 133.28279720313947,
+    "median_abs": 119.08866393566132
+  },
+  "velocity_range": {
+    "fem_vertex_min": 0.0,
+    "fem_vertex_max": 1.0
+  },
+  "pressure_range": {
+    "fem_min": -2475030608.2226276,
+    "fem_max": 6870037047.205145,
+    "fem_mean_p1": 1949868627.8061044,
+    "hodd_mean_p1": 1949868541.5719962,
+    "fem_zero_mean_min_p1": -4424899236.028732,
+    "fem_zero_mean_max_p1": 4920168419.39904,
+    "hodd_zero_mean_min_p1": -4424899057.198018,
+    "hodd_zero_mean_max_p1": 4920168160.73666
+  },
+  "sphere_centers": [
+    [
+      4.271189301551818,
+      3.5449351534788374,
+      1.0412859124739882
+    ],
+    [
+      3.775253535129905,
+      3.8613810863816624,
+      1.9141530629918366
+    ],
+    [
+      2.5444960153902927,
+      2.899749643136907,
+      1.8714600616267505
+    ],
+    [
+      2.975044963683966,
+      3.406690228904349,
+      3.9082442936044695
+    ],
+    [
+      1.8675151333318298,
+      2.2242280538987194,
+      2.8673072305641893
+    ],
+    [
+      3.5335850981377916,
+      1.1644258950665631,
+      1.6324148143893455
+    ],
+    [
+      2.8261972415502594,
+      3.5896478769209548,
+      1.2262836049805292
+    ],
+    [
+      4.164072153258029,
+      1.908818817015995,
+      3.816115508203901
+    ]
+  ],
+  "sphere_radius": 0.34
+}

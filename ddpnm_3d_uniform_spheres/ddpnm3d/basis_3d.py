@@ -274,6 +274,16 @@ class ClassicP0Basis:
     component_names = ("normal",)
     level_dofs = (1, 1, 1)
 
+    def active_transform(self, primitive_modes, port_index, level):
+        """No per-port transform for the original P0 basis.
+
+        Matches the unified interface assembler contract (``ddpnm_core``):
+        ``None`` means each active mode is a direct selection of one
+        primitive, i.e. the single constant normal mode is used unchanged.
+        """
+        del primitive_modes, port_index, level
+        return None
+
     def primitive_specs(self, partition, operator):
         specs: list[PrimitiveSpec] = []
         submesh = operator.submesh

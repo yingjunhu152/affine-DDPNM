@@ -1,0 +1,15 @@
+metric,value,meaning
+gmres_iterations,395,GMRES callback iterations for the matrix-free Schur solve
+gmres_relative_residual,1.690594465922478e-06,relative residual of the reported Schur solve
+active_boundary_dofs,465,free active Schur boundary unknown count after removing known Dirichlet/gauge dofs
+known_fixed_dofs,21940,known Dirichlet/gauge dofs removed before forming the active Schur unknown set
+eliminated_interior_dofs,20127,interior unknown count eliminated by local Schur reconstruction
+velocity_l2_rel,5.70868263687008e-07,FEM mass-matrix integral relative L2 error for P2 velocity
+velocity_h1_seminorm_rel,6.135162641350687e-07,FEM stiffness-matrix relative H1 seminorm error for P2 velocity
+pressure_l2_rel,1.4215413775402137e-14,FEM mass-matrix integral relative L2 error for pinned-gauge P1 pressure
+pressure_l2_mean_aligned_rel,1.2484089601376387e-14,FEM mass-matrix pressure L2 error after removing the mass-weighted mean pressure shift
+pressure_eliminated_dofs,2044,P1 pressure unknown count eliminated inside subregions
+inlet_flux_proxy_rel_error,0.0,relative difference between FEM and HODDPNM inlet flux proxy
+pressure_drop_proxy_rel_error,3.0072745416010425e-15,relative difference between FEM and HODDPNM pressure-drop proxy
+permeability_like_rel_error,5.383707781797899e-08,relative difference in proxy effective-permeability quantity Q L / (A delta-p)
+hoddpnm_continuity_row_residual_l2,1.2974576507275474e-09,L2 norm of mixed-system pressure-row residual for HODDPNM solution

@@ -1,4 +1,0 @@
-case,preconditioner,holes,cells_per_axis,mixed_dofs,hoddpnm_interface_dofs,hoddpnm_active_schur_dofs,hoddpnm_active_dof_ratio,hoddpnm_known_fixed_dofs,hoddpnm_free_interior_dofs_eliminated,hoddpnm_interior_dofs_eliminated,schur_iterations,schur_relative_residual,full_solve_time_seconds,hoddpnm_solve_time_seconds,velocity_l2_rel,pressure_mean_aligned_l2_rel
-preconditioner_diag_27holes_c4,diag,27,4,2288,874,31,0.013548951048951048,2146,111,111,11,9.531915070483506e-08,0.027916800001548836,0.0032811999990371987,9.35721037381727e-09,1.9467563372909745e-08
-preconditioner_ilu_27holes_c4,ilu,27,4,2288,874,31,0.013548951048951048,2146,111,111,7,3.0380131827102696e-08,0.029025600000750273,0.003463799999735784,6.473166428885187e-09,5.383935454474578e-09
-preconditioner_none_27holes_c4,none,27,4,2288,874,31,0.013548951048951048,2146,111,111,14,4.4105189974649744e-08,0.03929020000214223,0.008276600001408951,4.542100405758077e-09,1.2468064910030702e-08

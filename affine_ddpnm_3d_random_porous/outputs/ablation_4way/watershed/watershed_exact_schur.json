@@ -7,6 +7,6 @@
   "schur_relative_residual": 5.4655723414065655e-09,
   "global_relative_residual": 2.293779018157342e-10,
   "monolithic_relative_difference": 3.2274798317811503e-07,
-  "schur_seconds": 54.786942399980035,
-  "fem_seconds": 26.221476599981543
+  "schur_seconds": 50.58694469998591,
+  "fem_seconds": 25.499703600013163
 }
