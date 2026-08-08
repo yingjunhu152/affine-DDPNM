@@ -1,0 +1,56 @@
+{
+  "geometries": [
+    {
+      "name": "Uniform-27",
+      "cells": 12203,
+      "vertices": 3019,
+      "edges": 17293,
+      "fem_velocity_dofs": 60936,
+      "fem_pressure_dofs": 3019,
+      "fem_mixed_dofs": 63955,
+      "n_pores": 64,
+      "n_interfaces": 144,
+      "mean_ports_per_pore": 4.5,
+      "pore_volume_cv": 0.32115982521690134,
+      "interface_area_cv": 0.2031616666204531,
+      "interface_aspect_ratio_mean": 1.3937640709290473,
+      "interface_aspect_ratio_cv": 0.15837906313348912,
+      "total_fluid_volume": 0.885922453401411
+    },
+    {
+      "name": "Random-27",
+      "cells": 15249,
+      "vertices": 3483,
+      "edges": 20674,
+      "fem_velocity_dofs": 72471,
+      "fem_pressure_dofs": 3483,
+      "fem_mixed_dofs": 75954,
+      "n_pores": 27,
+      "n_interfaces": 114,
+      "mean_ports_per_pore": 8.444444444444445,
+      "pore_volume_cv": 0.43171867841259154,
+      "interface_area_cv": 0.782589499399266,
+      "interface_aspect_ratio_mean": 2.475795983059177,
+      "interface_aspect_ratio_cv": 1.478934872041446,
+      "total_fluid_volume": 0.9461271178887051
+    },
+    {
+      "name": "Real-100",
+      "cells": 32611,
+      "vertices": 7655,
+      "edges": 45407,
+      "fem_velocity_dofs": 159186,
+      "fem_pressure_dofs": 7655,
+      "fem_mixed_dofs": 166841,
+      "n_pores": 64,
+      "n_interfaces": 144,
+      "mean_ports_per_pore": 4.5,
+      "pore_volume_cv": 0.05739377836859664,
+      "interface_area_cv": 0.1162290893280917,
+      "interface_aspect_ratio_mean": 1.111969584507462,
+      "interface_aspect_ratio_cv": 0.07782818204935534,
+      "total_fluid_volume": 0.9012652281353529,
+      "sphere_count": 100
+    }
+  ]
+}

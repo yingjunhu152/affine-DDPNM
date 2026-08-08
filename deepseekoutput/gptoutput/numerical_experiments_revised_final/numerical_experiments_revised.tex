@@ -1,0 +1,847 @@
+% ======================================================================
+% Numerical experiments for the Affine-DDPNM paper
+% Geometry-dependent modal requirements of finite-area interface
+% representations in domain decomposition with pressure.
+%
+% Standalone compilation:
+%   pdflatex numerical_experiments.tex
+% (figures live in ./figures relative to this file)
+%
+% Section numbers 6-10 correspond to the intended position in the full
+% paper (after the theory sections 1-5).  Only results computed with the
+% benchmark pipelines archived under outputs/benchmark_w1n are reported;
+% missing experiments are explicitly identified as pending.
+% ======================================================================
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{array}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dom}{\Omega}
+\newcommand{\pore}[1]{\Omega_{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\normal}{\bm{n}}
+\newcommand{\trac}{\bm{\lambda}}
+\newcommand{\Schur}{\mathbf{S}}
+\newcommand{\Shat}{\widehat{\Schur}}
+\newcommand{\Shatuu}{\widehat{\Schur}{}^{uu}}
+\newcommand{\Wspace}{\mathcal{W}}
+\newcommand{\xiX}[1]{\bm{\xi}_{#1}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\meas}[1]{\operatorname{meas}\left(#1\right)}
+\newcommand{\cov}[1]{\operatorname{CV}\left(#1\right)}
+
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue}
+\setlength{\emergencystretch}{2em}
+
+\newtheorem{remark}{Remark}[section]
+
+\begin{document}
+
+\title{\textbf{Numerical Experiments}\\[4pt]
+       \large Geometry-Dependent Modal Requirements of Finite-Area
+       Interface Representations in Affine-DDPNM\\[4pt]
+       \normalsize Standalone working version of \S6--\S10 of the full paper}
+\author{}
+\date{}
+\maketitle
+
+\setcounter{section}{5}
+
+\noindent\textbf{Current numerical scope.}
+Only completed benchmark results are assigned numerical values below.
+The monolithic FEM reference and the theoretical broken-pressure C-DD
+reference are kept distinct throughout.  Experiments that remain to be
+run are identified explicitly in \S\ref{sec:limitations}; in particular,
+no full-C-DD Schur-energy values or $\Wspace_{0v}$ accuracy values are
+inferred from the available FEM-relative data.
+
+% ======================================================================
+\section{Numerical methodology}
+\label{sec:methodology}
+% ======================================================================
+
+\subsection{Geometries and discretisations}
+\label{sec:geometries}
+
+Three three-dimensional test geometries are used.  All are unit-cube
+packings of solid spheres with Stokes flow in the remaining fluid domain,
+partitioned into $N_p$ pore subdomains with $m$ planar internal
+interfaces.
+
+\begin{enumerate}[label=(\roman*),nosep,leftmargin=*]
+\item \textbf{Uniform-27}: a regular $3\times3\times3$ lattice of 27
+  equal spheres (radius $0.105$) centred at
+  $\{0.20,0.50,0.80\}^3$.  The partition is the regular $4\times4\times4$
+  grid cut, giving $N_p = 64$ pores and $m = 144$ interfaces
+  (mean $2m/N_p = 4.5$ ports per pore).
+\item \textbf{Random-27}: a frozen random packing of 27 spheres
+  (seed 20260804, 18 wall-clipped and 9 interior spheres); the partition
+  is the Voronoi tessellation of the sphere centres, giving $N_p = 27$
+  pores and $m = 114$ interfaces (mean 8.44 ports per pore).
+\item \textbf{Heterogeneous-100}: a synthetic frozen random packing of 100 spheres
+  (project-internal label ``Real-100'', seed 20260805) with porosity $0.856$;
+  the partition is the regular
+  $4\times4\times4$ grid cut, giving $N_p = 64$ pores and $m = 144$
+  interfaces (mean 4.5 ports per pore).
+\end{enumerate}
+
+The solid-phase packings are shown schematically in
+Fig.~\ref{fig:geometry} (the finite-element meshes themselves are not
+rendered; the sphere positions and radii are those used to build the
+meshes).  Mesh statistics are summarised in Table~\ref{tab:geometry},
+including the objective variability descriptors suggested by the review
+of the experimental design:
+\begin{equation}
+  \cov{A_\gamma} = \frac{\operatorname{std}(A_\gamma)}{\operatorname{mean}(A_\gamma)},
+  \qquad
+  \cov{V_i} = \frac{\operatorname{std}(V_i)}{\operatorname{mean}(V_i)},
+  \qquad
+  \cov{a_\gamma/b_\gamma} = \frac{\operatorname{std}(a_\gamma/b_\gamma)}
+       {\operatorname{mean}(a_\gamma/b_\gamma)},
+\end{equation}
+where $A_\gamma$ is the area of interface $\gamma$, $V_i$ the volume of
+pore $i$, and $a_\gamma/b_\gamma\ge 1$ the in-plane aspect ratio of the
+interface patch, estimated as the square root of the ratio of the two
+largest principal-component eigenvalues of the patch vertices.  These
+are \emph{reported} as descriptive quantities; no claim is made that a
+single scalar controls the error.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{figures/fig1_geometry.png}
+  \caption{Schematic of the three solid-phase packings used to build the
+    test geometries (sphere positions and radii as used by the mesh
+    generator; finite-element meshes are not shown): (a)~Uniform-27
+    regular $3\times3\times3$ lattice; (b)~Random-27 frozen packing of
+    27 spheres; (c)~Heterogeneous-100 frozen packing of 100 spheres.}
+  \label{fig:geometry}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \footnotesize
+  \caption{Geometry and discretisation summary.  FEM DOF counts are for
+    the monolithic Taylor--Hood pair $[P_2]^3$--$P_1$ (velocity DOFs =
+    $3\times$ number of P2 nodes; pressure DOFs = number of P1 nodes);
+    they match the mixed-unknown counts reported by the solver.}
+  \label{tab:geometry}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lccccccccl}
+    \toprule
+    Geometry & spheres & $N_p$ & $m$ & cells & vel. & pres. &
+    mixed & $2m/N_p$ & remarks \\
+    \midrule
+    Uniform-27 & 27 & 64 & 144 & 12\,203 & 60\,936 & 3\,019 &
+    63\,955 & 4.5 & regular lattice \\
+    Random-27  & 27 & 27 & 114 & 15\,249 & 72\,471 & 3\,483 &
+    75\,954 & 8.44 & Voronoi, irregular \\
+    Heterogeneous-100   & 100 & 64 & 144 & 32\,611 & 159\,186 & 7\,655 &
+    166\,841 & 4.5 & grid cut, porosity $0.856$ \\
+    \bottomrule
+  \end{tabular}}
+  \medskip
+  \begin{tabular}{lcccc}
+    \toprule
+    Geometry & $\cov{V_i}$ & $\cov{A_\gamma}$ & $\cov{a_\gamma/b_\gamma}$ &
+    mean $a_\gamma/b_\gamma$ \\
+    \midrule
+    Uniform-27 & 0.321 & 0.203 & 0.158 & 1.39 \\
+    Random-27  & 0.432 & 0.783 & 1.479 & 2.48 \\
+    Heterogeneous-100   & 0.057 & 0.116 & 0.078 & 1.11 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The three configurations comprise a deliberately regular lattice
+(Uniform-27), a deliberately irregular Voronoi-partitioned case
+(Random-27), and a larger synthetic heterogeneous packing
+(Heterogeneous-100).  The partition-level descriptors in
+Table~\ref{tab:geometry} should not be interpreted as a scalar measure of
+``geometric complexity'': Heterogeneous-100 uses a regular grid partition
+and therefore has small $\cov{V_i}$, $\cov{A_\gamma}$ and
+$\cov{a_\gamma/b_\gamma}$ despite its heterogeneous solid arrangement.
+
+\subsection{Reference systems and error metrics}
+\label{sec:references}
+
+Two reference systems must be kept distinct (see also the theory
+document):
+
+\begin{enumerate}[label=(\roman*),nosep,leftmargin=*]
+\item \textbf{Physical/numerical reference}: the monolithic Taylor--Hood
+  finite-element solution
+  $\vel_h^{\mathrm{FEM}}, \pres_h^{\mathrm{FEM}}$ on the \emph{same}
+  mesh, with continuous pressure across pores.  All reported accuracy
+  metrics are relative to this reference.  The theoretical section does
+  not establish equivalence between this system and the broken-pressure
+  C-DD reference; the error relative to the FEM solution is therefore
+  reported as an \emph{observed} accuracy measure, and no rate statement
+  is made about it from the theory.
+\item \textbf{Theoretical Galerkin reference}: the broken-pressure C-DD
+  trace solution $\xiX{\mathrm{CDD}}$ of the theory sections, and the
+  Schur-energy seminorm $\norm{\cdot}_{\Shatuu}$ it induces.  The
+  theory-level quantities ($\norm{\xiX{\mathrm{CDD}}-\xiX{X}}_{\Shatuu}$,
+  the Pythagorean decompositions) were \emph{not} computed in the runs
+  archived so far (the full C-DD solve was not executed); they are
+  discussed in \S\ref{sec:theoryverify} as planned verification, and no numerical values
+  are reported for them.
+\end{enumerate}
+
+For each reduced space $X \in \{\Wspace_{0n}, \Wspace_{0v},
+\Wspace_{1n}, \Wspace_{1v}\}$ we report, uniformly:
+\begin{align}
+  e_u^{L^2} &= \frac{\norm{\vel_X - \vel_{\mathrm{FEM}}}_{L^2(\dom)}}
+                   {\norm{\vel_{\mathrm{FEM}}}_{L^2(\dom)}}, \label{eq:elu}\\
+  e_u^{H^1_{\mathrm{br}}} &= \frac{
+      \left(\sum_i \norm{\nabla(\vel_X-\vel_{\mathrm{FEM}})}_{L^2(\pore{i})}^2\right)^{1/2}}
+      {\left(\sum_i \norm{\nabla \vel_{\mathrm{FEM}}}_{L^2(\pore{i})}^2\right)^{1/2}},
+      \label{eq:ehu}\\
+  e_p^{L^2} &= \frac{\norm{\pres_X - \pres_{\mathrm{FEM}}}_{L^2(\dom)}}
+                   {\norm{\pres_{\mathrm{FEM}}}_{L^2(\dom)}}, \label{eq:elp}\\
+  e_Q &= \frac{\abs{Q_X - Q_{\mathrm{FEM}}}}{\abs{Q_{\mathrm{FEM}}}},
+       \qquad Q = \text{outlet volume flux}. \label{eq:eq}
+\end{align}
+All error norms are evaluated cell-wise on the common mesh (broken
+domain), with degree-6 quadrature.  The pressure gauge is fixed by
+Dirichlet pressure conditions at inlet ($p=1$) and outlet ($p=0$) in
+both the FEM and the reduced systems; the raw relative $L^2$ pressure
+error \eqref{eq:elp} is reported without any post-hoc mean alignment.
+Because the pressure level is fixed physically by the inlet/outlet
+conditions, this is the pressure metric used consistently below.  The
+theory gives no monotonicity of \eqref{eq:elp} along the nested chains,
+so occasional non-monotone pressure errors are not a discrepancy.
+
+\subsection{Four modal interface spaces}
+\label{sec:spaces}
+
+The numerical programme is organised around the four trace subspaces
+of the theory section, whose per-interface contents are
+\begin{align}
+  \Wspace_{0n} &: \{1\cdot \normal\}, \qquad
+  \Wspace_{0v} : \{1\cdot \normal,\; 1\cdot \bm{t}_1,\; 1\cdot \bm{t}_2\},\\
+  \Wspace_{1n} &: \{1\cdot \normal,\; s\cdot \normal,\; t\cdot \normal\},\\
+  \Wspace_{1v} &: \{1,s,t\}\otimes\{\normal,\bm{t}_1,\bm{t}_2\},
+\end{align}
+where $(s,t)$ are local planar coordinates on the (representative)
+interface and $\{\normal,\bm{t}_1,\bm{t}_2\}$ a fixed orthonormal frame.
+Table~\ref{tab:spaces} lists the unknown budgets.  The two three-mode
+spaces satisfy $\dim\Wspace_{0v}=\dim\Wspace_{1n}=3m$, which makes them
+an \emph{equal-budget} pair: the same number of interface unknowns spent
+on directional content ($\Wspace_{0v}$) versus on first-order spatial
+content ($\Wspace_{1n}$).  Of the two paths
+$\Wspace_{0n}\subseteq\Wspace_{0v}\subseteq\Wspace_{1v}$ and
+$\Wspace_{0n}\subseteq\Wspace_{1n}\subseteq\Wspace_{1v}$, only the
+second was executable with the implemented bases at the time of the
+archived runs; $\Wspace_{0v}$ (constant tangential modes) is listed as
+\emph{not computed} in this study.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{The four modal interface spaces and their global unknown
+    budgets on the three geometries ($m$ = number of interfaces:
+    144/114/144).  The row marked $\dagger$ was \emph{not computed} in
+    the runs archived so far.}
+  \label{tab:spaces}
+  \begin{tabular}{lllccc}
+    \toprule
+    Method & space/interface & modes/iface & \multicolumn{3}{c}{global unknowns}\\
+    \cmidrule(lr){4-6}
+      & & & Uniform-27 & Random-27 & Heterogeneous-100 \\
+    \midrule
+    Classic       & $\Wspace_{0n}$ & 1 & 144 & 114 & 144 \\
+    P0-vector\dag & $\Wspace_{0v}$ & 3 & 432 & 342 & 432 \\
+    NormalLinear  & $\Wspace_{1n}$ & 3 & 432 & 342 & 432 \\
+    Affine        & $\Wspace_{1v}$ & 9 & 1296 & 1026 & 1296 \\
+    \bottomrule
+  \end{tabular}
+  \medskip
+  \raggedright\footnotesize
+  Per-interface contents: $\Wspace_{0n}=\{1\normal\}$;
+  $\Wspace_{0v}=\{1\normal,1\bm{t}_1,1\bm{t}_2\}$;
+  $\Wspace_{1n}=\{1\normal,s\normal,t\normal\}$;
+  $\Wspace_{1v}=\{1,s,t\}\otimes\{\normal,\bm{t}_1,\bm{t}_2\}$.
+  $\dag$ Constant-vector (P0-vector) space: basis implemented as part
+  of the four-space framework but not run in the archived benchmarks;
+  included for the equal-budget comparison in \S\ref{sec:equalbudget}.
+\end{table}
+
+\subsection{Timing and solver protocol}
+\label{sec:timing}
+
+All archived runs used the same serial pipeline on one Windows 11
+x86-64 workstation, with viscosity $1$ and inlet/outlet pressure $1/0$.
+The exact CPU/RAM and software-version metadata are not recorded in this
+working draft and must be added for the final performance benchmark.  Timings distinguish
+\begin{align}
+  T_{\mathrm{offline}} &= \text{local factorisations and primitive
+    response construction},\\
+  T_{\mathrm{online}} &= \text{global reduced assembly + Schur solve +
+    local reconstruction}.
+\end{align}
+$T_{\mathrm{first}} = T_{\mathrm{offline}} + T_{\mathrm{online}}$ is the
+wall time of a first reduced solve.  Common mesh generation and
+post-processing validation are excluded.  The archived timings are not
+yet a fully uniform performance benchmark: for Uniform-27 and Random-27
+the FEM entry is assembly+solve, whereas the Heterogeneous-100 archive
+contains FEM solve time only.  Consequently Table~\ref{tab:cost} reports
+absolute timing scopes explicitly.  First-solve speedups are quoted only
+where the FEM and reduced timings are directly comparable; online-only
+ratios for Heterogeneous-100 are labelled as such and are not interpreted
+as single-solve wall-clock speedups.
+
+% ======================================================================
+\section{Verification of the reference implementation}
+\label{sec:verification}
+% ======================================================================
+
+\subsection{Exact-FE-Schur: Schur elimination code validation}
+\label{sec:exactschur}
+
+On Random-27 the benchmark additionally solves the exact Schur
+complement of the monolithic system on the full FE interface trace
+(21\,970 trace DOFs, 465.9\,s).  This serves as a code-level validation
+of the Schur-elimination machinery, \emph{not} as the theoretical C-DD
+reference: the two systems share the assembled monolithic operator and
+must agree to round-off.  The measured relative difference between the
+exact-FE-Schur solution and the monolithic solve is
+\begin{equation}
+  \frac{\norm{\vel_{\mathrm{Schur}}-\vel_{\mathrm{direct}}}}
+       {\norm{\vel_{\mathrm{direct}}}} = 1.05\times10^{-12},
+\end{equation}
+with Schur symmetry defect $3.2\times10^{-15}$, Schur relative residual
+$5.75\times10^{-14}$ and global relative residual $1.55\times10^{-15}$.
+This validates the full-trace Schur elimination and the
+reference/error-evaluation pipeline.  The reduced systems are checked
+separately through their Schur residuals, symmetry and conservation
+diagnostics below; the Exact-FE-Schur comparison is not, by itself, a
+validation of the affine modal-basis assembly.
+
+\subsection{Conservation and algebraic diagnostics}
+\label{sec:algebraic}
+
+Table~\ref{tab:diagnostics} collects the algebraic diagnostics recorded
+by the runs.  Local discrete incompressibility gives each pore balance,
+while the retained constant-normal Schur equation enforces cancellation
+of the internal interface fluxes; together these yield the global mass
+balance under the assumptions of the conservation theorem.  The
+residuals shown are the maximum absolute modal-moment residual entries of
+the assembled Schur systems, at round-off level in all recorded cases.  The Schur matrices are
+exactly symmetric by construction (symmetry defect zero for the reduced
+systems).  On Random-27 the recorded minimum Schur eigenvalue drops from
+$2.1\times10^{-8}$ (Classic) to $1.26\times10^{-12}$ for both
+NormalLinear and Affine.  This indicates a much smaller minimum spectral
+scale in the chosen coefficient normalization, but it is not by itself a
+condition-number estimate because $\lambda_{\max}(\Schur)$ was not
+archived.  The matrices were successfully factorised as SPD in these
+runs.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Numerical verification diagnostics as recorded by the
+    archived runs (``--'' = not recorded by that benchmark).
+    ``$\max r_{\mathrm{mom}}$'' is the maximum absolute modal-moment
+    residual of the assembled reduced system; the mass-balance row is
+    the inlet/outlet flux sum of the random benchmark.}
+  \label{tab:diagnostics}
+  \begin{tabular}{lccccc}
+    \toprule
+    Geometry & Method & $\max\abs{r_{\mathrm{mom}}}$ & Schur sym.\ defect &
+    $\lambda_{\min}(\Schur)$ & in/out flux sum \\
+    \midrule
+    Uniform-27 & all & -- & -- & $1.67\times10^{-4}$\dag & -- \\
+    \addlinespace[2pt]
+    Random-27 & $W_{0n}$ & $2.17\times10^{-16}$ & 0 & $2.11\times10^{-8}$ &
+      $-5\times10^{-16}$ \\
+    Random-27 & $W_{1n}$ & $3.55\times10^{-16}$ & 0 & $1.26\times10^{-12}$ &
+      $-2\times10^{-16}$ \\
+    Random-27 & $W_{1v}$ & $4.92\times10^{-16}$ & 0 & $1.26\times10^{-12}$ &
+      $-4\times10^{-16}$ \\
+    \addlinespace[2pt]
+    Heterogeneous-100 & $W_{0n}$ & $6.36\times10^{-17}$ & 0 & -- & -- \\
+    Heterogeneous-100 & $W_{1n}$ & $1.05\times10^{-16}$ & 0 & -- & -- \\
+    Heterogeneous-100 & $W_{1v}$ & $1.45\times10^{-16}$ & 0 & -- & -- \\
+    \bottomrule
+  \end{tabular}
+  \medskip
+  \raggedright\footnotesize
+  $\dag$ Recorded by the base-project verification run
+  (\texttt{ddpnm\_3d\_uniform\_spheres}, same geometry, Classic system);
+  the affine benchmark did not record the eigenvalue.  The monolithic
+  FEM reference solves reached relative linear residuals
+  $1.73\times10^{-12}$ (Uniform-27) and $2.92\times10^{-12}$ (Random-27),
+  with relative mass imbalance $2.54\times10^{-14}$ (Random-27).
+\end{table}
+
+\subsection{Theory-level verification: not yet computed}
+\label{sec:theoryverify}
+
+The theory sections derive the best-approximation property in the
+$\Shatuu$-seminorm and the exact Pythagorean decompositions along the
+two nested paths, with the reduction errors
+$\Delta_T=\norm{\xiX{0v}-\xiX{0n}}_{\Shatuu}^2$,
+$\Delta_N=\norm{\xiX{1n}-\xiX{0n}}_{\Shatuu}^2$, and the identity
+\begin{equation}
+  \norm{\xiX{\mathrm{CDD}}-\xiX{0n}}_{\Shatuu}^2 =
+  \norm{\xiX{\mathrm{CDD}}-\xiX{1v}}_{\Shatuu}^2
+  + \norm{\xiX{1v}-\xiX{1n}}_{\Shatuu}^2
+  + \norm{\xiX{1n}-\xiX{0n}}_{\Shatuu}^2,
+\end{equation}
+and its analogue along $\Wspace_{0n}\to\Wspace_{0v}\to\Wspace_{1v}$.
+These identities are exact for nested spaces in exact arithmetic and
+their numerical verification requires solving the \emph{full} C-DD
+system (the broken-pressure Galerkin solution $\xiX{\mathrm{CDD}}$),
+which was not executed in the archived runs.  This verification is a
+planned item (see \S\ref{sec:limitations}).  The nestedness of the
+implemented bases is exact by construction, while
+\S\ref{sec:exactschur}--\S\ref{sec:algebraic} verify the full-trace
+Schur elimination and the algebraic residual/conservation properties of
+the reduced systems.  They do not establish equivalence between a
+reduced operator and the monolithic FEM operator.
+
+% ======================================================================
+\section{Controlled modal experiments}
+\label{sec:modal}
+% ======================================================================
+
+\subsection{Absolute accuracy}
+\label{sec:accuracy}
+
+Table~\ref{tab:master} collects the complete accuracy results of all
+archived runs: 3 geometries $\times$ 3 computed spaces, four metrics
+each.  It is an absolute-results table (not improvement ratios).
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Complete accuracy results relative to the monolithic
+    Taylor--Hood FEM on the same mesh.  $e_u^{L^2}$,
+    $e_u^{H^1_{\mathrm{br}}}$, $e_p^{L^2}$ and $e_Q$ are defined in
+    \eqref{eq:elu}--\eqref{eq:eq}.  The $\Wspace_{0v}$ row was not
+    computed in the archived runs.}
+  \label{tab:master}
+  \begin{tabular}{llcccc}
+    \toprule
+    Geometry & Method & $e_u^{L^2}$ & $e_u^{H^1_{\mathrm{br}}}$ &
+    $e_p^{L^2}$ & $e_Q$ \\
+    \midrule
+    Uniform-27 & $W_{0n}$ & 0.2108 & 0.4483 & 0.0321 & 0.1646 \\
+    Uniform-27 & $W_{1n}$ & 0.0816 & 0.2385 & 0.0185 & 0.0243 \\
+    Uniform-27 & $W_{1v}$ & 0.0563 & 0.2161 & 0.0217 & 0.0032 \\
+    \addlinespace[2pt]
+    Random-27 & $W_{0n}$ & 0.6532 & 0.8585 & 0.1030 & 0.7272 \\
+    Random-27 & $W_{1n}$ & 0.3075 & 0.3897 & 0.0322 & 0.1465 \\
+    Random-27 & $W_{1v}$ & 0.0651 & 0.1756 & 0.0203 & 0.0271 \\
+    \addlinespace[2pt]
+    Heterogeneous-100 & $W_{0n}$ & 0.9254 & 1.0627 & 0.0776 & 1.1199 \\
+    Heterogeneous-100 & $W_{1n}$ & 0.4738 & 0.5129 & 0.0299 & 0.2595 \\
+    Heterogeneous-100 & $W_{1v}$ & 0.1998 & 0.3594 & 0.0236 & 0.1244 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Three observations follow directly from the absolute numbers, all
+qualitative and confined to the tested configurations:
+
+\begin{enumerate}[label=\textbf{(C\arabic*)}.,leftmargin=*,nosep]
+\item The Classic constant-normal model $\Wspace_{0n}$ exhibits large
+  FEM-relative velocity errors on all three tested configurations
+  ($21.1\%$, $65.3\%$ and $92.5\%$, respectively).  These are observed
+  model-to-FEM discrepancies; without the full C-DD reference they are
+  not identified purely as modal-reduction errors.
+\item Along the computed path $\Wspace_{0n}\to\Wspace_{1n}\to
+  \Wspace_{1v}$, the first-order normal step accounts for the majority
+  of the observed Classic-to-Affine $L^2$ velocity-error reduction on
+  all three configurations (quantified in \S\ref{sec:shares}).
+\item The additional full-vector affine enrichment remains substantial
+  for Random-27 ($e_u^{L^2}$: $0.308\to0.065$) and Heterogeneous-100
+  ($0.474\to0.200$), while it is a smaller field-error correction on
+  Uniform-27 ($0.082\to0.056$).  On Uniform-27 the outlet-flux error
+  drops to $0.32\%$ only with $\Wspace_{1v}$.
+\end{enumerate}
+
+The non-monotonicity of the pressure error on Uniform-27
+($e_p^{L^2}(\Wspace_{1n}) = 0.0185 < e_p^{L^2}(\Wspace_{1v}) = 0.0217$)
+is not a discrepancy: the theory does not guarantee monotonicity of the
+pressure $L^2$ error along nested chains (the reduction error is
+monotone in the Schur-energy seminorm, not in $L^2(p)$).
+
+\subsection{Accuracy versus modal budget}
+\label{sec:budget}
+
+Fig.~\ref{fig:budget} is the central visual of the section: for each
+geometry it plots the relative $L^2$ velocity error against the number
+of modes per interface, $r \in \{1,3,9\}$, joining the points along the
+computed nested path $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$.  The
+$r=3$ location carries a single computed space ($\Wspace_{1n}$); the
+equal-budget companion $\Wspace_{0v}$ is not yet computed, so the
+question ``same DOF budget spent on direction versus on spatial
+variation'' can only be posed here, not answered (see \S\ref{sec:equalbudget}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{figures/fig2_modal_budget.png}
+  \caption{Relative $L^2$ velocity error versus modes per interface
+    ($r=1,3,9$) along the nested path
+    $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$, for the three
+    geometries (log scale).  Only the path through $\Wspace_{1n}$ was
+    computed; the equal-budget space $\Wspace_{0v}$ at $r=3$ is
+    planned work.}
+  \label{fig:budget}
+\end{figure}
+
+In absolute FEM-relative $L^2$ error, the reduction from $r=1$ to
+$r=3$ is larger than the reduction from $r=3$ to $r=9$ in each of the
+three archived cases.  This statement is intentionally additive rather
+than multiplicative: the log-scale ratios need not exhibit the same
+ordering.  The remaining error at $r=9$ also differs substantially
+($5.6\%$, $6.5\%$, $20.0\%$), indicating configuration-dependent
+accuracy at a fixed modal budget; no asymptotic statement in $r$ is
+claimed.
+
+\subsection{Metric comparison across geometries}
+\label{sec:metrics}
+
+Fig.~\ref{fig:metrics} shows all four metrics as dot plots
+(velocity $L^2$, broken $H^1$, pressure $L^2$, outlet-flux error) with
+logarithmic ordinate; the wide dynamic range ($0.3\%$--$112\%$) is the
+reason for the log scale.  The figure reproduces the Table~\ref{tab:master} numbers in
+a form where the cross-geometry pattern is visible at a glance: the
+Classic-to-Affine spread widens from the regular to the irregular and
+heterogeneous cases in every metric except the pressure error, which stays
+within one decade across all geometries and methods.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{figures/fig3_metrics.png}
+  \caption{Four error metrics (relative, log scale) across the three
+    geometries, three computed spaces: (a)~velocity $L^2$,
+    (b)~velocity broken $H^1$, (c)~pressure $L^2$, (d)~outlet-flux
+    error.}
+  \label{fig:metrics}
+\end{figure}
+
+\subsection{Equal-budget comparison \texorpdfstring{$\Wspace_{0v}$ vs.\ $\Wspace_{1n}$}{W0v vs. W1n}: planned}
+\label{sec:equalbudget}
+
+The central controlled contrast of the programme is the equal-budget
+comparison
+\begin{equation}
+  G_{0v} = \frac{e_{0n}-e_{0v}}{e_{0n}}, \qquad
+  G_{1n} = \frac{e_{0n}-e_{1n}}{e_{0n}},
+\end{equation}
+i.e.\ the FEM-relative $L^2$ reduction obtained by spending three DOFs
+per interface on constant directional content ($\Wspace_{0v}$) versus
+on first-order spatial content ($\Wspace_{1n}$).  This experiment was
+\emph{not} run in the archived benchmarks (the constant-vector basis is
+implemented in the four-space framework but no runs were executed).
+It is the first item of \S\ref{sec:limitations}.  Until it is computed, the statement
+that the normal-linear modes are the dominant mechanism rests on the
+comparison $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$ alone
+(Fig.~\ref{fig:budget}), which cannot separate directional from spatial
+information.
+
+\subsection{Field visualization (Random-27)}
+\label{sec:fields}
+
+Fig.~\ref{fig:fields} shows, on the Random-27 geometry, a slice plane
+($z=0.5$) of the FEM velocity magnitude together with the pointwise
+velocity error magnitude of the three reduced spaces, using the same
+error-map color normalization.  Qualitatively, the error becomes both
+weaker and more spatially localized along the sequence
+$\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$, consistent with the
+global metrics.  Because the archived figure does not retain numerical
+colorbar limits, it is used only as a qualitative field visualization;
+all quantitative comparisons use Tables~\ref{tab:master} and
+\ref{tab:cross}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{figures/fig6_fields.png}
+  \caption{Random-27, slice $z=0.5$: FEM velocity magnitude (left) and
+    pointwise velocity-error magnitude of $\Wspace_{0n}$,
+    $\Wspace_{1n}$ and $\Wspace_{1v}$ with a common archived color
+    normalization.  The panel is qualitative because numerical colorbar
+    limits were not retained in the archived image.}
+  \label{fig:fields}
+\end{figure}
+
+The archived slice output is available only for Random-27.  Additional
+field visualizations for the other configurations remain to be generated
+from the corresponding solution fields.
+
+% ======================================================================
+\section{Larger heterogeneous configuration (Heterogeneous-100)}
+\label{sec:realistic}
+% ======================================================================
+
+\subsection{Accuracy}
+\label{sec:realacc}
+
+Heterogeneous-100 is the largest of the three synthetic configurations
+(32\,611 cells, 166\,841 mixed DOFs, porosity $0.856$).  Its accuracy
+rows in Table~\ref{tab:master} repeat the qualitative pattern of the
+controlled geometries, at a higher level: Classic $\Wspace_{0n}$ has a $92.5\%$ relative velocity
+$L^2$ error and a broken-$H^1$ relative error above one ($e_u^{H^1_{\mathrm{br}}} = 1.063$); NormalLinear
+reduces the $L^2$ error to $47.4\%$ and the flux error to $25.9\%$;
+Affine reaches $e_u^{L^2}=20.0\%$, $e_Q=12.4\%$.  The pressure error is
+the least sensitive metric here as well ($7.8\%\to3.0\%\to2.4\%$).
+These are the largest errors among the three tested configurations for
+each of the three computed spaces.  The present data do not isolate a
+single geometric or topological quantity responsible for this ordering.
+
+\subsection{Cost and memory}
+\label{sec:realcost}
+
+Table~\ref{tab:cost} reports the cost structure of all runs.  For
+Uniform-27 and Random-27 the reduced methods achieve a genuine
+first-solve speedup over the monolithic FEM ($10.5\times$ and $13.3\times$
+for Classic; $8.2\times$ and $9.1\times$ for Affine), because the
+offline library is cheap relative to the FEM solve on those meshes.
+For Heterogeneous-100 the archive contains a $14.5\,$s FEM solve-only
+time, while the reduced offline phase takes $28$--$33\,$s.  Thus the
+archived data do not support a like-for-like first-solve speedup claim
+for this case.  The reduced online phase is short ($0.06$--$1.4\,$s),
+and the quoted $255\times$, $72\times$ and $10\times$ ratios compare
+that online phase against the archived FEM solve time only.  A formal
+performance table should be rerun with one timing scope and repeated
+measurements on all configurations.
+
+Memory: peak footprints on Heterogeneous-100 are $45$\,MiB (Classic),
+$79$\,MiB (NormalLinear), $246$\,MiB (Affine) versus $300$\,MiB for the
+monolithic solve.  The observed increase with mode count is consistent
+with the larger reduced coupling blocks, but no memory-complexity law is
+inferred from these three measurements.
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Computational cost (seconds).  $T_{\mathrm{offline}}$: local
+    factorisations + primitive responses; $T_{\mathrm{online}}$:
+    reduced assembly + Schur solve + reconstruction;
+    $T_{\mathrm{first}} = T_{\mathrm{offline}}+T_{\mathrm{online}}$.
+    $N_{\mathrm{prim}}$ = primitive RHS columns.  For Uniform-27 and
+    Random-27 the FEM time is assembly+solve; for Heterogeneous-100 the
+    archived FEM entry is solve-only, so timing ratios for that block are
+    labelled ``online only'' and are not directly comparable to the
+    first-solve ratios above.}
+  \label{tab:cost}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{llcccccc}
+    \toprule
+    Geometry & Method & unknowns & $N_{\mathrm{prim}}$ &
+    $T_{\mathrm{offline}}$ & $T_{\mathrm{online}}$ &
+    $T_{\mathrm{first}}$ & speedup vs FEM \\
+    \midrule
+    Uniform-27 & $W_{0n}$ & 144 & 320 & 7.35 & 0.0071 & 7.36 & $10.50\times$ \\
+    Uniform-27 & $W_{1n}$ & 432 & 896 & 7.38 & 0.0222 & 7.40 & $10.44\times$ \\
+    Uniform-27 & $W_{1v}$ & 1296 & 2624 & 9.18 & 0.208 & 9.39 & $8.23\times$ \\
+    Uniform-27 & FEM & 63\,955 & -- & -- & 77.25 & 77.25 & $1\times$ \\
+    \addlinespace[2pt]
+    Random-27 & $W_{0n}$ & 114 & 246 & 8.90 & 0.0141 & 8.91 & $13.29\times$ \\
+    Random-27 & $W_{1n}$ & 342 & 702 & 9.20 & 0.0287 & 9.22 & $12.84\times$ \\
+    Random-27 & $W_{1v}$ & 1026 & 2070 & 12.82 & 0.191 & 13.01 & $9.10\times$ \\
+    Random-27 & FEM & 75\,954 & -- & -- & 118.42 & 118.42 & $1\times$ \\
+    Random-27 & Exact-FE-Schur & 21\,970 & -- & -- & 465.90 & 465.90 & $0.25\times$ \\
+    \addlinespace[2pt]
+    Heterogeneous-100 & $W_{0n}$ & 144 & -- & 27.9 & 0.057 & 27.98 & $255\times$ (online only) \\
+    Heterogeneous-100 & $W_{1n}$ & 432 & -- & 28.0 & 0.203 & 28.17 & $72\times$ (online only) \\
+    Heterogeneous-100 & $W_{1v}$ & 1296 & -- & 32.7 & 1.400 & 34.13 & $10\times$ (online only) \\
+    Heterogeneous-100 & FEM & 166\,841 & -- & -- & 14.53 & 14.53 & $1\times$ \\
+    \bottomrule
+  \end{tabular}}
+  \medskip
+  \raggedright\footnotesize
+  Peak memory (Heterogeneous-100 only): $W_{0n}$ 45.0, $W_{1n}$ 78.8,
+  $W_{1v}$ 246.4, FEM 299.8\,MiB.  ``Online only'' speedups are
+  $T_{\mathrm{online}}(\mathrm{FEM})/T_{\mathrm{online}}(X)$; these
+  ratios exclude the reduced offline library and therefore do
+  not constitute single-solve speedups.
+\end{table}
+
+\subsection{Accuracy--cost tradeoff}
+\label{sec:pareto}
+
+Fig.~\ref{fig:pareto} plots the relative $L^2$ velocity error of the
+three reduced spaces against their online time.  The monolithic FEM
+solution has zero error relative to itself and therefore cannot be
+plotted on a logarithmic error axis; its archived time is shown only as
+a vertical reference line in each panel.  The figure visualizes the
+reduced-method accuracy--online-cost tradeoff and is relevant primarily
+to repeated-query use, because it excludes the offline library.  The
+Heterogeneous-100 FEM timing scope also differs from the other two cases,
+as stated in Table~\ref{tab:cost}.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.97\textwidth]{figures/fig5_pareto.png}
+  \caption{Relative $L^2$ velocity error versus online solve time
+    (log--log), shown separately for the three configurations.  The
+    vertical dotted line is the archived monolithic FEM time; the FEM
+    self-error is exactly zero and is therefore off the logarithmic
+    ordinate.  Online time excludes the reduced offline library (see
+    Table~\ref{tab:cost}).}
+  \label{fig:pareto}
+\end{figure}
+
+% ======================================================================
+\section{Cross-geometry modal analysis}
+\label{sec:cross}
+% ======================================================================
+
+\subsection{Observed FEM-relative error-reduction shares}
+\label{sec:shares}
+
+Along the computed path $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$ the
+observed FEM-relative $L^2$ velocity-error reduction decomposes into the
+normal-spatial step ($\Wspace_{0n}\to\Wspace_{1n}$) and the additional
+vectorial step ($\Wspace_{1n}\to\Wspace_{1v}$):
+\begin{equation}
+  R_N = \frac{e_{0n}-e_{1n}}{e_{0n}-e_{1v}}, \qquad
+  R_{V|N} = \frac{e_{1n}-e_{1v}}{e_{0n}-e_{1v}}, \qquad
+  R_N + R_{V|N} = 1.
+  \label{eq:shares}
+\end{equation}
+Fig.~\ref{fig:shares} and Table~\ref{tab:cross} report these shares.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.72\textwidth]{figures/fig4_shares.png}
+  \caption{Fractions of the \emph{observed} FEM-relative $L^2$ velocity
+    error reduction along the prescribed path
+    $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$ (100\% stacked).
+    These fractions are descriptive; they are not unique causal modal
+    contributions, because the two middle spaces $\Wspace_{0v}$ and
+    $\Wspace_{1n}$ are generally non-nested and the path choice fixes the attribution.}
+  \label{fig:shares}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Cross-geometry modal summary: absolute errors and the
+    observed FEM-relative reduction shares of \eqref{eq:shares}.}
+  \label{tab:cross}
+  \begin{tabular}{lcccccc}
+    \toprule
+    Geometry & $e_{0n}^{L^2}$ & $e_{1n}^{L^2}$ & $e_{1v}^{L^2}$ &
+    $R_N$ & $R_{V|N}$ & reduction $\frac{e_{0n}-e_{1v}}{e_{0n}}$ \\
+    \midrule
+    Uniform-27 & 0.2108 & 0.0816 & 0.0563 & 83.6\% & 16.4\% & 73.3\% \\
+    Random-27  & 0.6532 & 0.3075 & 0.0651 & 58.8\% & 41.2\% & 90.0\% \\
+    Heterogeneous-100   & 0.9254 & 0.4738 & 0.1998 & 62.2\% & 37.8\% & 78.4\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Two statements can be made from these numbers, both confined to the
+tested configurations and to the chosen path:
+
+\begin{enumerate}[label=\textbf{(D\arabic*)}.,leftmargin=*,nosep]
+\item On all three geometries the normal-spatial step
+  $\Wspace_{0n}\to\Wspace_{1n}$ accounts for the majority of the
+  observed reduction ($59$--$84\%$).
+\item The share of the additional full-vector affine step
+  $\Wspace_{1n}\to\Wspace_{1v}$ is larger for Random-27 and
+  Heterogeneous-100 ($41\%$ and $38\%$) than for Uniform-27 ($16\%$).
+  The simple partition-level variability descriptors in
+  Table~\ref{tab:geometry} do \emph{not} order these three cases
+  monotonically---Heterogeneous-100 has smaller listed CVs than
+  Uniform-27---so the present data support configuration-dependent modal
+  behavior but not a scalar ``irregularity $\mapsto$ modal share'' law.
+\end{enumerate}
+
+\subsection{Schur-energy pathwise decomposition: planned}
+\label{sec:schurdecomp}
+
+The theory sections give an \emph{exact} decomposition of the squared
+Schur-energy error into pathwise marginal gains (see \S\ref{sec:theoryverify}).  Unlike
+the FEM-relative shares of Fig.~\ref{fig:shares}, those quantities
+($\Delta_N$, $\Delta_{T|N}$ etc.\ in the $\Shatuu$-seminorm) are
+theorem-level and require the full C-DD trace solution
+$\xiX{\mathrm{CDD}}$.  They were not computed in the archived runs and
+are therefore not reported numerically; Fig.~\ref{fig:shares} and the
+planned Schur-energy figure must not be conflated.  The former is an
+observed descriptive attribution, the latter would be a strict theorem
+quantity; only the former is available at this stage.
+
+\subsection{Geometry dependence and limitations}
+\label{sec:limitations}
+
+\textbf{What the current data supports.}  (i)~the Classic
+constant-normal model $\Wspace_{0n}$ exhibits large FEM-relative
+velocity errors in all three tested configurations; (ii)~adding
+first-order normal spatial content $\Wspace_{1n}$ produces a major
+observed correction in each case; (iii)~the residual gap between
+$\Wspace_{1n}$ and $\Wspace_{1v}$ is small for Uniform-27 and
+substantial for Random-27 and Heterogeneous-100, indicating
+configuration-dependent modal requirements across the tested cases;
+(iv)~neither a monotonic dependence on a single scalar geometry
+descriptor nor a causal geometric law is claimed.
+
+\textbf{What is planned and not yet computed.}  (a)~the equal-budget
+space $\Wspace_{0v}$ (constant tangential modes) on all three
+geometries, enabling the controlled contrast of \S\ref{sec:equalbudget};
+(b)~the full C-DD solve $\xiX{\mathrm{CDD}}$ on Uniform-27 and
+Random-27 for the exact Schur-energy verification (\S\ref{sec:theoryverify}) and the
+pathwise decomposition (\S\ref{sec:schurdecomp}); (c)~a mesh-sensitivity study
+(Uniform-27 at three mesh levels) to confirm that the separation
+$\Wspace_{0n}\gg\Wspace_{1n}>\Wspace_{1v}$ is not an artifact of one
+mesh; the theory gives fixed-mesh separation only, no
+mesh-independent asymptotic statement; (d)~an ensemble of random
+realisations of the Random-27 geometry to test the stability of the
+$59/41$ split across seeds; (e)~additional field outputs for
+Heterogeneous-100; (f)~an independent second porous configuration at a
+different pore/sphere count; and (g)~a uniform, repeated timing benchmark
+with the same FEM/reduced timing scope on every configuration.
+
+\textbf{Scope notes.}  All timings are single-machine, single-threaded
+measurements from the archived runs; they are indicative, not
+benchmark-suite grade.  The reported errors are with respect to the
+monolithic Taylor--Hood FEM on the same mesh; the relation between the
+broken-pressure C-DD discretisation and the monolithic system is not
+established in the theory sections, and therefore no claim about the
+accuracy of the reduced methods \emph{relative to the exact Stokes
+solution} is made.
+
+% ======================================================================
+\section*{Appendix A: archived output provenance}
+\label{app:provenance}
+% ======================================================================
+
+All numerical values in this working section were read from the archived
+benchmark outputs listed below:
+\begin{itemize}[nosep,leftmargin=*]
+\item \texttt{affine\_ddpnm\_3d/outputs/benchmark\_w1n/}:\\
+  \texttt{affine\_ddpnm\_metrics.csv}, \texttt{affine\_ddpnm\_report.json};
+\item \texttt{affine\_ddpnm\_3d\_random\_porous/outputs/benchmark\_w1n/}:\\
+  \texttt{random\_affine\_metrics.csv}, \texttt{random\_affine\_report.json},
+  \texttt{random\_benchmark\_fields.npz};
+\item \texttt{real\_porous\_benchmark\_3d/outputs/benchmark\_w1n/}:\\
+  \texttt{benchmark\_metrics.csv}, \texttt{benchmark\_report.json};
+\item the base-project verification run\\
+  \texttt{ddpnm\_3d\_uniform\_spheres/outputs/verify\_run/} (Classic
+  Schur eigenvalue footnote).
+\end{itemize}
+The geometry descriptors and tabulated numerical values are retained
+from the supplied working experiment document.  In this revised version,
+Figs.~\ref{fig:budget}, \ref{fig:metrics}, \ref{fig:pareto} and
+\ref{fig:shares} were regenerated directly from the tabulated values;
+the geometry and Random-27 field panels were reproduced from the supplied
+compiled artifact.  No unreported experiment was assigned a numerical
+value.
+
+\end{document}
