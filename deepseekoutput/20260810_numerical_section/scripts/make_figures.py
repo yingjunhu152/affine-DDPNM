@@ -20,8 +20,20 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
 
-REPO = Path(__file__).resolve().parents[3]
-SECTION = Path(__file__).resolve().parent.parent
+# The section script lives in a copy that may sit at either the report
+# root (20260810report/numerical_section/scripts) or the repository root
+# (deepseekoutput/20260810_numerical_section/scripts); resolve the project
+# directory that actually carries the benchmark outputs.
+_SCRIPT_DIR = Path(__file__).resolve().parent.parent
+REPO = next(
+    (
+        p
+        for p in (_SCRIPT_DIR.parent, _SCRIPT_DIR.parent.parent)
+        if (p / "affine_ddpnm_3d" / "outputs").is_dir()
+    ),
+    _SCRIPT_DIR.parent.parent,
+)
+SECTION = _SCRIPT_DIR
 FIG = SECTION / "figures"
 DATA = SECTION / "data"
 FIG.mkdir(parents=True, exist_ok=True)
@@ -399,47 +411,195 @@ def fig5_pareto():
 
 
 # ----------------------------------------------------------------------------
-# Figure 6: Random-27 slice velocity fields and errors
+# field colormaps (dataviz reference palette: sequential = blue ramp,
+# second sequential context = orange slot; diverging = blue <-> red)
+# ----------------------------------------------------------------------------
+SEQ_BLUE_STEPS = [
+    "#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7",
+    "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281",
+    "#0d366b",
+]
+SEQ_ORANGE_STEPS = [
+    "#fbe4d4", "#f6c3a0", "#f09e6d", "#eb6834", "#d2541f",
+    "#b04218", "#8e3512", "#6f2a0e",
+]
+CMAP_REF = plt.matplotlib.colors.LinearSegmentedColormap.from_list(
+    "seq_orange", SEQ_ORANGE_STEPS
+)
+CMAP_ERR = plt.matplotlib.colors.LinearSegmentedColormap.from_list(
+    "seq_blue", SEQ_BLUE_STEPS
+)
+CMAP_FLUX = plt.matplotlib.colors.LinearSegmentedColormap.from_list(
+    "div_flux", ["#e34948", "#f5b3b1", "#f0efec", "#a9c8f2", "#2a78d6"]
+)
+
+FIELD_GEOMS = ["Uniform-27", "Random-27"]
+
+
+def load_fields(geom: str) -> np.lib.npyio.NpzFile:
+    """Benchmark field archives (slice + interface exports) per geometry."""
+    paths = {
+        "Uniform-27": (
+            REPO / "affine_ddpnm_3d/outputs/benchmark_w1n/affine_benchmark_fields.npz"
+        ),
+        "Random-27": (
+            REPO
+            / "affine_ddpnm_3d_random_porous/outputs/benchmark_w1n/random_benchmark_fields.npz"
+        ),
+    }
+    return np.load(paths[geom])
+
+
+def draw_sphere_section(ax, centers, radii, z_value, color=C_MUTED, lw=0.6):
+    """Outlines of the solid spheres cut by the plane z=z_value."""
+    for c, r in zip(centers, radii):
+        dz = c[2] - z_value
+        if abs(dz) >= r:
+            continue
+        radius = np.sqrt(r * r - dz * dz)
+        circle = plt.Circle(
+            (c[0], c[1]), radius, fill=False, ec=color, lw=lw, zorder=5
+        )
+        ax.add_patch(circle)
+
+
+# ----------------------------------------------------------------------------
+# Figure 6: slice fields and FEM-relative errors, 2 x 4 across geometries
 # ----------------------------------------------------------------------------
 def fig6_fields():
-    npz_path = REPO / "affine_ddpnm_3d_random_porous/outputs/benchmark_w1n/random_benchmark_fields.npz"
-    d = np.load(npz_path)
-    sl = {
-        "points": d["classic_error_slice_points"],
-        "tri": d["classic_error_slice_triangles"],
-    }
-    xy = sl["points"][:, :2]
-    tri = sl["tri"]
-    u_fem = d["classic_error_slice_u_fem"]
-    mag_fem = np.linalg.norm(u_fem, axis=1)
-    panels = [
-        ("reference", r"$|\mathbf{u}_{\rm FEM}|$", mag_fem, None),
-        ("W0n", r"$|\mathbf{u}_{W_{0n}}-\mathbf{u}_{\rm FEM}|$",
-         np.linalg.norm(d["classic_error_slice_u_ddpnm"] - u_fem, axis=1), "err"),
-        ("W1n", r"$|\mathbf{u}_{W_{1n}}-\mathbf{u}_{\rm FEM}|$",
-         np.linalg.norm(d["normal_linear_error_slice_u_ddpnm"] - u_fem, axis=1), "err"),
-        ("W1v", r"$|\mathbf{u}_{W_{1v}}-\mathbf{u}_{\rm FEM}|$",
-         np.linalg.norm(d["affine_error_slice_u_ddpnm"] - u_fem, axis=1), "err"),
+    fig = plt.figure(figsize=(13.8, 8.0))
+    gs = fig.add_gridspec(
+        2, 6, width_ratios=[1, 0.10, 1, 1, 1, 0.10],
+        hspace=0.34, wspace=0.24,
+    )
+    axes = [[fig.add_subplot(gs[r, c]) for c in range(4)] for r in range(2)]
+    ref_cax = [fig.add_subplot(gs[r, 1]) for r in range(2)]
+    err_cax = [fig.add_subplot(gs[r, 5]) for r in range(2)]
+    titles = [
+        r"(a) FEM: $|\mathbf{u}|$",
+        r"(b) Classic-1: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$",
+        r"(c) W1n-3: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$",
+        r"(d) Affine-9: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$",
     ]
-    err_max = max(p[2].max() for p in panels if p[3] == "err")
-    ref_max = mag_fem.max()
-    fig, axes = plt.subplots(1, 4, figsize=(11.5, 3.4), sharey=True)
-    for ax, (key, title, vals, kind) in zip(axes, panels):
-        if kind == "err":
-            vmax = err_max
-            cmap = "Blues"
-        else:
-            vmax = ref_max
-            cmap = "viridis"
-        ax.tripcolor(xy[:, 0], xy[:, 1], tri, vals, cmap=cmap,
-                     vmin=0.0, vmax=vmax, shading="gouraud")
-        ax.set_title(title, fontsize=9)
-        ax.set_aspect("equal")
-        ax.set_xticks([]); ax.set_yticks([])
-        ax.grid(False)
-    axes[0].set_ylabel("slice plane $z=0.5$ (unit cube)")
-    fig.tight_layout()
+    for row, geom in enumerate(FIELD_GEOMS):
+        d = load_fields(geom)
+        points = d["classic_error_slice_points"]
+        tri = d["classic_error_slice_triangles"]
+        xy = points[:, :2]
+        u_fem = d["classic_error_slice_u_fem"]
+        mag_fem = np.linalg.norm(u_fem, axis=1)
+        panels = [
+            mag_fem,
+            np.linalg.norm(d["classic_error_slice_u_ddpnm"] - u_fem, axis=1),
+            np.linalg.norm(d["normal_linear_error_slice_u_ddpnm"] - u_fem, axis=1),
+            np.linalg.norm(d["affine_error_slice_u_ddpnm"] - u_fem, axis=1),
+        ]
+        err_max = max(panel.max() for panel in panels[1:])
+        sp = SPHERES[geom]
+        for col in range(4):
+            ax = axes[row][col]
+            if col == 0:
+                mappable = ax.tripcolor(
+                    xy[:, 0], xy[:, 1], tri, panels[col], cmap=CMAP_REF,
+                    vmin=0.0, vmax=mag_fem.max(), shading="gouraud",
+                )
+            else:
+                mappable = ax.tripcolor(
+                    xy[:, 0], xy[:, 1], tri, panels[col], cmap=CMAP_ERR,
+                    vmin=0.0, vmax=err_max, shading="gouraud",
+                )
+            draw_sphere_section(ax, sp["c"], sp["r"], 0.5)
+            if "interface_slice_segments" in d.files:
+                ax.plot(d["interface_slice_segments"][:, :, 0].T,
+                        d["interface_slice_segments"][:, :, 1].T,
+                        color=C_GRAY, lw=0.7, alpha=0.75, zorder=4)
+            ax.set_title(titles[col] if row == 0 else titles[col].replace(
+                "(a)", "(e)").replace("(b)", "(f)").replace("(c)", "(g)")
+                .replace("(d)", "(h)"), fontsize=8.5)
+            ax.set_aspect("equal")
+            ax.set_xlim(0, 1); ax.set_ylim(0, 1)
+            ax.set_xticks([0.0, 0.5, 1.0]); ax.set_yticks([0.0, 0.5, 1.0])
+            ax.tick_params(labelsize=7.5, colors=C_MUTED)
+            ax.grid(False)
+            if col == 0:
+                ax.set_ylabel(f"{geom}\n\n$y$", fontsize=8.5)
+            if row == 1:
+                ax.set_xlabel("$x$", fontsize=8.5)
+        cb = fig.colorbar(
+            matplotlib.cm.ScalarMappable(
+                norm=matplotlib.colors.Normalize(0.0, mag_fem.max()),
+                cmap=CMAP_REF),
+            cax=ref_cax[row])
+        cb.set_label(r"$|\mathbf{u}_{\rm FEM}|$", fontsize=8)
+        cb.ax.tick_params(labelsize=7)
+        cb = fig.colorbar(
+            matplotlib.cm.ScalarMappable(
+                norm=matplotlib.colors.Normalize(0.0, err_max), cmap=CMAP_ERR),
+            cax=err_cax[row])
+        cb.set_label(r"$|\mathbf{u}-\mathbf{u}_{\rm FEM}|$", fontsize=8)
+        cb.ax.tick_params(labelsize=7)
     fig.savefig(FIG / "fig6_fields.png", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+# ----------------------------------------------------------------------------
+# Figure 7: normal flux q = u.n on a representative interface, 2 x 4
+# ----------------------------------------------------------------------------
+def fig7_interfaces():
+    # The per-interface normal-flux export is only available for
+    # Uniform-27 so far; the Random-27 rerun that writes the interface
+    # keys is pending, so the 2x4 figure is not produced yet.
+    if not all(
+        "interface_q_fem" in load_fields(geom).files for geom in FIELD_GEOMS
+    ):
+        print("fig7_interfaces: skipped (Random-27 interface export pending)")
+        return
+    fig = plt.figure(figsize=(13.8, 7.6))
+    gs = fig.add_gridspec(
+        2, 5, width_ratios=[1, 1, 1, 1, 0.10], hspace=0.34, wspace=0.24,
+    )
+    axes = [[fig.add_subplot(gs[r, c]) for c in range(4)] for r in range(2)]
+    flux_cax = [fig.add_subplot(gs[r, 4]) for r in range(2)]
+    titles = [
+        r"(a) FEM: $q=\mathbf{u}\cdot\mathbf{n}$",
+        r"(b) Classic-1: $q$",
+        r"(c) W1n-3: $q$",
+        r"(d) Affine-9: $q$",
+    ]
+    for row, geom in enumerate(FIELD_GEOMS):
+        d = load_fields(geom)
+        st = d["interface_st"]
+        tri = d["interface_triangles"]
+        qs = [
+            d["interface_q_fem"],
+            d["interface_q_classic"],
+            d["interface_q_normal_linear"],
+            d["interface_q_affine"],
+        ]
+        q_max = max(np.max(np.abs(q)) for q in qs)
+        for col in range(4):
+            ax = axes[row][col]
+            ax.tripcolor(st[:, 0], st[:, 1], tri, qs[col], cmap=CMAP_FLUX,
+                         vmin=-q_max, vmax=q_max, shading="gouraud")
+            ax.set_title(titles[col] if row == 0 else titles[col].replace(
+                "(a)", "(e)").replace("(b)", "(f)").replace("(c)", "(g)")
+                .replace("(d)", "(h)"), fontsize=8.5)
+            ax.set_aspect("equal")
+            ax.set_xlim(-1, 1); ax.set_ylim(-1, 1)
+            ax.set_xticks([-1.0, 0.0, 1.0]); ax.set_yticks([-1.0, 0.0, 1.0])
+            ax.tick_params(labelsize=7.5, colors=C_MUTED)
+            ax.grid(False)
+            if col == 0:
+                ax.set_ylabel(f"{geom}\n\n$t$", fontsize=8.5)
+            if row == 1:
+                ax.set_xlabel("$s$", fontsize=8.5)
+        cb = fig.colorbar(
+            matplotlib.cm.ScalarMappable(
+                norm=matplotlib.colors.Normalize(-q_max, q_max), cmap=CMAP_FLUX),
+            cax=flux_cax[row])
+        cb.set_label(r"$q=\mathbf{u}\cdot\mathbf{n}$", fontsize=8)
+        cb.ax.tick_params(labelsize=7)
+    fig.savefig(FIG / "fig7_interfaces.png", dpi=200, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -450,6 +610,7 @@ def main() -> None:
     fig4_shares()
     fig5_pareto()
     fig6_fields()
+    fig7_interfaces()
     print("figures written to", FIG)
 
 

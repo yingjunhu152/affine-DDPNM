@@ -1,0 +1,540 @@
+--- /mnt/data/make_final_figures.py	2026-08-09 06:25:00.877322163 +0000
++++ make_final_figures.py	2026-08-09 06:27:10.297322163 +0000
+@@ -14,8 +14,10 @@
+     fig4_equal_budget_W0v_vs_W1n.png       SKIP (no W0v run exists)
+     fig5_fields_uniform27.png              OK
+     fig5_fields_random27.png               OK
++    fig5_fields_uniform_random.png         OK  (paper-ready 2x4 comparison)
+     fig5_fields_real100.png                SKIP (current W1n benchmark saves no slice fields)
+     fig5_interface_flux_modes.png          OK  (Uniform-27 row only)
++    fig5_interface_flux_errors.png         OK  (for each archived interface-flux row)
+     fig6_schur_energy_decomposition.png    SKIP (requires full broken-pressure C-DD)
+     fig7_accuracy_cost_standardized.png    OK  (single timing runs; no spread)
+     fig8_mesh_sensitivity.png              SKIP (no multi-mesh archive)
+@@ -73,6 +75,16 @@
+ 
+ STATUS = {}
+ 
++# Timing scope in the currently archived benchmark files.  Keep this mapping
++# synchronized with future re-runs.  The accuracy-cost figure prints the scope
++# explicitly so that solve-only and assembly+solve timings are never silently
++# compared as if they were identical measurements.
++FEM_TIMING_SCOPE = {
++    "Uniform-27": "assembly + solve",
++    "Random-27": "assembly + solve",
++    "Real-100": "solve only",
++}
++
+ 
+ def mark(name: str, ok: bool, note: str = "") -> None:
+     STATUS[name] = (ok, note)
+@@ -102,6 +114,20 @@
+             ax.plot(*zip(*pts), ls=ls, lw=lw, alpha=alpha, color=color, zorder=1)
+ 
+ 
++def modal_x_positions(g: dict) -> dict[str, float]:
++    """Display positions for modal-budget plots.
++
++    W0v and W1n both have exactly r=3.  When both are present, they are given
++    a very small visual jitter around the r=3 tick so that the equal-budget
++    comparison remains legible.  The tick itself stays at the true value 3.
++    """
++    xs = {k: float(g[k]["modes"]) for k in g if k in METHOD_LABELS}
++    if "W0v" in xs and "W1n" in xs:
++        xs["W0v"] = 2.82
++        xs["W1n"] = 3.18
++    return xs
++
++
+ # ----------------------------------------------------------------------------
+ # fig2: modal budget, FEM-relative velocity L2 vs modes/interface r
+ # ----------------------------------------------------------------------------
+@@ -110,7 +136,7 @@
+     fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.3), sharey=True)
+     for ax, geom in zip(axes, GEOM_ORDER):
+         g = METRICS[geom]
+-        xs = {k: g[k]["modes"] for k in present_methods(METRICS, geom)}
++        xs = modal_x_positions(g)
+         # legal nested paths only; W0v is drawn when present (r=3, dashed path)
+         nested_lines(ax, xs, g, ["W0n", "W1n", "W1v"])
+         if "W0v" in xs:
+@@ -131,11 +157,12 @@
+         if ax is axes[0]:
+             ax.set_ylabel(r"relative $L^2$ error of $\mathbf{u}$")
+             pct_format(ax)
+-    axes[0].annotate(
+-        r"$W_{0n}\to W_{1n}\to W_{1v}$ (nested)$\;\cdot\; W_{0v}$ at $r=3$ pending",
+-        xy=(0.02, 0.03), xycoords="axes fraction", fontsize=7.5,
+-        color=C_MUTED, ha="left",
+-    )
++    if all("W0v" in METRICS[g] for g in GEOM_ORDER):
++        axes[0].annotate(
++            r"$W_{0v}$ and $W_{1n}$ both have $r=3$ (slightly jittered for visibility)",
++            xy=(0.02, 0.03), xycoords="axes fraction", fontsize=7.2,
++            color=C_MUTED, ha="left",
++        )
+     fig.tight_layout()
+     fig.savefig(FIG_DIR / name, dpi=200, bbox_inches="tight")
+     plt.close(fig)
+@@ -159,16 +186,16 @@
+         for j, geom in enumerate(GEOM_ORDER):
+             g = METRICS[geom]
+             ks = present_methods(METRICS, geom)
+-            xx = x[j] + 0.16 * (np.arange(len(ks)) - 1)
+-            yy = [g[k][key] for k in ks]
++            offsets = 0.16 * (np.arange(len(ks)) - (len(ks) - 1) / 2.0)
++            xpos = {k: x[j] + offsets[ks.index(k)] for k in ks}
+             # nested chain per geometry (W0v never joined to W1n)
+             for path in NESTED_PATHS:
+-                pts = [(x[j] + 0.16 * (ks.index(k) - 1), g[k][key])
++                pts = [(xpos[k], g[k][key])
+                        for k in path if k in ks]
+                 if len(pts) == len(path):
+                     ax.plot(*zip(*pts), ls=":", lw=1.0, color=C_MUTED, zorder=1)
+             for k in ks:
+-                ax.plot(x[j] + 0.16 * (ks.index(k) - 1), g[k][key], "o", ms=7,
++                ax.plot(xpos[k], g[k][key], "o", ms=7,
+                         mfc=METHOD_COLORS[k], mec="white", mew=0.9, zorder=3)
+         ax.set_xticks(x)
+         ax.set_xticklabels([GEOM_LABELS[g] for g in GEOM_ORDER], fontsize=8)
+@@ -182,14 +209,16 @@
+             mticker.FuncFormatter(lambda v, p: f"{v * 100:.3g}%")
+         )
+     axes[0].set_ylabel("relative error")
++    available = [
++        k for k in METHOD_ORDER if any(k in METRICS[g] for g in GEOM_ORDER)
++    ]
+     handles = [
+         plt.Line2D([], [], marker="o", ls="", mfc=METHOD_COLORS[k], mec="white",
+                    mew=0.9, label=METHOD_LABELS[k])
+-        for k in ("W0n", "W1n", "W1v")
++        for k in available
+     ]
+-    handles.append(plt.Line2D([], [], ls=":", color=C_MUTED, label="nested path"))
+-    fig.legend(handles=handles, loc="lower center", ncol=4,
+-               bbox_to_anchor=(0.5, -0.02), fontsize=8)
++    fig.legend(handles=handles, loc="lower center", ncol=max(1, len(handles)),
++               bbox_to_anchor=(0.5, -0.01), fontsize=8)
+     fig.tight_layout()
+     fig.savefig(FIG_DIR / name, dpi=200, bbox_inches="tight")
+     plt.close(fig)
+@@ -228,7 +257,7 @@
+ # fig5: slice field panels per geometry (shared error color scale)
+ # ----------------------------------------------------------------------------
+ CMAP_SPEED = plt.matplotlib.colormaps["viridis"]
+-CMAP_ERR = plt.matplotlib.colormaps["turbo"]
++CMAP_ERR = plt.matplotlib.colormaps["magma"]
+ CMAP_FLUX = mpl.colors.LinearSegmentedColormap.from_list(
+     "div_flux", ["#e34948", "#f5b3b1", "#f0efec", "#a9c8f2", "#2a78d6"]
+ )
+@@ -237,8 +266,10 @@
+ 
+ 
+ def _draw_field_panel(ax, grid, vmin, vmax, cmap, boundaries, spheres, radii, z):
+-    artist = ax.pcolormesh(grid["X"], grid["Y"], grid["values"], cmap=cmap,
+-                           vmin=vmin, vmax=vmax)
++    artist = ax.pcolormesh(
++        grid["X"], grid["Y"], grid["values"], cmap=cmap,
++        vmin=vmin, vmax=vmax, shading="auto"
++    )
+     ax.add_collection(
+         plt.matplotlib.collections.LineCollection(
+             boundaries, colors="#1f1f1f", linewidths=1.3, zorder=5
+@@ -262,44 +293,50 @@
+     return idx[:, 0] * 16 + idx[:, 1] * 4 + idx[:, 2]
+ 
+ 
++def _prepare_slice_grid(geom: str):
++    """Return the smoothed, geometry-aware slice-grid payload for one case."""
++    data = load_fields(geom)
++    if data is None:
++        return None
++    if geom == "Uniform-27":
++        sp = SPHERES[geom]
++        return slice_field_grids(
++            data,
++            spheres=sp["c"], radii=sp["r"],
++            vertex_labels=uniform_slice_labels(data["classic_error_slice_points"]),
++        )
++    return slice_field_grids(data)
++
++
+ def fig5_fields(geom: str):
+     fname = {
+         "Uniform-27": "fig5_fields_uniform27.png",
+         "Random-27": "fig5_fields_random27.png",
+         "Real-100": "fig5_fields_real100.png",
+     }[geom]
+-    data = load_fields(geom)
+-    if data is None:
++    grid = _prepare_slice_grid(geom)
++    if grid is None:
+         mark(fname, False,
+              "current benchmark archives no slice fields (Real-100: z_slice API bug)")
+         return
+-    if geom == "Uniform-27":
+-        sp = SPHERES[geom]
+-        grid = slice_field_grids(
+-            data,
+-            spheres=sp["c"], radii=sp["r"],
+-            vertex_labels=uniform_slice_labels(data["classic_error_slice_points"]),
+-        )
+-    else:
+-        grid = slice_field_grids(data)
+     gr = grid["grids"]
+-    # One shared error scale, anchored on the largest-error method so every
+-    # panel reads: vmax = p90 of the W0n error field (its median then sits at
+-    # ~30% of the scale; a p98 vmax pushes W0n's bulk below ~10% and makes
+-    # the panel read as empty).
+-    err_w0n = gr["err_W0n"][~np.isnan(gr["err_W0n"])]
+-    err_max = float(np.percentile(err_w0n, 90.0))
+-
+-    fig = plt.figure(figsize=(14.5, 4.15))
+-    gs = fig.add_gridspec(1, 6, width_ratios=[1, 0.09, 1, 1, 1, 0.09],
+-                          wspace=0.42, hspace=0.3)
++    # One honest shared scale for all three error panels.  Use the full finite
++    # maximum (not a hidden percentile clipping) so visual differences have a
++    # direct quantitative meaning.
++    err_max = max(float(np.nanmax(gr[f"err_{k}"])) for k in ERR_METHODS)
++
++    fig = plt.figure(figsize=(14.2, 3.8))
++    gs = fig.add_gridspec(
++        1, 6, width_ratios=[1, 1, 1, 1, 0.055, 0.055],
++        wspace=0.28,
++    )
+     axes = [fig.add_subplot(gs[0, c]) for c in range(4)]
+-    ref_cax, err_cax = fig.add_subplot(gs[0, 1]), fig.add_subplot(gs[0, 5])
++    ref_cax, err_cax = fig.add_subplot(gs[0, 4]), fig.add_subplot(gs[0, 5])
+     panels = [
+         ("speed_ref", CMAP_SPEED, 0.0, grid["speed_max"], r"FEM: $|\mathbf{u}|$"),
+-        ("err_W0n", CMAP_ERR, 0.0, err_max, r"$W_{0n}$"),
+-        ("err_W1n", CMAP_ERR, 0.0, err_max, r"$W_{1n}$"),
+-        ("err_W1v", CMAP_ERR, 0.0, err_max, r"$W_{1v}$"),
++        ("err_W0n", CMAP_ERR, 0.0, err_max, r"$W_{0n}$: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$"),
++        ("err_W1n", CMAP_ERR, 0.0, err_max, r"$W_{1n}$: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$"),
++        ("err_W1v", CMAP_ERR, 0.0, err_max, r"$W_{1v}$: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$"),
+     ]
+     for col, (key, cmap, vmin, vmax, ttl) in enumerate(panels):
+         ax = axes[col]
+@@ -328,10 +365,79 @@
+     mark(fname, True)
+ 
+ 
++def fig5_fields_uniform_random():
++    """Paper-ready 2x4 comparison: regular versus irregular geometry."""
++    name = "fig5_fields_uniform_random.png"
++    geoms = ["Uniform-27", "Random-27"]
++    prepared = {g: _prepare_slice_grid(g) for g in geoms}
++    if any(prepared[g] is None for g in geoms):
++        mark(name, False, "Uniform-27 and Random-27 slice archives are both required")
++        return
++
++    fig = plt.figure(figsize=(14.2, 7.0))
++    gs = fig.add_gridspec(
++        2, 6, width_ratios=[1, 1, 1, 1, 0.055, 0.055],
++        wspace=0.28, hspace=0.30,
++    )
++    titles = [
++        r"FEM: $|\mathbf{u}|$",
++        r"$W_{0n}$: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$",
++        r"$W_{1n}$: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$",
++        r"$W_{1v}$: $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$",
++    ]
++    letter = ord("a")
++    for row, geom in enumerate(geoms):
++        grid = prepared[geom]
++        gr = grid["grids"]
++        err_max = max(float(np.nanmax(gr[f"err_{k}"])) for k in ERR_METHODS)
++        axes = [fig.add_subplot(gs[row, c]) for c in range(4)]
++        ref_cax = fig.add_subplot(gs[row, 4])
++        err_cax = fig.add_subplot(gs[row, 5])
++        keys = ["speed_ref", "err_W0n", "err_W1n", "err_W1v"]
++        for col, (ax, key) in enumerate(zip(axes, keys)):
++            if key == "speed_ref":
++                cmap, vmin, vmax = CMAP_SPEED, 0.0, grid["speed_max"]
++            else:
++                cmap, vmin, vmax = CMAP_ERR, 0.0, err_max
++            _draw_field_panel(
++                ax, {**grid, "values": gr[key]}, vmin, vmax, cmap,
++                grid["boundaries"], grid["spheres"], grid["radii"], grid["z"],
++            )
++            if row == 0:
++                ax.set_title(titles[col], fontsize=10)
++            ax.set_xlabel("$x$", fontsize=8.5)
++            if col == 0:
++                ax.set_ylabel(f"{geom}\n$y$", fontsize=8.5)
++            panel_letter(ax, chr(letter), y=-0.14)
++            letter += 1
++
++        cb = fig.colorbar(
++            mpl.cm.ScalarMappable(
++                norm=mpl.colors.Normalize(0.0, grid["speed_max"]), cmap=CMAP_SPEED
++            ),
++            cax=ref_cax,
++        )
++        cb.set_label(r"$|\mathbf{u}_{\mathrm{FEM}}|$", fontsize=8)
++        cb.ax.tick_params(labelsize=7)
++        cb = fig.colorbar(
++            mpl.cm.ScalarMappable(
++                norm=mpl.colors.Normalize(0.0, err_max), cmap=CMAP_ERR
++            ),
++            cax=err_cax,
++        )
++        cb.set_label(r"$|\mathbf{u}-\mathbf{u}_{\mathrm{FEM}}|$", fontsize=8)
++        cb.ax.tick_params(labelsize=7)
++
++    fig.savefig(FIG_DIR / name, dpi=240, bbox_inches="tight")
++    plt.close(fig)
++    mark(name, True)
++
++
+ def fig5_fields_all():
+     fig5_fields("Uniform-27")
+     fig5_fields("Random-27")
+     fig5_fields("Real-100")
++    fig5_fields_uniform_random()
+ 
+ 
+ # ----------------------------------------------------------------------------
+@@ -379,14 +485,15 @@
+             t0, t1 = float(st[:, 1].min()), float(st[:, 1].max())
+             ax.set_xlim(s0, s1)
+             ax.set_ylim(t0, t1)
+-            ax.set_xticks([])
+-            ax.set_yticks([])
++            ax.set_xticks([s0, 0.5 * (s0 + s1), s1])
++            ax.set_yticks([t0, 0.5 * (t0 + t1), t1])
++            ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%.2g"))
++            ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2g"))
+             ax.tick_params(labelsize=7.5, colors=C_MUTED)
+             ax.grid(False)
+             if col == 0:
+                 ax.set_ylabel(f"{geom}\n$t$", fontsize=8.5)
+-            if row == nrows - 1:
+-                ax.set_xlabel("$s$", fontsize=8.5)
++            ax.set_xlabel("$s$", fontsize=8.5)
+             panel_letter(ax, chr(ord("a") + row * 4 + col), y=-0.14)
+         cax = fig.add_subplot(gs[row, 4])
+         cb = fig.colorbar(
+@@ -399,6 +506,85 @@
+     mark(name, True)
+ 
+ 
++def fig5_interface_flux_errors():
++    """Absolute normal-flux errors on the same representative interfaces.
++
++    This companion figure is deliberately error-focused because the four raw
++    q-fields can look visually similar even when their interface errors differ
++    materially.  Each geometry row uses one common error scale for W0n/W1n/W1v.
++    """
++    name = "fig5_interface_flux_errors.png"
++    rows = {}
++    pending = []
++    for geom in ("Uniform-27", "Random-27"):
++        data = load_fields(geom)
++        if data is not None and "interface_q_fem" in data.files:
++            rows[geom] = data
++        else:
++            pending.append(geom)
++    if not rows:
++        mark(name, False, "no geometry archives per-interface fluxes")
++        return
++
++    nrows = len(rows)
++    fig = plt.figure(figsize=(10.6, 3.55 * nrows + 0.15))
++    gs = fig.add_gridspec(nrows, 4, width_ratios=[1, 1, 1, 0.07],
++                          wspace=0.25, hspace=0.34)
++    titles = [
++        r"$W_{0n}$: $|q-q_{\rm FEM}|$",
++        r"$W_{1n}$: $|q-q_{\rm FEM}|$",
++        r"$W_{1v}$: $|q-q_{\rm FEM}|$",
++    ]
++    letter = ord("a")
++    for row, (geom, d) in enumerate(rows.items()):
++        st = d["interface_st"]
++        tri = d["interface_triangles"]
++        q_ref = d["interface_q_fem"]
++        errs = [
++            np.abs(d["interface_q_classic"] - q_ref),
++            np.abs(d["interface_q_normal_linear"] - q_ref),
++            np.abs(d["interface_q_affine"] - q_ref),
++        ]
++        emax = max(float(np.max(e)) for e in errs)
++        s0, s1 = float(st[:, 0].min()), float(st[:, 0].max())
++        t0, t1 = float(st[:, 1].min()), float(st[:, 1].max())
++        for col in range(3):
++            ax = fig.add_subplot(gs[row, col])
++            ax.tripcolor(st[:, 0], st[:, 1], tri, errs[col], cmap=CMAP_ERR,
++                         vmin=0.0, vmax=emax, shading="gouraud")
++            ax.set_title(titles[col], fontsize=8.8)
++            ax.set_aspect("equal")
++            ax.set_xlim(s0, s1)
++            ax.set_ylim(t0, t1)
++            ax.set_xticks([s0, 0.5 * (s0 + s1), s1])
++            ax.set_yticks([t0, 0.5 * (t0 + t1), t1])
++            ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%.2g"))
++            ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2g"))
++            ax.tick_params(labelsize=7.3, colors=C_MUTED)
++            ax.grid(False)
++            ax.set_xlabel("$s$", fontsize=8.5)
++            if col == 0:
++                ax.set_ylabel(f"{geom}\n$t$", fontsize=8.5)
++            panel_letter(ax, chr(letter), y=-0.14)
++            letter += 1
++        cax = fig.add_subplot(gs[row, 3])
++        cb = fig.colorbar(
++            mpl.cm.ScalarMappable(
++                norm=mpl.colors.Normalize(0.0, emax), cmap=CMAP_ERR
++            ),
++            cax=cax,
++        )
++        cb.set_label(r"$|q-q_{\rm FEM}|$", fontsize=8)
++        cb.ax.tick_params(labelsize=7)
++
++    fig.savefig(FIG_DIR / name, dpi=240, bbox_inches="tight")
++    plt.close(fig)
++    note = f"rows available: {', '.join(rows)}"
++    if pending:
++        note += f"; pending: {', '.join(pending)}"
++    mark(name, True, note)
++
++
+ # ----------------------------------------------------------------------------
+ # fig6: Schur energy decomposition (requires full broken-pressure C-DD)
+ # ----------------------------------------------------------------------------
+@@ -428,14 +614,14 @@
+                     ls=":", color=METHOD_COLORS[k], lw=0.9, zorder=2)
+         if fem_first:
+             ax.axvline(fem_first, ls="--", color=C_GRAY, lw=1.2, zorder=4)
+-            ax.annotate(
+-                "FEM reference\nerror = 0 (off log axis)",
+-                (fem_first, 1.35), ha="center", fontsize=7, color=C_GRAY,
+-                xycoords=("data", "axes fraction"),
+-            )
++        ax.text(
++            0.98, 0.97, f"FEM timing: {FEM_TIMING_SCOPE[geom]}",
++            transform=ax.transAxes, ha="right", va="top",
++            fontsize=6.8, color=C_MUTED,
++        )
+         ax.set_xlim(4e-3, 2.5e2)
+         ax.set_title(GEOM_LABELS[geom])
+-        ax.set_xlabel("solve time (s)")
++        ax.set_xlabel("recorded wall time (s)")
+         if ax is axes[0]:
+             ax.set_ylabel(r"relative $L^2$ error of $\mathbf{u}$")
+             pct_format(ax)
+@@ -447,7 +633,7 @@
+     handles.append(plt.Line2D([], [], marker="o", ls="", mfc="white", mec=C_GRAY,
+                               mew=1.3, label="first solve (incl. offline)"))
+     handles.append(plt.Line2D([], [], ls="--", color=C_GRAY,
+-                              label="monolithic FEM (error = 0)"))
++                              label="monolithic FEM timing (reference error = 0, off log axis)"))
+     fig.legend(handles=handles, loc="lower center", ncol=5,
+                bbox_to_anchor=(0.5, -0.03), fontsize=8)
+     fig.tight_layout()
+@@ -496,11 +682,10 @@
+     ax.set_yticks(y)
+     ax.set_yticklabels([GEOM_LABELS[g] for g in geoms])
+     ax.set_xlim(0, 1)
+-    ax.set_xlabel(r"share of observed FEM-relative $L^2(\mathbf{u})$ error reduction")
+     ax.grid(axis="x")
+     ax.set_axisbelow(True)
+-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.34), ncol=1, fontsize=8)
+-    fig.tight_layout()
++    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.16), ncol=2, fontsize=7.6)
++    fig.subplots_adjust(top=0.80, bottom=0.12, left=0.18, right=0.98)
+     fig.savefig(FIG_DIR / name, dpi=200, bbox_inches="tight")
+     plt.close(fig)
+     mark(name, True)
+@@ -554,13 +739,39 @@
+     return collections, pair_lines
+ 
+ 
++def _grid_adjacency_graph(planes: np.ndarray):
++    """Representative pore centers and adjacency edges for a Cartesian cut."""
++    edges = np.concatenate(([0.0], np.asarray(planes, dtype=float), [1.0]))
++    mids = 0.5 * (edges[:-1] + edges[1:])
++    centers = np.asarray(
++        [(mids[i], mids[j], mids[k]) for i in range(4) for j in range(4) for k in range(4)],
++        dtype=float,
++    )
++
++    def idx(i, j, k):
++        return i * 16 + j * 4 + k
++
++    segs = []
++    for i in range(4):
++        for j in range(4):
++            for k in range(4):
++                a = centers[idx(i, j, k)]
++                if i < 3:
++                    segs.append([a, centers[idx(i + 1, j, k)]])
++                if j < 3:
++                    segs.append([a, centers[idx(i, j + 1, k)]])
++                if k < 3:
++                    segs.append([a, centers[idx(i, j, k + 1)]])
++    return centers, np.asarray(segs)
++
++
+ def fig1b_geometry_partition():
+     name = "fig1b_geometry_partition_interfaces.png"
+     fig = plt.figure(figsize=(12.6, 7.4))
+     axes = [[fig.add_subplot(2, 3, r * 3 + c + 1, projection="3d")
+              for c in range(3)] for r in range(2)]
+     rand_part = load_random_partition()
+-    rand_colls, rand_pairs = _random_partition_lines(rand_part)
++    rand_pairs = rand_part["balls"][rand_part["pairs"]]
+     for c, geom in enumerate(GEOM_ORDER):
+         sp = SPHERES[geom]
+         ax = axes[0][c]
+@@ -573,29 +784,28 @@
+         ax = axes[1][c]
+         draw_spheres(ax, sp["c"], sp["r"], color=C_GRAY, alpha=0.10, linewidth=0.0)
+         if geom in GRID_PLANES:
+-            segs = _grid_interface_lines(GRID_PLANES[geom])
++            nodes, segs = _grid_adjacency_graph(GRID_PLANES[geom])
+             ax.add_collection3d(
+                 Line3DCollection(segs, colors="#30343b",
+-                                 linewidths=0.8, alpha=0.9)
++                                 linewidths=0.75, alpha=0.88)
++            )
++            ax.scatter(nodes[:, 0], nodes[:, 1], nodes[:, 2], s=4.5,
++                       color="#30343b", alpha=0.65, depthshade=False)
++        else:  # Random-27: same graph-only visual convention; no colored FE mesh
++            ax.add_collection3d(
++                Line3DCollection(rand_pairs, colors="#30343b",
++                                 linewidths=0.75, alpha=0.88)
+             )
+-        else:  # Random-27: actual partition mesh + throat/interface network
+-            for pts, color, lw, alpha in rand_colls:
+-                ax.add_collection3d(
+-                    Line3DCollection(pts, colors=color,
+-                                     linewidths=lw, alpha=alpha)
+-                )
+-            ax.plot(rand_pairs[:, :, 0], rand_pairs[:, :, 1], rand_pairs[:, :, 2],
+-                    color="#1464b4", linewidth=1.3, alpha=0.9)
+-            ax.scatter(rand_part["centers"][:, 0], rand_part["centers"][:, 1],
+-                       rand_part["centers"][:, 2], s=8, color="#b2182b",
+-                       depthshade=False)
++            ax.scatter(rand_part["balls"][:, 0], rand_part["balls"][:, 1],
++                       rand_part["balls"][:, 2], s=4.5, color="#30343b",
++                       alpha=0.65, depthshade=False)
+         draw_cube(ax, color=C_GRID, linewidth=0.5, alpha=0.8)
+         set_equal_cube(ax)
+         ax.text2D(0.5, -0.10, f"({chr(ord('d') + c)})", transform=ax.transAxes,
+                   ha="center", va="top", fontsize=12, fontfamily="serif")
+     fig.text(0.012, 0.76, "Solid sphere packing",
+              rotation=90, va="center", ha="center", fontsize=11, fontstyle="italic")
+-    fig.text(0.012, 0.26, "Partition and interface network",
++    fig.text(0.012, 0.26, "Pore adjacency / interface graph",
+              rotation=90, va="center", ha="center", fontsize=11, fontstyle="italic")
+     fig.tight_layout()
+     fig.savefig(FIG_DIR / name, dpi=220, bbox_inches="tight")
+@@ -610,6 +820,7 @@
+     fig4_equal_budget_W0v_vs_W1n()
+     fig5_fields_all()
+     fig5_interface_flux_modes()
++    fig5_interface_flux_errors()
+     fig6_schur_energy_decomposition()
+     fig7_accuracy_cost_standardized()
+     fig8_mesh_sensitivity()

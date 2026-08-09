@@ -1,0 +1,81 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Numerical methodology}{1}{section.6}\protected@file@percent }
+\newlabel{sec:methodology}{{6}{1}{Numerical methodology}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Geometries and discretisations}{1}{subsection.6.1}\protected@file@percent }
+\newlabel{sec:geometries}{{6.1}{1}{Geometries and discretisations}{subsection.6.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Schematic of the three solid-phase packings used to build the test geometries (sphere positions and radii as used by the mesh generator; finite-element meshes are not shown): (a)~Uniform-27 regular $3\times 3\times 3$ lattice; (b)~Random-27 frozen packing of 27 spheres; (c)~Heterogeneous-100 frozen packing of 100 spheres.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:geometry}{{1}{2}{Schematic of the three solid-phase packings used to build the test geometries (sphere positions and radii as used by the mesh generator; finite-element meshes are not shown): (a)~Uniform-27 regular $3\times 3\times 3$ lattice; (b)~Random-27 frozen packing of 27 spheres; (c)~Heterogeneous-100 frozen packing of 100 spheres}{figure.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Geometry and discretisation summary. FEM DOF counts are for the monolithic Taylor--Hood pair $[P_2]^3$--$P_1$ (velocity DOFs = $3\times $ number of P2 nodes; pressure DOFs = number of P1 nodes); they match the mixed-unknown counts reported by the solver.}}{2}{table.1}\protected@file@percent }
+\newlabel{tab:geometry}{{1}{2}{Geometry and discretisation summary. FEM DOF counts are for the monolithic Taylor--Hood pair $[P_2]^3$--$P_1$ (velocity DOFs = $3\times $ number of P2 nodes; pressure DOFs = number of P1 nodes); they match the mixed-unknown counts reported by the solver}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Reference systems and error metrics}{2}{subsection.6.2}\protected@file@percent }
+\newlabel{sec:references}{{6.2}{2}{Reference systems and error metrics}{subsection.6.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces The four modal interface spaces and their global unknown budgets on the three geometries ($m$ = number of interfaces: 144/114/144). The row marked $\dagger $ was \emph  {not computed} in the runs archived so far.}}{3}{table.2}\protected@file@percent }
+\newlabel{tab:spaces}{{2}{3}{The four modal interface spaces and their global unknown budgets on the three geometries ($m$ = number of interfaces: 144/114/144). The row marked $\dagger $ was \emph {not computed} in the runs archived so far}{table.2}{}}
+\newlabel{eq:elu}{{2}{3}{Reference systems and error metrics}{equation.2}{}}
+\newlabel{eq:ehu}{{3}{3}{Reference systems and error metrics}{equation.3}{}}
+\newlabel{eq:elp}{{4}{3}{Reference systems and error metrics}{equation.4}{}}
+\newlabel{eq:eq}{{5}{3}{Reference systems and error metrics}{equation.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Four modal interface spaces}{3}{subsection.6.3}\protected@file@percent }
+\newlabel{sec:spaces}{{6.3}{3}{Four modal interface spaces}{subsection.6.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Timing and solver protocol}{4}{subsection.6.4}\protected@file@percent }
+\newlabel{sec:timing}{{6.4}{4}{Timing and solver protocol}{subsection.6.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Verification of the reference implementation}{4}{section.7}\protected@file@percent }
+\newlabel{sec:verification}{{7}{4}{Verification of the reference implementation}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Exact-FE-Schur: Schur elimination code validation}{4}{subsection.7.1}\protected@file@percent }
+\newlabel{sec:exactschur}{{7.1}{4}{Exact-FE-Schur: Schur elimination code validation}{subsection.7.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Conservation and algebraic diagnostics}{4}{subsection.7.2}\protected@file@percent }
+\newlabel{sec:algebraic}{{7.2}{4}{Conservation and algebraic diagnostics}{subsection.7.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Theory-level verification: not yet computed}{4}{subsection.7.3}\protected@file@percent }
+\newlabel{sec:theoryverify}{{7.3}{4}{Theory-level verification: not yet computed}{subsection.7.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Numerical verification diagnostics as recorded by the archived runs (``--'' = not recorded by that benchmark). ``$\max r_{\mathrm  {mom}}$'' is the maximum absolute modal-moment residual of the assembled reduced system; the mass-balance row is the inlet/outlet flux sum of the random benchmark.}}{5}{table.3}\protected@file@percent }
+\newlabel{tab:diagnostics}{{3}{5}{Numerical verification diagnostics as recorded by the archived runs (``--'' = not recorded by that benchmark). ``$\max r_{\mathrm {mom}}$'' is the maximum absolute modal-moment residual of the assembled reduced system; the mass-balance row is the inlet/outlet flux sum of the random benchmark}{table.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Complete accuracy results relative to the monolithic Taylor--Hood FEM on the same mesh. $e_u^{L^2}$, $e_u^{H^1_{\mathrm  {br}}}$, $e_p^{L^2}$ and $e_Q$ are defined in \eqref  {eq:elu}--\eqref  {eq:eq}. The $\mathcal  {W}_{0v}$ row was not computed in the archived runs.}}{5}{table.4}\protected@file@percent }
+\newlabel{tab:master}{{4}{5}{Complete accuracy results relative to the monolithic Taylor--Hood FEM on the same mesh. $e_u^{L^2}$, $e_u^{H^1_{\mathrm {br}}}$, $e_p^{L^2}$ and $e_Q$ are defined in \eqref {eq:elu}--\eqref {eq:eq}. The $\Wspace _{0v}$ row was not computed in the archived runs}{table.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Controlled modal experiments}{5}{section.8}\protected@file@percent }
+\newlabel{sec:modal}{{8}{5}{Controlled modal experiments}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Absolute accuracy}{5}{subsection.8.1}\protected@file@percent }
+\newlabel{sec:accuracy}{{8.1}{5}{Absolute accuracy}{subsection.8.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Relative $L^2$ velocity error versus modes per interface ($r=1,3,9$) along the nested path $\mathcal  {W}_{0n}\to \mathcal  {W}_{1n}\to \mathcal  {W}_{1v}$, for the three geometries (log scale). Only the path through $\mathcal  {W}_{1n}$ was computed; the equal-budget space $\mathcal  {W}_{0v}$ at $r=3$ is planned work.}}{6}{figure.2}\protected@file@percent }
+\newlabel{fig:budget}{{2}{6}{Relative $L^2$ velocity error versus modes per interface ($r=1,3,9$) along the nested path $\Wspace _{0n}\to \Wspace _{1n}\to \Wspace _{1v}$, for the three geometries (log scale). Only the path through $\Wspace _{1n}$ was computed; the equal-budget space $\Wspace _{0v}$ at $r=3$ is planned work}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Accuracy versus modal budget}{6}{subsection.8.2}\protected@file@percent }
+\newlabel{sec:budget}{{8.2}{6}{Accuracy versus modal budget}{subsection.8.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Metric comparison across geometries}{6}{subsection.8.3}\protected@file@percent }
+\newlabel{sec:metrics}{{8.3}{6}{Metric comparison across geometries}{subsection.8.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Four error metrics (relative, log scale) across the three geometries, three computed spaces: (a)~velocity $L^2$, (b)~velocity broken $H^1$, (c)~pressure $L^2$, (d)~outlet-flux error.}}{7}{figure.3}\protected@file@percent }
+\newlabel{fig:metrics}{{3}{7}{Four error metrics (relative, log scale) across the three geometries, three computed spaces: (a)~velocity $L^2$, (b)~velocity broken $H^1$, (c)~pressure $L^2$, (d)~outlet-flux error}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Equal-budget comparison $\mathcal  {W}_{0v}$ vs.\ $\mathcal  {W}_{1n}$: planned}{7}{subsection.8.4}\protected@file@percent }
+\newlabel{sec:equalbudget}{{8.4}{7}{Equal-budget comparison \texorpdfstring {$\Wspace _{0v}$ vs.\ $\Wspace _{1n}$}{W0v vs. W1n}: planned}{subsection.8.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Field visualization}{7}{subsection.8.5}\protected@file@percent }
+\newlabel{sec:fields}{{8.5}{7}{Field visualization}{subsection.8.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {9}Larger heterogeneous configuration (Heterogeneous-100)}{7}{section.9}\protected@file@percent }
+\newlabel{sec:realistic}{{9}{7}{Larger heterogeneous configuration (Heterogeneous-100)}{section.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.1}Accuracy}{7}{subsection.9.1}\protected@file@percent }
+\newlabel{sec:realacc}{{9.1}{7}{Accuracy}{subsection.9.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Slice plane $z=0.5$ of the velocity field and the FEM-relative velocity error on Uniform-27 (top row) and Random-27 (bottom row). Panels (a,e) show the FEM velocity magnitude $|\mathbf  {u}_{\rm  FEM}|$; panels (b,f), (c,g) and (d,h) show $|\mathbf  {u}-\mathbf  {u}_{\rm  FEM}|$ for $\mathcal  {W}_{0n}$, $\mathcal  {W}_{1n}$ and $\mathcal  {W}_{1v}$. Coordinates are physical (unit cube). Within each row the three error panels use a common color scale to enable direct visual comparison; the reference panel has its own scale. Solid outlines are the sections of the solid spheres and grey lines the partition-interface intersections with the slice plane.}}{8}{figure.4}\protected@file@percent }
+\newlabel{fig:fields}{{4}{8}{Slice plane $z=0.5$ of the velocity field and the FEM-relative velocity error on Uniform-27 (top row) and Random-27 (bottom row). Panels (a,e) show the FEM velocity magnitude $|\mathbf {u}_{\rm FEM}|$; panels (b,f), (c,g) and (d,h) show $|\mathbf {u}-\mathbf {u}_{\rm FEM}|$ for $\Wspace _{0n}$, $\Wspace _{1n}$ and $\Wspace _{1v}$. Coordinates are physical (unit cube). Within each row the three error panels use a common color scale to enable direct visual comparison; the reference panel has its own scale. Solid outlines are the sections of the solid spheres and grey lines the partition-interface intersections with the slice plane}{figure.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2}Cost and memory}{8}{subsection.9.2}\protected@file@percent }
+\newlabel{sec:realcost}{{9.2}{8}{Cost and memory}{subsection.9.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3}Accuracy--cost tradeoff}{8}{subsection.9.3}\protected@file@percent }
+\newlabel{sec:pareto}{{9.3}{8}{Accuracy--cost tradeoff}{subsection.9.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Computational cost (seconds). $T_{\mathrm  {offline}}$: local factorisations + primitive responses; $T_{\mathrm  {online}}$: reduced assembly + Schur solve + reconstruction; $T_{\mathrm  {first}} = T_{\mathrm  {offline}}+T_{\mathrm  {online}}$. $N_{\mathrm  {prim}}$ = primitive RHS columns. For Uniform-27 and Random-27 the FEM time is assembly+solve; for Heterogeneous-100 the archived FEM entry is solve-only, so timing ratios for that block are labelled ``online only'' and are not directly comparable to the first-solve ratios above.}}{9}{table.5}\protected@file@percent }
+\newlabel{tab:cost}{{5}{9}{Computational cost (seconds). $T_{\mathrm {offline}}$: local factorisations + primitive responses; $T_{\mathrm {online}}$: reduced assembly + Schur solve + reconstruction; $T_{\mathrm {first}} = T_{\mathrm {offline}}+T_{\mathrm {online}}$. $N_{\mathrm {prim}}$ = primitive RHS columns. For Uniform-27 and Random-27 the FEM time is assembly+solve; for Heterogeneous-100 the archived FEM entry is solve-only, so timing ratios for that block are labelled ``online only'' and are not directly comparable to the first-solve ratios above}{table.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Cross-geometry modal summary: absolute errors and the observed FEM-relative reduction shares of \eqref  {eq:shares}.}}{9}{table.6}\protected@file@percent }
+\newlabel{tab:cross}{{6}{9}{Cross-geometry modal summary: absolute errors and the observed FEM-relative reduction shares of \eqref {eq:shares}}{table.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Cross-geometry modal analysis}{9}{section.10}\protected@file@percent }
+\newlabel{sec:cross}{{10}{9}{Cross-geometry modal analysis}{section.10}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1}Observed FEM-relative error-reduction shares}{9}{subsection.10.1}\protected@file@percent }
+\newlabel{sec:shares}{{10.1}{9}{Observed FEM-relative error-reduction shares}{subsection.10.1}{}}
+\newlabel{eq:shares}{{14}{9}{Observed FEM-relative error-reduction shares}{equation.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Relative $L^2$ velocity error versus online solve time (log--log), shown separately for the three configurations. The vertical dotted line is the archived monolithic FEM time; the FEM self-error is exactly zero and is therefore off the logarithmic ordinate. Online time excludes the reduced offline library (see Table~\ref {tab:cost}).}}{10}{figure.5}\protected@file@percent }
+\newlabel{fig:pareto}{{5}{10}{Relative $L^2$ velocity error versus online solve time (log--log), shown separately for the three configurations. The vertical dotted line is the archived monolithic FEM time; the FEM self-error is exactly zero and is therefore off the logarithmic ordinate. Online time excludes the reduced offline library (see Table~\ref {tab:cost})}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Fractions of the \emph  {observed} FEM-relative $L^2$ velocity error reduction along the prescribed path $\mathcal  {W}_{0n}\to \mathcal  {W}_{1n}\to \mathcal  {W}_{1v}$ (100\% stacked). These fractions are descriptive; they are not unique causal modal contributions, because the two middle spaces $\mathcal  {W}_{0v}$ and $\mathcal  {W}_{1n}$ are generally non-nested and the path choice fixes the attribution.}}{10}{figure.6}\protected@file@percent }
+\newlabel{fig:shares}{{6}{10}{Fractions of the \emph {observed} FEM-relative $L^2$ velocity error reduction along the prescribed path $\Wspace _{0n}\to \Wspace _{1n}\to \Wspace _{1v}$ (100\% stacked). These fractions are descriptive; they are not unique causal modal contributions, because the two middle spaces $\Wspace _{0v}$ and $\Wspace _{1n}$ are generally non-nested and the path choice fixes the attribution}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.2}Schur-energy pathwise decomposition: planned}{10}{subsection.10.2}\protected@file@percent }
+\newlabel{sec:schurdecomp}{{10.2}{10}{Schur-energy pathwise decomposition: planned}{subsection.10.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.3}Geometry dependence and limitations}{10}{subsection.10.3}\protected@file@percent }
+\newlabel{sec:limitations}{{10.3}{10}{Geometry dependence and limitations}{subsection.10.3}{}}
+\newlabel{app:provenance}{{10.3}{11}{Appendix A: archived output provenance}{section*.1}{}}
+\gdef \@abspage@last{11}

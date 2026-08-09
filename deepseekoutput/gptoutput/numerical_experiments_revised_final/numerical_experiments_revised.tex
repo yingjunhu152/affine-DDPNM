@@ -554,34 +554,45 @@ comparison $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$ alone
 (Fig.~\ref{fig:budget}), which cannot separate directional from spatial
 information.
 
-\subsection{Field visualization (Random-27)}
+\subsection{Field visualization}
 \label{sec:fields}
 
-Fig.~\ref{fig:fields} shows, on the Random-27 geometry, a slice plane
-($z=0.5$) of the FEM velocity magnitude together with the pointwise
-velocity error magnitude of the three reduced spaces, using the same
-error-map color normalization.  Qualitatively, the error becomes both
-weaker and more spatially localized along the sequence
-$\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$, consistent with the
-global metrics.  Because the archived figure does not retain numerical
-colorbar limits, it is used only as a qualitative field visualization;
-all quantitative comparisons use Tables~\ref{tab:master} and
-\ref{tab:cross}.
+Fig.~\ref{fig:fields} shows, for Uniform-27 and Random-27, the mid-plane
+slice $z=0.5$ of the FEM velocity magnitude together with the pointwise
+velocity-error magnitude of the three reduced spaces.  Within each row
+the three error panels share one color scale, so the reduced spaces are
+directly comparable panel to panel; the reference panel has its own
+scale.  Axes are the physical coordinates of the unit cube.  Solid
+outlines mark the sections of the solid spheres, and grey lines the
+intersections of the partition interfaces with the slice plane.  Along
+the sequence $\Wspace_{0n}\to\Wspace_{1n}\to\Wspace_{1v}$ the error
+becomes both weaker and more spatially localized.  On Uniform-27 the
+normal-linear space $\Wspace_{1n}$ already recovers most of the
+structure, while on Random-27 the residual $\Wspace_{1n}$ error is still
+spread over extended regions and only the affine space $\Wspace_{1v}$
+approaches the FEM field, consistent with the global metrics
+(Table~\ref{tab:master}).
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.97\textwidth]{figures/fig6_fields.png}
-  \caption{Random-27, slice $z=0.5$: FEM velocity magnitude (left) and
-    pointwise velocity-error magnitude of $\Wspace_{0n}$,
-    $\Wspace_{1n}$ and $\Wspace_{1v}$ with a common archived color
-    normalization.  The panel is qualitative because numerical colorbar
-    limits were not retained in the archived image.}
+  \caption{Slice plane $z=0.5$ of the velocity field and the FEM-relative
+    velocity error on Uniform-27 (top row) and Random-27 (bottom row).
+    Panels (a,e) show the FEM velocity magnitude
+    $|\mathbf{u}_{\rm FEM}|$; panels (b,f), (c,g) and (d,h) show
+    $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$ for $\Wspace_{0n}$,
+    $\Wspace_{1n}$ and $\Wspace_{1v}$.  Coordinates are physical (unit
+    cube).  Within each row the three error panels use a common color
+    scale to enable direct visual comparison; the reference panel has
+    its own scale.  Solid outlines are the sections of the solid spheres
+    and grey lines the partition-interface intersections with the slice
+    plane.}
   \label{fig:fields}
 \end{figure}
 
-The archived slice output is available only for Random-27.  Additional
-field visualizations for the other configurations remain to be generated
-from the corresponding solution fields.
+The slice fields are available for the two controlled geometries;
+per-interface normal-flux fields and Heterogeneous-100 field outputs
+remain planned work (see \S\ref{sec:limitations}).
 
 % ======================================================================
 \section{Larger heterogeneous configuration (Heterogeneous-100)}
@@ -804,7 +815,9 @@ mesh; the theory gives fixed-mesh separation only, no
 mesh-independent asymptotic statement; (d)~an ensemble of random
 realisations of the Random-27 geometry to test the stability of the
 $59/41$ split across seeds; (e)~additional field outputs for
-Heterogeneous-100; (f)~an independent second porous configuration at a
+Heterogeneous-100 and per-interface normal-flux fields
+($q=\mathbf{u}\cdot\mathbf{n}$) for the interface-structure
+visualization; (f)~an independent second porous configuration at a
 different pore/sphere count; and (g)~a uniform, repeated timing benchmark
 with the same FEM/reduced timing scope on every configuration.
 
@@ -826,7 +839,8 @@ All numerical values in this working section were read from the archived
 benchmark outputs listed below:
 \begin{itemize}[nosep,leftmargin=*]
 \item \texttt{affine\_ddpnm\_3d/outputs/benchmark\_w1n/}:\\
-  \texttt{affine\_ddpnm\_metrics.csv}, \texttt{affine\_ddpnm\_report.json};
+  \texttt{affine\_ddpnm\_metrics.csv}, \texttt{affine\_ddpnm\_report.json},
+  \texttt{affine\_benchmark\_fields.npz};
 \item \texttt{affine\_ddpnm\_3d\_random\_porous/outputs/benchmark\_w1n/}:\\
   \texttt{random\_affine\_metrics.csv}, \texttt{random\_affine\_report.json},
   \texttt{random\_benchmark\_fields.npz};
@@ -840,8 +854,9 @@ The geometry descriptors and tabulated numerical values are retained
 from the supplied working experiment document.  In this revised version,
 Figs.~\ref{fig:budget}, \ref{fig:metrics}, \ref{fig:pareto} and
 \ref{fig:shares} were regenerated directly from the tabulated values;
-the geometry and Random-27 field panels were reproduced from the supplied
-compiled artifact.  No unreported experiment was assigned a numerical
-value.
+Fig.~\ref{fig:fields} was regenerated from the field archives
+\texttt{affine\_benchmark\_fields.npz} and
+\texttt{random\_benchmark\_fields.npz}.  No unreported experiment was
+assigned a numerical value.
 
 \end{document}

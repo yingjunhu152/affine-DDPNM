@@ -322,23 +322,30 @@ statement that the normal-linear modes are the dominant mechanism rests on the c
 $W_{0n}\to W_{1n}\to W_{1v}$ alone (Fig. 2), which cannot separate directional from spatial
 information.
 
-### 8.5 Field visualization (Random-27)
+### 8.5 Field visualization
 
-Fig. 4 shows, on the Random-27 geometry, a slice plane ($z = 0.5$) of the FEM velocity magnitude
-together with the pointwise velocity error magnitude of the three reduced spaces, on a common color
-scale. The pattern matches the quantitative results: the Classic error field is concentrated at pore
-throats and interface junctions, the NormalLinear space removes most of it, and the Affine space
-reduces the residual further; at this slice the remaining Affine error is concentrated in a few
-throat regions.
+Fig. 4 shows, for Uniform-27 and Random-27, the mid-plane slice $z = 0.5$ of the FEM velocity
+magnitude together with the pointwise velocity-error magnitude of the three reduced spaces. Within
+each row the three error panels share one color scale, so the reduced spaces are directly
+comparable panel to panel; the reference panel has its own scale. Axes are the physical coordinates
+of the unit cube. Solid outlines mark the sections of the solid spheres, and grey lines the
+intersections of the partition interfaces with the slice plane. Along the sequence
+$W_{0n}\to W_{1n}\to W_{1v}$ the error becomes both weaker and more spatially localized. On
+Uniform-27 the normal-linear space $W_{1n}$ already recovers most of the structure, while on
+Random-27 the residual $W_{1n}$ error is still spread over extended regions and only the affine
+space $W_{1v}$ approaches the FEM field, consistent with the global metrics (Table 2).
 
 ![Fig. 4](figures/fig6_fields.png)
-**Fig. 4.** Random-27, slice $z = 0.5$: FEM velocity magnitude (left) and pointwise velocity error
-magnitude of $W_{0n}$, $W_{1n}$, $W_{1v}$ on a common color scale (blue = zero error). Error maps
-share one scale; the reference panel has its own.
+**Fig. 4.** Slice plane $z = 0.5$ of the velocity field and the FEM-relative velocity error on
+Uniform-27 (top row) and Random-27 (bottom row). Panels (a,e) show the FEM velocity magnitude
+$|\mathbf{u}_{\rm FEM}|$; panels (b,f), (c,g) and (d,h) show $|\mathbf{u}-\mathbf{u}_{\rm FEM}|$
+for $W_{0n}$, $W_{1n}$ and $W_{1v}$. Coordinates are physical (unit cube). Within each row the
+three error panels use a common color scale to enable direct visual comparison; the reference
+panel has its own scale. Solid outlines are the sections of the solid spheres and grey lines the
+partition-interface intersections with the slice plane.
 
-The archived slice data exists only for Random-27 (the Real-100 run could not write slice fields
-because of the known `z_slice` interface mismatch, see the handoff document); field maps for the
-other geometries are planned work.
+The slice fields are available for the two controlled geometries; per-interface normal-flux fields
+and Heterogeneous-100 field outputs remain planned work (see §10.3).
 
 ---
 
@@ -508,7 +515,7 @@ All numbers in this section were produced by the archived benchmark runs of 2026
 stored in
 
 - `affine_ddpnm_3d/outputs/benchmark_w1n/`:
-  `affine_ddpnm_metrics.csv`, `affine_ddpnm_report.json`;
+  `affine_ddpnm_metrics.csv`, `affine_ddpnm_report.json`, `affine_benchmark_fields.npz`;
 - `affine_ddpnm_3d_random_porous/outputs/benchmark_w1n/`:
   `random_affine_metrics.csv`, `random_affine_report.json`, `random_benchmark_fields.npz`;
 - `real_porous_benchmark_3d/outputs/benchmark_w1n/`:
@@ -519,8 +526,9 @@ stored in
 Geometry descriptors were recomputed by the enclosed script (`scripts/geometry_stats.py`) directly
 from the saved partition meshes (Uniform-27, Random-27) and by rebuilding the grid partition with
 the benchmark's own builder (Real-100); the resulting `data/geometry_stats.json` accompanies this
-section. All figures were regenerated from the CSVs/JSON above by `scripts/make_figures.py`; no
-numbers were edited by hand beyond rounding to the significant digits shown.
+section. All figures were regenerated from the CSVs/JSON above by `scripts/make_figures.py`; the
+field panels of Fig. 4 additionally use the two field archives listed above; no numbers were
+edited by hand beyond rounding to the significant digits shown.
 
 ## Appendix B. Archived benchmark plot (Uniform-27)
 

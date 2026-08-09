@@ -1,0 +1,15 @@
+--- /mnt/data/figlib.py	2026-08-09 06:25:01.449322163 +0000
++++ figlib.py	2026-08-09 06:25:10.783975317 +0000
+@@ -362,7 +362,11 @@
+     raw = {"speed_ref": speed_ref}
+     for key, suffix in (("W0n", "classic"), ("W1n", "normal_linear"), ("W1v", "affine")):
+         u_dd = data[f"{suffix}_error_slice_u_ddpnm"]
+-        raw[f"err_{key}"] = np.abs(np.linalg.norm(u_dd, axis=1) - speed_ref)
++        # Pointwise vector-velocity error magnitude.  Do NOT use
++        # | |u_DD| - |u_FEM| | here: that quantity can be much smaller than
++        # ||u_DD-u_FEM|| and does not match the field-error label used in the
++        # numerical section.
++        raw[f"err_{key}"] = np.linalg.norm(u_dd - u_fem, axis=1)
+ 
+     X, Y, cell_of_point, usable = _classify_slice_grid(
+         slice_points, slice_triangles, vertex_labels, z_value, spheres, radii, n=n
