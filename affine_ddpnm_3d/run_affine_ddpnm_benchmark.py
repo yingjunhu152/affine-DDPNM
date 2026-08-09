@@ -41,6 +41,12 @@ from ddpnm_core.library import build_response_library
 from ddpnm_core.validation import finite_element_error_analysis
 from ddpnm3d.geometry import build_partition
 from ddpnm3d.solver import DdpnmSolution, LocalResponse, build_modes
+from ddpnm3d.visualization import (
+    evaluate_fem_ddpnm_interface,
+    evaluate_fem_ddpnm_slice,
+    fem_interface_fluxes,
+    interface_contour_segments,
+)
 
 from affine_face_basis import (
     AffineFaceBasis,
@@ -248,8 +254,6 @@ def main() -> None:
         f"offline={classic_offline:.3f} s, online={classic_online:.3f} s, "
         f"L2(u)={classic_metric['velocity_relative_l2']:.3%}"
     )
-    del classic_value, classic_system, classic_library
-    gc.collect()
 
     print("[4/5] Normal-linear DDPNM: three normal modes per face ...")
     started = time.perf_counter()
@@ -300,8 +304,6 @@ def main() -> None:
         f"offline={normal_linear_offline:.3f} s, online={normal_linear_online:.3f} s, "
         f"L2(u)={normal_linear_metric['velocity_relative_l2']:.3%}"
     )
-    del normal_linear_solution, normal_linear_system, normal_linear_library
-    gc.collect()
 
     print("[5/5] Affine DDPNM: one face entity carrying nine modes ...")
     started = time.perf_counter()
@@ -347,6 +349,54 @@ def main() -> None:
         f"      dofs={len(affine_system.global_keys)}, "
         f"offline={affine_offline:.3f} s, online={affine_online:.3f} s, "
         f"L2(u)={affine_metric['velocity_relative_l2']:.3%}"
+    )
+
+    # Field exports for the paper figure set: slice fields (z = 0.5) and
+    # the normal flux q = u.n on the representative interface (the one
+    # carrying the largest FEM normal flux).
+    slice_data = {
+        name: evaluate_fem_ddpnm_slice(
+            partition, solution, reference, points, tetrahedra, z_value=0.5
+        )
+        for name, solution in [
+            ("classic", classic_value),
+            ("normal_linear", normal_linear_solution),
+            ("affine", affine_solution),
+        ]
+    }
+    fluxes = fem_interface_fluxes(partition, reference)
+    rep_interface = int(np.argmax(np.abs(fluxes)))
+    print(f"      representative interface id = {rep_interface}")
+    interface_data = {
+        name: evaluate_fem_ddpnm_interface(
+            partition, solution, reference, rep_interface
+        )
+        for name, solution in [
+            ("classic", classic_value),
+            ("normal_linear", normal_linear_solution),
+            ("affine", affine_solution),
+        ]
+    }
+    rep = interface_data["classic"]
+    np.savez_compressed(
+        args.out_dir / "affine_benchmark_fields.npz",
+        representative_interface_id=rep_interface,
+        fem_interface_fluxes=fluxes,
+        interface_points=rep["interface_points"],
+        interface_st=rep["interface_st"],
+        interface_triangles=rep["interface_triangles"],
+        interface_normal=rep["interface_normal"],
+        interface_center=rep["interface_center"],
+        interface_q_fem=rep["interface_q_fem"],
+        interface_q_classic=interface_data["classic"]["interface_q_ddpnm"],
+        interface_q_normal_linear=interface_data["normal_linear"]["interface_q_ddpnm"],
+        interface_q_affine=interface_data["affine"]["interface_q_ddpnm"],
+        interface_slice_segments=interface_contour_segments(partition, 0.5),
+        **{
+            f"{name}_{key}": value
+            for name, data in slice_data.items()
+            for key, value in data.items()
+        },
     )
 
     fem_time = timings["Monolithic-FEM"]["first_solve_seconds"]

@@ -42,7 +42,12 @@ from ddpnm_core.library import build_response_library
 from ddpnm_core.trace_schur import solve_exact_fe_schur
 from ddpnm_core.validation import finite_element_error_analysis
 from ddpnm3d.solver import DdpnmSolution, LocalResponse, build_modes
-from ddpnm3d.visualization import evaluate_fem_ddpnm_slice
+from ddpnm3d.visualization import (
+    evaluate_fem_ddpnm_interface,
+    evaluate_fem_ddpnm_slice,
+    fem_interface_fluxes,
+    interface_contour_segments,
+)
 
 from random_porous import SPHERES, build_partition
 from affine_face_basis import (
@@ -551,6 +556,20 @@ def _write_outputs(partition, args, mesh_seconds, timings, method_data,
             ("affine", affine_solution),
         ]
     }
+    fluxes = fem_interface_fluxes(partition, reference)
+    rep_interface = int(np.argmax(np.abs(fluxes)))
+    print(f"      representative interface id = {rep_interface}")
+    interface_data = {
+        name: evaluate_fem_ddpnm_interface(
+            partition, solution, reference, rep_interface
+        )
+        for name, solution in [
+            ("classic", classic_value),
+            ("normal_linear", normal_linear_solution),
+            ("affine", affine_solution),
+        ]
+    }
+    rep = interface_data["classic"]
     np.savez_compressed(
         out_dir / "random_benchmark_fields.npz",
         points=points,
@@ -580,6 +599,18 @@ def _write_outputs(partition, args, mesh_seconds, timings, method_data,
         interface_pressures_affine=affine_solution.interface_pressures,
         interface_flux_sums_affine=affine_solution.interface_flux_sums,
         schur_matrix_affine=affine_solution.schur_matrix,
+        representative_interface_id=rep_interface,
+        fem_interface_fluxes=fluxes,
+        interface_points=rep["interface_points"],
+        interface_st=rep["interface_st"],
+        interface_triangles=rep["interface_triangles"],
+        interface_normal=rep["interface_normal"],
+        interface_center=rep["interface_center"],
+        interface_q_fem=rep["interface_q_fem"],
+        interface_q_classic=interface_data["classic"]["interface_q_ddpnm"],
+        interface_q_normal_linear=interface_data["normal_linear"]["interface_q_ddpnm"],
+        interface_q_affine=interface_data["affine"]["interface_q_ddpnm"],
+        interface_slice_segments=interface_contour_segments(partition, 0.5),
         **{
             f"{name}_{key}": value
             for name, data in slice_data.items()
