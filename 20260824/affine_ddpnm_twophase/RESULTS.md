@@ -37,4 +37,17 @@
 ## 性能
 
 优化后（SUPG 系数冻结于步初 + Picard 上限 6）：每步 ~1.8 s（原 ~9 s），
-完整 benchmark（FEM + 三档 DDPNM × 300 步）~48 分钟。
+完整 benchmark（FEM + 三档 DDPNM × 300 步）~48 分钟（本机环境波动下
+实测 ~90 分钟）。
+
+## 可视化
+
+- `outputs/benchmark_twophase/frames/twophase_tXXX.X.png`：31 帧（t=0..30
+  每 1 s），每帧 2×4 —— 上排水相 S_w、下排油相 S_o=1−S_w，列 = 四方法；
+  z=0.5 切片、球截面挖空、Voronoi 界面迹线；`twophase_frames.gif` 动画。
+- `outputs/fem_plots/frames/fem_tXXX.X.png`：FEM 单方法时间序列（31 帧，
+  每帧左水相右油相）+ `fem_frames.gif`；`fem_water/oil_saturation.png`、
+  `fem_velocity.png`：终态场。
+- `outputs/benchmark_twophase/slice_error_fields.png`：2×3 误差场切片
+  （速度误差 / 饱和度误差 × 三档 DDPNM）。
+- 帧图与切片图只读 `twophase_fields.npz`，无需重跑 benchmark。
