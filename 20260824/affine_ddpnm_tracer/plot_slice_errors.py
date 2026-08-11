@@ -71,20 +71,6 @@ def sci_colorbar(fig, artist, ax):
     return cb
 
 
-def slice_sphere_cuts(ax, spheres, radii, z_value, color="#404040"):
-    for center, radius in zip(spheres, radii, strict=True):
-        dz = abs(float(center[2]) - z_value)
-        if dz >= float(radius):
-            continue
-        rho = float(np.sqrt(radius**2 - dz**2))
-        circle = np.linspace(0.0, 2.0 * np.pi, 120)
-        ax.plot(
-            center[0] + rho * np.cos(circle),
-            center[1] + rho * np.sin(circle),
-            color=color, linewidth=0.9,
-        )
-
-
 def _point_in_triangle(px, py, a, b, c):
     """Barycentric-side test (true on edges), vectorized over triangles."""
     d1 = (b[:, 0] - a[:, 0]) * (py - a[:, 1]) - (b[:, 1] - a[:, 1]) * (px - a[:, 0])
@@ -302,7 +288,8 @@ def plot_slice_error_fields(data, out_dir: Path) -> None:
         ax.add_collection(
             LineCollection(boundary_segments, colors="#1f1f1f", linewidths=1.3, zorder=5)
         )
-        slice_sphere_cuts(ax, spheres, radii, Z_VALUE, color="#3a3a3a")
+        # No sphere cross-section outlines: the field is cut directly by the
+        # obstacles (NaN inside the spheres renders as clean white cut-outs).
         ax.set_aspect("equal")
         ax.set_xlim(0.0, 1.0)
         ax.set_ylim(0.0, 1.0)
@@ -326,7 +313,8 @@ def plot_slice_error_fields(data, out_dir: Path) -> None:
     )
     fig.text(
         0.5, 0.015, f"slice z = {Z_VALUE:g}; regular-grid resampling with masked "
-        "per-subdomain smoothing; sphere cut-outs and Voronoi interface traces",
+        "per-subdomain smoothing; the field is cut directly by the solid spheres "
+        "(no outlines) with Voronoi interface traces",
         ha="center", va="top", fontsize=8.5, color="#444444",
     )
     fig.savefig(out_dir / "slice_error_fields.png", dpi=240)
