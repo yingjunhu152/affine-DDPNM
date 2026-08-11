@@ -511,19 +511,22 @@ def plot_error_summary(out: Path, rows: list[dict[str, object]]) -> None:
     concentration = [float(row["concentration_rel_l2_fem_integral_vs_fem"]) for row in rows if row["method"] != "FEM"]
     breakthrough = [float(row["breakthrough_rel_l2_error"]) for row in rows if row["method"] != "FEM"]
     mass = [abs(float(row["final_mass_rel_error_vs_fem"])) for row in rows if row["method"] != "FEM"]
-    balance = [float(row["max_mass_balance_relative_residual"]) for row in rows if row["method"] != "FEM"]
+    # The mass-balance series is excluded on purpose: it sits at machine
+    # precision (~1e-13) for every method, and forcing it onto the same log
+    # axis flattens the O(1e-5..1e-2) error differences to a sliver.  Mass
+    # conservation is still visible in mass_balance_validation.png.
     x = np.arange(len(methods))
-    width = 0.18
+    width = 0.25
     fig, ax = plt.subplots(figsize=(8.0, 4.5), dpi=220)
-    ax.bar(x - 1.5 * width, concentration, width, label="field L2", color="#457b9d")
-    ax.bar(x - 0.5 * width, breakthrough, width, label="breakthrough L2", color="#e76f51")
-    ax.bar(x + 0.5 * width, mass, width, label="final mass", color="#2a9d8f")
-    ax.bar(x + 1.5 * width, balance, width, label="mass balance", color="#6d597a")
+    ax.bar(x - width, concentration, width, label="field L2", color="#457b9d")
+    ax.bar(x, breakthrough, width, label="breakthrough L2", color="#e76f51")
+    ax.bar(x + width, mass, width, label="final mass", color="#2a9d8f")
     ax.set_yscale("log")
+    ax.set_ylim(1.0e-6, 1.0e-1)
     ax.set_xticks(x, methods)
-    ax.set_ylabel("relative error")
+    ax.set_ylabel("relative error (log)")
     ax.grid(True, axis="y", which="both", alpha=0.7)
-    ax.legend(ncols=2)
+    ax.legend(ncols=3)
     fig.tight_layout()
     fig.savefig(out)
     plt.close(fig)
