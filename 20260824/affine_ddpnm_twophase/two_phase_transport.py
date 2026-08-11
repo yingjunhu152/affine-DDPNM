@@ -281,13 +281,17 @@ def solve_two_phase(
     picard_relaxation: float = 1.0,
     supg: bool = True,
     supg_factor: float = 0.5,
+    snapshot_every: int | None = 10,
 ) -> dict[str, object]:
     """Solve the Buckley--Leverett saturation equation on *msh* with total
     velocity *u_vertices* (P1 vertex values, topology-vertex ordering).
 
     Returns the time history (water cut, recovery, mass bookkeeping,
     saturation bounds, Picard diagnostics), the final saturation on dofs and
-    vertices, and the mass matrix for reference-error metrics.
+    vertices, the mass matrix for reference-error metrics, and — if
+    ``snapshot_every`` is set — the vertex-interpolated saturation field
+    every ``snapshot_every`` steps (``snapshot_times`` /
+    ``snapshot_saturation_vertices``).
     """
     corey = dict(DEFAULT_COREY, **(corey or {}))
     swr, sor = float(corey["swr"]), float(corey["sor"])
@@ -455,6 +459,8 @@ def solve_two_phase(
     limiter_mass_residual = [0.0]
 
     n_steps = int(np.ceil(t_final / dt))
+    snapshot_times = [0.0]
+    snapshot_vertices = [np.asarray(cold[vertex_to_c_dof], dtype=float).copy()]
     current_time = 0.0
     for step in range(1, n_steps + 1):
         dt_step = min(float(dt), float(t_final) - current_time)
@@ -567,6 +573,9 @@ def solve_two_phase(
         limiter_mass_residual.append(float(porosity) * float(limiter_info["mass_residual"]))
         picard_counts.append(iters_used)
         picard_converged.append(converged)
+        if snapshot_every is not None and step % snapshot_every == 0:
+            snapshot_times.append(current_time)
+            snapshot_vertices.append(np.asarray(cold_vec[vertex_to_c_dof], dtype=float).copy())
         cold = cold_vec
 
     return {
@@ -614,6 +623,8 @@ def solve_two_phase(
         "nonconverged_picard_steps": int(np.count_nonzero(~np.asarray(picard_converged))),
         "saturation_bounds": (lower, upper),
         "concentration_vertex_mapping_max_distance": concentration_map_distance,
+        "snapshot_times": np.asarray(snapshot_times),
+        "snapshot_saturation_vertices": np.asarray(snapshot_vertices),
     }
 
 

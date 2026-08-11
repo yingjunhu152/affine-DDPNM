@@ -90,6 +90,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mu-o", type=float, default=5.0)
     parser.add_argument("--picard-max-iters", type=int, default=6)
     parser.add_argument("--picard-tol", type=float, default=1.0e-6)
+    parser.add_argument("--snapshot-every", type=int, default=10,
+                        help="save the saturation vertex field every N steps (0 disables)")
     parser.add_argument("--picard-relaxation", type=float, default=1.0)
     parser.add_argument("--supg", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--supg-factor", type=float, default=0.50)
@@ -339,6 +341,7 @@ def json_safe(value):
 def _write_outputs(
     args, partition, points, tetrahedra, mesh_seconds, timings, rows,
     histories, final_vertex_fields, vertex_velocities,
+    snapshots=None, snapshot_times=None,
 ) -> None:
     out_dir = args.out_dir
     tp.write_csv(out_dir / "twophase_metrics.csv", rows)
@@ -373,6 +376,8 @@ def _write_outputs(
         sphere_radii=partition.pore_seeds[:, 3],
         **{f"u_{method.replace('-', '_')}": vertex_velocities[method] for method in vertex_velocities},
         **{f"s_{method.replace('-', '_')}": final_vertex_fields[method] for method in final_vertex_fields},
+        **({f"s_{method.replace('-', '_')}_snapshots": snapshots[method] for method in snapshots} if snapshots else {}),
+        **({"snapshot_times": snapshot_times} if snapshot_times is not None else {}),
     )
 
     summary = {
@@ -485,8 +490,10 @@ def main() -> None:
         picard_max_iters=args.picard_max_iters, picard_tol=args.picard_tol,
         picard_relaxation=args.picard_relaxation,
         supg=args.supg, supg_factor=args.supg_factor,
+        snapshot_every=args.snapshot_every,
     )
     timings["FEM"]["two_phase_seconds"] = time.perf_counter() - t0
+    results: dict[str, dict[str, object]] = {"FEM": tp_fem}
     print(f"      two-phase={timings['FEM']['two_phase_seconds']:.3f} s, "
           f"final recovery={tp_fem['history']['recovery'][-1]:.4f}, "
           f"watercut t50={tp.crossing_time(tp_fem['history']['time'], tp_fem['history']['watercut'], 0.50):.3f}")
@@ -549,6 +556,7 @@ def main() -> None:
             picard_max_iters=args.picard_max_iters, picard_tol=args.picard_tol,
             picard_relaxation=args.picard_relaxation,
             supg=args.supg, supg_factor=args.supg_factor,
+            snapshot_every=args.snapshot_every,
         )
         two_phase_time = time.perf_counter() - t0
         timings[method] = {
@@ -571,6 +579,7 @@ def main() -> None:
             **ddpnm_stokes_metrics(partition, solution, reference, volumes),
         }
         rows.append(row)
+        results[method] = history
         histories[method] = history["history"]
         final_vertex_fields[method] = history["final_saturation_vertices"]
         final_dof_fields[method] = history["final_saturation"]
@@ -584,9 +593,12 @@ def main() -> None:
 
     print("[7/7] Metrics and outputs ...")
     attach_two_phase_metrics(rows, histories, final_dof_fields, mass_matrix, reference="FEM")
+    snapshots = {method: results[method]["snapshot_saturation_vertices"] for method in results}
+    snapshot_times = results["FEM"]["snapshot_times"]
     _write_outputs(
         args, partition, points, tetrahedra, mesh_seconds, timings, rows,
         histories, final_vertex_fields, vertex_velocities,
+        snapshots=snapshots, snapshot_times=snapshot_times,
     )
 
 
