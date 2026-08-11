@@ -42,6 +42,8 @@ def main() -> None:
                         default=PROJECT_DIR / "outputs" / "smoke_twophase3" / "twophase_fields.npz")
     parser.add_argument("--max-frames", type=int, default=0)
     parser.add_argument("--stride", type=int, default=1, help="take every Nth snapshot")
+    parser.add_argument("--method", type=str, default="FEM",
+                        help="method key: FEM, Classic_DDPNM_1, NormalLinear_DDPNM_3, Affine_DDPNM_9")
     args = parser.parse_args()
 
     data = np.load(args.data)
@@ -51,9 +53,11 @@ def main() -> None:
     spheres = data["sphere_centers"]
     radii = data["sphere_radii"]
 
-    snapshots = np.asarray(data["s_FEM_snapshots"], dtype=float)
+    snapshots = np.asarray(data[f"s_{args.method}_snapshots"], dtype=float)
     times = np.asarray(data["snapshot_times"], dtype=float)
     n_snap = len(times)
+    plot_dir = PLOT_DIR.parent / f"{args.method.lower()}_plots"
+    frame_dir = plot_dir / "frames"
 
     slice_points, slice_triangles, parent_cells = pse.build_cellwise_slice(
         points, tetrahedra, Z_VALUE
@@ -65,7 +69,7 @@ def main() -> None:
     )
     segments = pse._subdomain_boundary_lines(slice_points, slice_triangles, vertex_labels)
 
-    FRAME_DIR.mkdir(parents=True, exist_ok=True)
+    frame_dir.mkdir(parents=True, exist_ok=True)
     step = max(1, args.stride)
     n_render = n_snap if args.max_frames <= 0 else min(n_snap, args.max_frames)
     paths: list[Path] = []
@@ -97,8 +101,8 @@ def main() -> None:
             ax.tick_params(labelsize=8)
             ax.set_title(title, fontsize=11)
             pse.sci_colorbar(fig, artist, ax)
-        fig.suptitle(f"FEM  |  t = {t:5.2f}", fontsize=13)
-        out = FRAME_DIR / f"fem_t{t:05.1f}.png"
+        fig.suptitle(f"{args.method}  |  t = {t:5.2f}", fontsize=13)
+        out = frame_dir / f"fem_t{t:05.1f}.png"
         fig.savefig(out, dpi=160)
         plt.close(fig)
         paths.append(out)
@@ -108,12 +112,12 @@ def main() -> None:
     try:
         import imageio.v2 as imageio
 
-        gif_path = PLOT_DIR / "fem_frames.gif"
+        gif_path = plot_dir / f"{args.method.lower()}_frames.gif"
         imageio.mimsave(gif_path, [imageio.imread(p) for p in paths], duration=0.45)
         print(f"wrote {gif_path}")
     except Exception as exc:
         print(f"GIF skipped: {exc}")
-    print(f"wrote {len(paths)} frames to {FRAME_DIR}")
+    print(f"wrote {len(paths)} frames to {frame_dir}")
 
 
 if __name__ == "__main__":
