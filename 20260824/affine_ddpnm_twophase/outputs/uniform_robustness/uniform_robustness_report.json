@@ -1,0 +1,101 @@
+{
+  "description": "Robustness check: DDPNM mode-enrichment error story on the uniform 27-sphere (3x3x3 regular packing) vs the random-27 medium; same metric pipeline.",
+  "geometry": "uniform 27 spheres (grid 0.2/0.5/0.8, r=0.105), archived ddpnm_3d_uniform_spheres",
+  "mesh_sizes": {
+    "mesh_size": 0.28,
+    "sphere_size": 0.07,
+    "boundary_size": 0.1,
+    "interface_size": 0.1,
+    "sphere_band": 0.1,
+    "boundary_band": 0.08,
+    "interface_band": 0.08
+  },
+  "counts": {
+    "tetrahedra": 12203,
+    "vertices": 3019,
+    "pore_subdomains": 64,
+    "interfaces": 144
+  },
+  "common_mesh_seconds": 127.52775809998275,
+  "timings": {
+    "FEM": {
+      "online_seconds": 225.62070010000025
+    },
+    "Classic-DDPNM-1": {
+      "offline_seconds": 21.16995019998285,
+      "online_seconds": 0.02707620000001043
+    },
+    "NormalLinear-DDPNM-3": {
+      "offline_seconds": 22.588884400000097,
+      "online_seconds": 0.08116659999359399
+    },
+    "Affine-DDPNM-9": {
+      "offline_seconds": 28.653826499998104,
+      "online_seconds": 0.7020191999909002
+    }
+  },
+  "rows": [
+    {
+      "method": "Classic-DDPNM-1",
+      "global_unknowns": 144,
+      "modes_per_interface": 1,
+      "offline_seconds": 21.16995019998285,
+      "online_seconds": 0.02707620000001043,
+      "velocity_relative_l2_error_vs_fem": 0.2108379784453805,
+      "velocity_relative_broken_h1_vs_fem": 0.4482861540440433,
+      "pressure_raw_relative_l2_error_vs_fem": 0.03207842560860002,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.058678065594389046,
+      "outlet_flux_relative_error_vs_fem": 0.16462599544744308
+    },
+    {
+      "method": "NormalLinear-DDPNM-3",
+      "global_unknowns": 432,
+      "modes_per_interface": 3,
+      "offline_seconds": 22.588884400000097,
+      "online_seconds": 0.08116659999359399,
+      "velocity_relative_l2_error_vs_fem": 0.0816178255512383,
+      "velocity_relative_broken_h1_vs_fem": 0.23845138853099088,
+      "pressure_raw_relative_l2_error_vs_fem": 0.01845144315815223,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.033749766782153634,
+      "outlet_flux_relative_error_vs_fem": 0.024292526636815814
+    },
+    {
+      "method": "Affine-DDPNM-9",
+      "global_unknowns": 1296,
+      "modes_per_interface": 9,
+      "offline_seconds": 28.653826499998104,
+      "online_seconds": 0.7020191999909002,
+      "velocity_relative_l2_error_vs_fem": 0.056295757219095036,
+      "velocity_relative_broken_h1_vs_fem": 0.21612063208037904,
+      "pressure_raw_relative_l2_error_vs_fem": 0.02170960930899889,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.03971113231802473,
+      "outlet_flux_relative_error_vs_fem": 0.0032331955551133983
+    }
+  ],
+  "comparison_uniform_vs_random": {
+    "Classic-DDPNM-1": {
+      "uniform_eps": 0.2108379784453805,
+      "uniform_flux": 0.16462599544744308,
+      "random_eps": 0.653203,
+      "random_flux": 0.7272,
+      "eps_ratio_uniform_over_random": 0.3227755819329986,
+      "flux_ratio_uniform_over_random": 0.22638338207844208
+    },
+    "NormalLinear-DDPNM-3": {
+      "uniform_eps": 0.0816178255512383,
+      "uniform_flux": 0.024292526636815814,
+      "random_eps": 0.307488,
+      "random_flux": 0.1465,
+      "eps_ratio_uniform_over_random": 0.26543418133793284,
+      "flux_ratio_uniform_over_random": 0.16581929444925472
+    },
+    "Affine-DDPNM-9": {
+      "uniform_eps": 0.056295757219095036,
+      "uniform_flux": 0.0032331955551133983,
+      "random_eps": 0.065058,
+      "random_flux": 0.0271,
+      "eps_ratio_uniform_over_random": 0.8653164440821272,
+      "flux_ratio_uniform_over_random": 0.11930610904477484
+    }
+  }
+}

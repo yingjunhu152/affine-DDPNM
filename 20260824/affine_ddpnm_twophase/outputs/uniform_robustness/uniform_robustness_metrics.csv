@@ -1,0 +1,4 @@
+method,global_unknowns,velocity_relative_l2_error_vs_fem,velocity_relative_broken_h1_vs_fem,pressure_mean_aligned_relative_l2_error_vs_fem,outlet_flux_relative_error_vs_fem,offline_seconds,online_seconds
+Classic-DDPNM-1,144,2.10837978e-01,4.48286154e-01,5.86780656e-02,1.64625995e-01,21.170,0.027076
+NormalLinear-DDPNM-3,432,8.16178256e-02,2.38451389e-01,3.37497668e-02,2.42925266e-02,22.589,0.081167
+Affine-DDPNM-9,1296,5.62957572e-02,2.16120632e-01,3.97111323e-02,3.23319556e-03,28.654,0.702019
