@@ -111,13 +111,20 @@ def solve_1d_blev(L: float, nx: int, u_val: float, dt: float, t_final: float,
                   picard_max_iters: int = 6, picard_tol: float = 1.0e-6,
                   picard_relaxation: float = 1.0,
                   supg: bool = True, supg_factor: float = 0.5,
-                  porosity: float = 1.0, diffusivity: float = 0.0) -> dict:
+                  porosity: float = 1.0, diffusivity: float = 0.0,
+                  u_values: np.ndarray | None = None) -> dict:
     msh = dmesh.create_interval(MPI.COMM_WORLD, nx, (0.0, L))
     cell = msh.basix_cell()
     C = fem.functionspace(msh, element("Lagrange", cell, 1))
     S_trial = ufl.TrialFunction(C)
     w = ufl.TestFunction(C)
-    u = fem.Constant(msh, float(u_val))
+    # Spatially varying total velocity: pass P1 dof values (used by the
+    # sensitivity study); constant otherwise.
+    if u_values is None:
+        u = fem.Constant(msh, float(u_val))
+    else:
+        u = fem.Function(C)
+        u.x.array[:] = np.asarray(u_values, dtype=float)
     normal = ufl.FacetNormal(msh)
     h = ufl.CellDiameter(msh)
     dx = ufl.dx
