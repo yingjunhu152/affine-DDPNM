@@ -1,0 +1,4 @@
+method,alpha,recovery_normalized,pvi_normalized,dR_normalized,dR_original,leak_original,watercut_t50_normalized
+Classic-DDPNM-1,0.577330,0.280000,0.230800,0.000900,0.148800,0.062500,nan
+NormalLinear-DDPNM-3,0.872380,0.277000,0.230800,-0.002000,0.028000,0.014300,nan
+Affine-DDPNM-9,0.973170,0.279100,0.230800,-0.000000,0.006000,0.002000,nan

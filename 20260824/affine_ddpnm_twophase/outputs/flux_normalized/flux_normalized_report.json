@@ -1,0 +1,63 @@
+{
+  "description": "Counterfactual: DDPNM fields rescaled to the FEM total flux, same two-phase transport; the recovery bias collapses to |dR| <= 0.2 pp (both throughput and leak channels are throughput-driven).",
+  "fem_rerun_recovery": 0.2791,
+  "fem_archive_recovery": 0.2791,
+  "fem_rebuild_delta": -1e-05,
+  "inlet_fluxes": {
+    "FEM": 0.007279,
+    "Classic_DDPNM_1": 0.012608,
+    "NormalLinear_DDPNM_3": 0.008344,
+    "Affine_DDPNM_9": 0.007480
+  },
+  "alpha": {
+    "FEM": 1.0,
+    "Classic_DDPNM_1": 0.57733,
+    "NormalLinear_DDPNM_3": 0.87238,
+    "Affine_DDPNM_9": 0.97317
+  },
+  "rows": [
+    {
+      "method": "Classic-DDPNM-1",
+      "alpha": 0.57733,
+      "recovery_normalized": 0.2800,
+      "pvi_normalized": 0.2308,
+      "dR_normalized": 0.0009,
+      "dR_original": 0.1488,
+      "leak_original": 0.0625,
+      "predicted_dR_norm_approx_minus_leak": -0.0625,
+      "watercut_t50_normalized": null,
+      "s_min": 0.2,
+      "s_max": 0.8,
+      "max_balance_resid": null
+    },
+    {
+      "method": "NormalLinear-DDPNM-3",
+      "alpha": 0.87238,
+      "recovery_normalized": 0.2770,
+      "pvi_normalized": 0.2308,
+      "dR_normalized": -0.0020,
+      "dR_original": 0.0280,
+      "leak_original": 0.0143,
+      "predicted_dR_norm_approx_minus_leak": -0.0143,
+      "watercut_t50_normalized": null,
+      "s_min": 0.2,
+      "s_max": 0.8,
+      "max_balance_resid": null
+    },
+    {
+      "method": "Affine-DDPNM-9",
+      "alpha": 0.97317,
+      "recovery_normalized": 0.2791,
+      "pvi_normalized": 0.2308,
+      "dR_normalized": -0.0000,
+      "dR_original": 0.0060,
+      "leak_original": 0.0020,
+      "predicted_dR_norm_approx_minus_leak": -0.0020,
+      "watercut_t50_normalized": null,
+      "s_min": 0.2,
+      "s_max": 0.8,
+      "max_balance_resid": null
+    }
+  ],
+  "note": "watercut_t50 is null (no 0.5 crossing before t=30; front at ~0.64 PVI position).  max_balance_resid unavailable for the archived run log; transport conservation ledger is ~1e-13 by construction (see benchmark report).  Values recovered from the run log; the original script's JSON write crashed on NaN (fixed: json_safe) after printing all results."
+}
