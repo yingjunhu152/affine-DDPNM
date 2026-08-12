@@ -1,0 +1,311 @@
+{
+  "description": "Mesh-convergence verification of DDPNM Stokes errors on the random-27 medium: three self-similar mesh levels (bulk 0.17/0.13/0.10), errors vs same-mesh Taylor-Hood FEM reference, empirical orders per method.",
+  "base_sizes": {
+    "mesh_size": 0.13,
+    "sphere_size": 0.065,
+    "boundary_size": 0.085,
+    "interface_size": 0.075,
+    "sphere_band": 0.15,
+    "boundary_band": 0.13,
+    "interface_band": 0.12
+  },
+  "levels": [
+    {
+      "name": "coarse",
+      "bulk_size": 0.17,
+      "scale": 1.3076923076923077
+    },
+    {
+      "name": "medium",
+      "bulk_size": 0.13,
+      "scale": 1.0
+    },
+    {
+      "name": "fine",
+      "bulk_size": 0.1,
+      "scale": 0.7692307692307693
+    }
+  ],
+  "h_definition": "mean of per-tetrahedron volume^(1/3)",
+  "order_definition": "p = -d log(err)/d log(h); regression in log-log space",
+  "timings": {
+    "levels": {
+      "coarse": {
+        "h": 0.043712199565198076,
+        "n_cells": 9845,
+        "mesh_seconds": 45.40788289997727
+      },
+      "medium": {
+        "h": 0.037556937552424535,
+        "n_cells": 15249,
+        "mesh_seconds": 60.485089000023436
+      },
+      "fine": {
+        "h": 0.031634965199190956,
+        "n_cells": 25082,
+        "mesh_seconds": 21.524131599988323
+      }
+    }
+  },
+  "errors_vs_h": {
+    "Classic-DDPNM-1": {
+      "coarse": {
+        "velocity_relative_l2_error_vs_fem": 0.6368484235142705,
+        "velocity_relative_broken_h1_vs_fem": 0.8442557431342825,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.21557703485381688
+      },
+      "medium": {
+        "velocity_relative_l2_error_vs_fem": 0.6532027987220982,
+        "velocity_relative_broken_h1_vs_fem": 0.858518320646569,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.21957401991730893
+      },
+      "fine": {
+        "velocity_relative_l2_error_vs_fem": 0.6580587582876478,
+        "velocity_relative_broken_h1_vs_fem": 0.8623536463309847,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.22001498405552244
+      }
+    },
+    "NormalLinear-DDPNM-3": {
+      "coarse": {
+        "velocity_relative_l2_error_vs_fem": 0.31177140914288587,
+        "velocity_relative_broken_h1_vs_fem": 0.39479115451137176,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.07100940818094935
+      },
+      "medium": {
+        "velocity_relative_l2_error_vs_fem": 0.307487903081215,
+        "velocity_relative_broken_h1_vs_fem": 0.389650364835209,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.0694363922382594
+      },
+      "fine": {
+        "velocity_relative_l2_error_vs_fem": 0.3047690217860122,
+        "velocity_relative_broken_h1_vs_fem": 0.38412594733271876,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.06740861280362545
+      }
+    },
+    "Affine-DDPNM-9": {
+      "coarse": {
+        "velocity_relative_l2_error_vs_fem": 0.06180812872513104,
+        "velocity_relative_broken_h1_vs_fem": 0.1741546632929039,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.04292397055907379
+      },
+      "medium": {
+        "velocity_relative_l2_error_vs_fem": 0.06505828625813033,
+        "velocity_relative_broken_h1_vs_fem": 0.17556381317240624,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.04359659825719671
+      },
+      "fine": {
+        "velocity_relative_l2_error_vs_fem": 0.0658660497084312,
+        "velocity_relative_broken_h1_vs_fem": 0.17087747274481044,
+        "pressure_mean_aligned_relative_l2_error_vs_fem": 0.042376031393611596
+      }
+    }
+  },
+  "orders": {
+    "Classic-DDPNM-1": {
+      "velocity_relative_l2_error_vs_fem": {
+        "p_coarse_to_medium": -0.1670693832023565,
+        "p_medium_to_fine": -0.04316311676571544,
+        "p_coarse_to_fine": -0.10131779997842852,
+        "regression_slope": -0.1000579881822292,
+        "regression_r_squared": 0.8876932862746728
+      },
+      "velocity_relative_broken_h1_vs_fem": {
+        "p_coarse_to_medium": -0.11038186998322336,
+        "p_medium_to_fine": -0.025976431319898033,
+        "p_coarse_to_fine": -0.0655916314874032,
+        "regression_slope": -0.06473344271011604,
+        "regression_r_squared": 0.8769906331356444
+      },
+      "pressure_mean_aligned_relative_l2_error_vs_fem": {
+        "p_coarse_to_medium": -0.12104623844128158,
+        "p_medium_to_fine": -0.01169180802512235,
+        "p_coarse_to_fine": -0.06301667190527387,
+        "regression_slope": -0.06190481529489463,
+        "regression_r_squared": 0.7952637054256219
+      }
+    },
+    "NormalLinear-DDPNM-3": {
+      "velocity_relative_l2_error_vs_fem": {
+        "p_coarse_to_medium": 0.09115497275365209,
+        "p_medium_to_fine": 0.05175883288336111,
+        "p_coarse_to_fine": 0.07024918127209283,
+        "regression_slope": 0.0698486226630676,
+        "regression_r_squared": 0.9744259067228646
+      },
+      "velocity_relative_broken_h1_vs_fem": {
+        "p_coarse_to_medium": 0.08636187852771439,
+        "p_medium_to_fine": 0.08321536459387173,
+        "p_coarse_to_fine": 0.08469216255017704,
+        "regression_slope": 0.08466017050098708,
+        "regression_r_squared": 0.9998860507881197
+      },
+      "pressure_mean_aligned_relative_l2_error_vs_fem": {
+        "p_coarse_to_medium": 0.14760094115594222,
+        "p_medium_to_fine": 0.1727223876878513,
+        "p_coarse_to_fine": 0.16093178333084507,
+        "regression_slope": 0.1611872045907103,
+        "regression_r_squared": 0.9980000529452837
+      }
+    },
+    "Affine-DDPNM-9": {
+      "velocity_relative_l2_error_vs_fem": {
+        "p_coarse_to_medium": -0.33767536814958665,
+        "p_medium_to_fine": -0.07191084762865395,
+        "p_coarse_to_fine": -0.1966458747144427,
+        "regression_slope": -0.19394372503636462,
+        "regression_r_squared": 0.8658622225900415
+      },
+      "velocity_relative_broken_h1_vs_fem": {
+        "p_coarse_to_medium": -0.053099148856795,
+        "p_medium_to_fine": 0.15767243042694482,
+        "p_coarse_to_fine": 0.05874801945087165,
+        "regression_slope": 0.060891030692526084,
+        "regression_r_squared": 0.5028913102368081
+      },
+      "pressure_mean_aligned_relative_l2_error_vs_fem": {
+        "p_coarse_to_medium": -0.10244970917108352,
+        "p_medium_to_fine": 0.16548385325174644,
+        "p_coarse_to_fine": 0.039730799004721304,
+        "regression_slope": 0.042455002325871266,
+        "regression_r_squared": 0.23332242704021378
+      }
+    }
+  },
+  "rows": [
+    {
+      "level": "coarse",
+      "bulk_size": 0.17,
+      "h_mean_cube_root_volume": 0.043712199565198076,
+      "n_tetrahedra": 9845,
+      "method": "Classic-DDPNM-1",
+      "global_unknowns": 114,
+      "offline_seconds": 19.41061500000069,
+      "online_seconds": 0.0258109999995213,
+      "velocity_relative_l2_error_vs_fem": 0.6368484235142705,
+      "velocity_relative_broken_h1_vs_fem": 0.8442557431342825,
+      "pressure_raw_relative_l2_error_vs_fem": 0.10066556314898077,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.21557703485381688,
+      "outlet_flux_relative_error_vs_fem": 0.6982274320011678
+    },
+    {
+      "level": "coarse",
+      "bulk_size": 0.17,
+      "h_mean_cube_root_volume": 0.043712199565198076,
+      "n_tetrahedra": 9845,
+      "method": "NormalLinear-DDPNM-3",
+      "global_unknowns": 342,
+      "offline_seconds": 22.24156260001473,
+      "online_seconds": 0.08220309999887832,
+      "velocity_relative_l2_error_vs_fem": 0.31177140914288587,
+      "velocity_relative_broken_h1_vs_fem": 0.39479115451137176,
+      "pressure_raw_relative_l2_error_vs_fem": 0.032740046995321744,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.07100940818094935,
+      "outlet_flux_relative_error_vs_fem": 0.14828174875096453
+    },
+    {
+      "level": "coarse",
+      "bulk_size": 0.17,
+      "h_mean_cube_root_volume": 0.043712199565198076,
+      "n_tetrahedra": 9845,
+      "method": "Affine-DDPNM-9",
+      "global_unknowns": 1026,
+      "offline_seconds": 26.567094400001224,
+      "online_seconds": 0.6571932000224479,
+      "velocity_relative_l2_error_vs_fem": 0.06180812872513104,
+      "velocity_relative_broken_h1_vs_fem": 0.1741546632929039,
+      "pressure_raw_relative_l2_error_vs_fem": 0.019848643964134684,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.04292397055907379,
+      "outlet_flux_relative_error_vs_fem": 0.02507484123830951
+    },
+    {
+      "level": "medium",
+      "bulk_size": 0.13,
+      "h_mean_cube_root_volume": 0.037556937552424535,
+      "n_tetrahedra": 15249,
+      "method": "Classic-DDPNM-1",
+      "global_unknowns": 114,
+      "offline_seconds": 19.752243199996883,
+      "online_seconds": 0.02115899999625981,
+      "velocity_relative_l2_error_vs_fem": 0.6532027987220982,
+      "velocity_relative_broken_h1_vs_fem": 0.858518320646569,
+      "pressure_raw_relative_l2_error_vs_fem": 0.10303528968086895,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.21957401991730893,
+      "outlet_flux_relative_error_vs_fem": 0.727187364715219
+    },
+    {
+      "level": "medium",
+      "bulk_size": 0.13,
+      "h_mean_cube_root_volume": 0.037556937552424535,
+      "n_tetrahedra": 15249,
+      "method": "NormalLinear-DDPNM-3",
+      "global_unknowns": 342,
+      "offline_seconds": 22.726123300002655,
+      "online_seconds": 0.05718090001028031,
+      "velocity_relative_l2_error_vs_fem": 0.307487903081215,
+      "velocity_relative_broken_h1_vs_fem": 0.389650364835209,
+      "pressure_raw_relative_l2_error_vs_fem": 0.032189966142014095,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.0694363922382594,
+      "outlet_flux_relative_error_vs_fem": 0.1465000395055281
+    },
+    {
+      "level": "medium",
+      "bulk_size": 0.13,
+      "h_mean_cube_root_volume": 0.037556937552424535,
+      "n_tetrahedra": 15249,
+      "method": "Affine-DDPNM-9",
+      "global_unknowns": 1026,
+      "offline_seconds": 31.989550400001463,
+      "online_seconds": 0.46719719999236986,
+      "velocity_relative_l2_error_vs_fem": 0.06505828625813033,
+      "velocity_relative_broken_h1_vs_fem": 0.17556381317240624,
+      "pressure_raw_relative_l2_error_vs_fem": 0.02027635709014223,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.04359659825719671,
+      "outlet_flux_relative_error_vs_fem": 0.027055470437198595
+    },
+    {
+      "level": "fine",
+      "bulk_size": 0.1,
+      "h_mean_cube_root_volume": 0.031634965199190956,
+      "n_tetrahedra": 25082,
+      "method": "Classic-DDPNM-1",
+      "global_unknowns": 114,
+      "offline_seconds": 17.34513970001717,
+      "online_seconds": 0.0066685999918263406,
+      "velocity_relative_l2_error_vs_fem": 0.6580587582876478,
+      "velocity_relative_broken_h1_vs_fem": 0.8623536463309847,
+      "pressure_raw_relative_l2_error_vs_fem": 0.1033154827836971,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.22001498405552244,
+      "outlet_flux_relative_error_vs_fem": 0.7390361002541516
+    },
+    {
+      "level": "fine",
+      "bulk_size": 0.1,
+      "h_mean_cube_root_volume": 0.031634965199190956,
+      "n_tetrahedra": 25082,
+      "method": "NormalLinear-DDPNM-3",
+      "global_unknowns": 342,
+      "offline_seconds": 18.43876960000489,
+      "online_seconds": 0.03418090002378449,
+      "velocity_relative_l2_error_vs_fem": 0.3047690217860122,
+      "velocity_relative_broken_h1_vs_fem": 0.38412594733271876,
+      "pressure_raw_relative_l2_error_vs_fem": 0.031307995426749335,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.06740861280362545,
+      "outlet_flux_relative_error_vs_fem": 0.1448596727956805
+    },
+    {
+      "level": "fine",
+      "bulk_size": 0.1,
+      "h_mean_cube_root_volume": 0.031634965199190956,
+      "n_tetrahedra": 25082,
+      "method": "Affine-DDPNM-9",
+      "global_unknowns": 1026,
+      "offline_seconds": 64.75782739999704,
+      "online_seconds": 0.5547299000027124,
+      "velocity_relative_l2_error_vs_fem": 0.0658660497084312,
+      "velocity_relative_broken_h1_vs_fem": 0.17087747274481044,
+      "pressure_raw_relative_l2_error_vs_fem": 0.019731322935597508,
+      "pressure_mean_aligned_relative_l2_error_vs_fem": 0.042376031393611596,
+      "outlet_flux_relative_error_vs_fem": 0.027293885213228612
+    }
+  ]
+}
