@@ -17,6 +17,16 @@ class Coupling(StrEnum):
     SFI = "SFI"
 
 
+class ViscousForm(StrEnum):
+    GRADIENT = "gradient"
+    SYMMETRIC = "symmetric"
+
+
+class InitialProfile(StrEnum):
+    DISCONTINUOUS = "discontinuous"
+    EXPONENTIAL = "exponential"
+
+
 @dataclass(frozen=True)
 class Arm:
     flow: FlowMethod
@@ -53,8 +63,10 @@ class Physics:
     outlet_pressure: float = 0.0
     phi_initial: float = -1.0
     phi_inlet: float = 1.0
+    initial_profile: InitialProfile = InitialProfile.DISCONTINUOUS
+    initial_transition_length: float = 0.05
 
-    def as_dict(self) -> dict[str, float]:
+    def as_dict(self) -> dict[str, float | str]:
         return asdict(self)
 
 
@@ -70,6 +82,7 @@ class Numerics:
     sfi_relaxation: float = 0.65
     pressure_stabilization: float = 1.0e-10
     affine_pod_tolerance: float = 1.0e-8
+    viscous_form: ViscousForm = ViscousForm.GRADIENT
 
     @property
     def steps(self) -> int:
@@ -81,5 +94,5 @@ class Numerics:
             raise ValueError("At least one time step is required")
         return int(rounded)
 
-    def as_dict(self) -> dict[str, float | int]:
+    def as_dict(self) -> dict[str, float | int | str]:
         return asdict(self)

@@ -1,0 +1,2 @@
+# Preserve the exact Gmsh input bytes and its documented SHA-256.
+data/*.msh binary

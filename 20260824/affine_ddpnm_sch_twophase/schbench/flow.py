@@ -148,8 +148,14 @@ class FemFlowSolver(FlowSolver):
         self._normal = ufl.FacetNormal(msh)
         dx = ufl.dx(domain=msh)
         self._ds = ufl.Measure("ds", domain=msh, subdomain_data=self._tags)
+        if numerics.viscous_form.value == "gradient":
+            viscous_term = ufl.inner(ufl.grad(u), ufl.grad(v))
+        elif numerics.viscous_form.value == "symmetric":
+            viscous_term = 2.0 * ufl.inner(ufl.sym(ufl.grad(u)), ufl.sym(ufl.grad(v)))
+        else:
+            raise ValueError(f"Unknown viscous form: {numerics.viscous_form}")
         a = (
-            self._mu * ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+            self._mu * viscous_term * dx
             - p * ufl.div(v) * dx - q * ufl.div(u) * dx
             - numerics.pressure_stabilization * p * q * dx
         )
@@ -256,6 +262,7 @@ class DdpnmFlowSolver(FlowSolver):
             outlet_pressure=physics.outlet_pressure,
             pressure_stabilization=numerics.pressure_stabilization,
             retain_responses=True,
+            viscous_form=numerics.viscous_form.value,
         )
         self.offline_seconds = time.perf_counter() - started
 

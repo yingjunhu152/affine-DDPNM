@@ -1,5 +1,8 @@
 # 交接文档：affine_ddpnm_sch_twophase（Stokes–Cahn–Hilliard 两相流实验）
 
+> **历史交接警告：** 本文记录重写前状态，所述局部 CH-Schur、Korteweg 和阻塞
+> 情况均不是当前实现。现状见 `HANDOFF_REWRITE.md`，精确模型见 `MODEL_SPEC.md`。
+
 日期：2026-08-22（v2，接替同日 v1）。状态：**文档体系完备（math v1 + 伪代码 v2）；随机 27 球 FEM 臂已验证；Classic-frozen 臂被孔 9 的 CH-Newton 不收敛阻塞（调试中，已有复现脚本与残差追踪）；Bentheimer 几何分支已写入主驱动但未验证；正式 12 臂实验未跑。**
 
 ---

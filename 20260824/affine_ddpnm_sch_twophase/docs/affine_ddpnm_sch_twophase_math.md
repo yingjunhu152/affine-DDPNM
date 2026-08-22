@@ -1,5 +1,9 @@
 # Stokes–Cahn–Hilliard 两相流的 DDPNM / Affine-DDPNM：连续模型、离散与守恒（数学文档 v1）
 
+> **历史设计警告（2026-08-22）：** 本文包含未实现的 Korteweg 力和已经弃用的
+> 局部 CH trace Schur 路线，不描述当前 `schbench/`。当前实现只以
+> [`../MODEL_SPEC.md`](../MODEL_SPEC.md) 为准；此文件及其 PDF/TEX 仅供追溯。
+
 > 项目：`D:\hu\tongjiproj\20260727\20260824\affine_ddpnm_sch_twophase`
 > 日期：2026-08-22。前驱：单相 1/3/9 模态层级见 `20260810report/docs/affine_ddpnm_method_extension`；
 > BL/Corey 两相版见 `20260824/docs/affine_ddpnm_twophase_method`（本文件继承其流动层机制，替换输运层为 Cahn–Hilliard）。

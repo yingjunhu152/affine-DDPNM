@@ -37,6 +37,21 @@ class ArmResult:
     flow_global_unknowns: int
     max_flow_linear_residual: float
     flow_stabilization: str
+    phi_below_minus_one_lumped_volume_fraction: float
+    phi_above_plus_one_lumped_volume_fraction: float
+    phi_below_minus_one_minus_1e3_lumped_volume_fraction: float
+    phi_bound_violation_l1_volume_mean: float
+    phi_below_minus_one_near_inlet_share: float
+    phi_significant_undershoot_near_inlet_share: float
+    phi_min_distance_from_inlet: float
+    phi_min_x: float
+    phi_min_y: float
+    phi_min_z: float
+    phi_min_pore: int
+    phi_max_cell_vertex_jump: float
+    pore_average_phi_min: float
+    pore_average_phi_max: float
+    pore_average_clipped_count: int
     phi_l2_error_vs_fem: float = float("nan")
     velocity_l2_error_vs_fem: float = float("nan")
 
@@ -47,11 +62,15 @@ class _ArmFields:
     phi: np.ndarray
     velocity: np.ndarray
     history: list[dict]
+    initial_diagnostics: dict
 
 
 def _run_arm(arm, solver, transport, projector, physics, numerics) -> _ArmFields:
     started = time.perf_counter()
     phi = transport.initial_vertices()
+    initial_diagnostics = projector.phase_diagnostics(
+        phi, inlet_bandwidth=transport.epsilon
+    )
     flow_seconds = 0.0
     transport_seconds = 0.0
     flow_solves = 0
@@ -114,6 +133,9 @@ def _run_arm(arm, solver, transport, projector, physics, numerics) -> _ArmFields
             phi = candidate
             sfi_iterations = outer
             sfi_total += outer
+        phase_diagnostics = projector.phase_diagnostics(
+            phi, inlet_bandwidth=transport.epsilon
+        )
         history.append({
             "step": step,
             "time": step * numerics.dt,
@@ -126,6 +148,7 @@ def _run_arm(arm, solver, transport, projector, physics, numerics) -> _ArmFields
             "phi_min": diag.phi_min,
             "phi_max": diag.phi_max,
             "outlet_flux": flow.outlet_flux,
+            **phase_diagnostics,
         })
         print(
             f"    {arm.name}: step {step}/{numerics.steps}, "
@@ -134,6 +157,9 @@ def _run_arm(arm, solver, transport, projector, physics, numerics) -> _ArmFields
             flush=True,
         )
 
+    final_phase_diagnostics = projector.phase_diagnostics(
+        phi, inlet_bandwidth=transport.epsilon
+    )
     result = ArmResult(
         arm=arm.name,
         steps=numerics.steps,
@@ -153,8 +179,47 @@ def _run_arm(arm, solver, transport, projector, physics, numerics) -> _ArmFields
         flow_global_unknowns=flow.global_unknowns,
         max_flow_linear_residual=max_flow_residual,
         flow_stabilization=flow.stabilization,
+        phi_below_minus_one_lumped_volume_fraction=float(
+            final_phase_diagnostics["phi_below_minus_one_lumped_volume_fraction"]
+        ),
+        phi_above_plus_one_lumped_volume_fraction=float(
+            final_phase_diagnostics["phi_above_plus_one_lumped_volume_fraction"]
+        ),
+        phi_below_minus_one_minus_1e3_lumped_volume_fraction=float(
+            final_phase_diagnostics[
+                "phi_below_minus_one_minus_1e3_lumped_volume_fraction"
+            ]
+        ),
+        phi_bound_violation_l1_volume_mean=float(
+            final_phase_diagnostics["phi_bound_violation_l1_volume_mean"]
+        ),
+        phi_below_minus_one_near_inlet_share=float(
+            final_phase_diagnostics["phi_below_minus_one_near_inlet_share"]
+        ),
+        phi_significant_undershoot_near_inlet_share=float(
+            final_phase_diagnostics[
+                "phi_significant_undershoot_near_inlet_share"
+            ]
+        ),
+        phi_min_distance_from_inlet=float(
+            final_phase_diagnostics["phi_min_distance_from_inlet"]
+        ),
+        phi_min_x=float(final_phase_diagnostics["phi_min_x"]),
+        phi_min_y=float(final_phase_diagnostics["phi_min_y"]),
+        phi_min_z=float(final_phase_diagnostics["phi_min_z"]),
+        phi_min_pore=int(final_phase_diagnostics["phi_min_pore"]),
+        phi_max_cell_vertex_jump=float(
+            final_phase_diagnostics["phi_max_cell_vertex_jump"]
+        ),
+        pore_average_phi_min=float(final_phase_diagnostics["pore_average_phi_min"]),
+        pore_average_phi_max=float(final_phase_diagnostics["pore_average_phi_max"]),
+        pore_average_clipped_count=int(
+            final_phase_diagnostics["pore_average_clipped_count"]
+        ),
     )
-    return _ArmFields(result, phi.copy(), flow.vertex_velocity.copy(), history)
+    return _ArmFields(
+        result, phi.copy(), flow.vertex_velocity.copy(), history, initial_diagnostics
+    )
 
 
 def run_six_geometry(
@@ -244,6 +309,7 @@ def run_six_geometry(
         "flow_protocol": "Taylor-Hood FEM or local-response DDPNM; SFI updates porewise viscosity",
         "physics": physics.as_dict(),
         "numerics": numerics.as_dict(),
+        "initial_phase_diagnostics": next(iter(fields.values())).initial_diagnostics,
         "mesh": {
             "cells": int(len(partition.cell_labels)),
             "pores": int(len(projector.pore_volumes)),

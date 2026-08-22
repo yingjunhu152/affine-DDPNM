@@ -12,13 +12,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from schbench.geometry import DEFAULT_BENTHEIMER_MESH
+
 
 PROJECT = Path(__file__).resolve().parent
 DEFAULT_ROOT = PROJECT / "outputs" / "baseline_campaign_20260822"
-DEFAULT_BENTHEIMER = (
-    PROJECT.parent / "affine_ddpnm_twophase" / "outputs" / "experiment_v2"
-    / "bentheimer_inverted_cartesian_mesh_c6" / "bentheimer_voxel_pore_mesh.msh"
-)
+DEFAULT_BENTHEIMER = DEFAULT_BENTHEIMER_MESH
 
 
 def _tag(value: float) -> str:

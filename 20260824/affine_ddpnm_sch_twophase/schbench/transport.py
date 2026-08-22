@@ -11,7 +11,7 @@ from dolfinx import fem
 from scipy.sparse.linalg import splu
 from scipy.spatial import cKDTree
 
-from .config import Numerics, Physics
+from .config import InitialProfile, Numerics, Physics
 from .geometry import enable_flow_dependencies
 
 
@@ -131,9 +131,20 @@ class CahnHilliardTransport:
         return total / count
 
     def initial_vertices(self) -> np.ndarray:
-        self.phi_old.interpolate(
-            lambda x: np.where(x[0] <= 1.0e-8, self.physics.phi_inlet, self.physics.phi_initial)
-        )
+        if self.physics.initial_profile is InitialProfile.DISCONTINUOUS:
+            profile = lambda x: np.where(
+                x[0] <= 1.0e-8, self.physics.phi_inlet, self.physics.phi_initial
+            )
+        elif self.physics.initial_profile is InitialProfile.EXPONENTIAL:
+            length = self.physics.initial_transition_length
+            if length <= 0.0:
+                raise ValueError("initial_transition_length must be positive")
+            profile = lambda x: self.physics.phi_initial + (
+                self.physics.phi_inlet - self.physics.phi_initial
+            ) * np.exp(-x[0] / length)
+        else:
+            raise ValueError(f"Unknown initial profile: {self.physics.initial_profile}")
+        self.phi_old.interpolate(profile)
         return self.vertex_values(self.phi_old)
 
     def vertex_values(self, function: fem.Function) -> np.ndarray:

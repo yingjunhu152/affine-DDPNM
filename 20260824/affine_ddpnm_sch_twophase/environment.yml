@@ -1,0 +1,11 @@
+name: affine-ddpnm-sch
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - fenics-dolfinx
+  - gmsh
+  - mpi4py
+  - numpy
+  - scipy
+  - matplotlib

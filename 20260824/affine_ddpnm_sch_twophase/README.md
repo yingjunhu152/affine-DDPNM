@@ -1,7 +1,11 @@
 # Stokes--Cahn--Hilliard 六臂实验
 
 这是 2026-08-22 从零重写的实现。旧版源码不再使用；旧数学文档、伪代码和
-`HANDOFF_SCH.md` 仅作为历史记录保留。
+`HANDOFF_SCH.md` 仅作为历史记录保留。运行依赖的 DDPNM 源码与 Bentheimer 输入
+网格已经内置，不再从相邻项目目录动态导入。
+
+> **实现真源：** 当前实际方程、弱式、边界条件、黏度闭合和 frozen/SFI 算法
+> 统一见 [`MODEL_SPEC.md`](MODEL_SPEC.md)。旧设计文档不代表已实现功能。
 
 ## 六个算例
 
@@ -23,6 +27,8 @@ SFI 的第一轮是未阻尼时间步预测器，后续耦合修正使用 `omega
 孔内体积平均相场对应的孔内常黏度。
 
 ## 运行
+
+首次安装可用 `conda env create -f environment.yml`；已有 `fenicsx` 环境可直接运行。
 
 ```powershell
 cd D:\hu\tongjiproj\20260727\20260824\affine_ddpnm_sch_twophase
@@ -114,6 +120,17 @@ POD 三档阈值均保留 `720/747` 个 Bentheimer Affine Schur 方向，流量�
 conda run -n fenicsx --no-capture-output python -u run_baseline_campaign.py --stage all
 conda run -n fenicsx --no-capture-output python analyze_baseline_campaign.py
 ```
+
+## 方法学检查
+
+流动层支持 `--viscous-form gradient|symmetric`；输运层支持入口相容初值
+`--initial-profile exponential --initial-transition-length 0.05`。默认值仍是已发表
+基线所用的 `gradient + discontinuous`，不会静默改变旧算例定义。两个几何的
+算子与初值对照、机器可读 CSV 及解释见
+[`reports/METHODOLOGY_CHECKS.md`](reports/METHODOLOGY_CHECKS.md)。
+
+逐步 history 现在还记录严格/显著相场下冲的 lumped-volume 体积分数、越界 L1
+均值、极小值空间位置、距入口距离、孔号和入口邻域占比；相场本身从不 clipping。
 
 ## 新代码结构
 
