@@ -1,0 +1,268 @@
+% !TEX program = xelatex
+% 实验伪代码 1/4（v2，矩阵元素级）：随机27球 × classic DDPNM（W0n 流动 + W0ch 输运）× frozen-SCH
+% v2 对齐清单：H_i 显式公式、G_i=B^T R 元素式、COO 三重组装配、对称化、
+% G-行代数通量提取、CH 块消去形式 (M^{00}, M^{0Γ})、b_adv/N(φ) 装配、
+% G^ch=-M_c·bvec·δw 负定构造、入口反应通量账本、μ_w 参考场 dt 调度。
+% 与 sch_core/{stokes_operator,flow_library,ch_parts,ch_step}.py 逐条对应。
+\documentclass[11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage[a4paper, top=2.2cm, bottom=2.2cm, left=2.3cm, right=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage[colorlinks=true, linkcolor=RoyalBlue]{hyperref}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\dd}{\,dx}
+\newcommand{\iu}{\hat{\bm u}}
+\newcommand{\Ssch}{\mathbf{S}}
+\definecolor{cmtclr}{rgb}{0.0,0.42,0.42}
+\newcommand{\kwd}[1]{\textbf{#1}}
+\newcommand{\cmt}[1]{{\color{cmtclr}$\langle$#1$\rangle$}}
+\newcommand{\ind}{\hspace*{1.5em}}
+\newcommand{\indd}{\hspace*{3.0em}}
+\newcommand{\inddd}{\hspace*{4.5em}}
+
+\newtcolorbox{algobox}[1]{breakable, enhanced, colback=gray!4, colframe=gray!55,
+  title={#1}, fonttitle=\bfseries, left=2mm, right=2mm, top=1.5mm, bottom=1.5mm}
+\newenvironment{pseudo}[1]{\begin{algobox}{#1}%
+  \begin{enumerate}[label={\ttfamily\arabic*}, leftmargin=3.4em, itemsep=1.5pt, topsep=1pt, parsep=0pt]}%
+  {\end{enumerate}\end{algobox}}
+
+\title{\bfseries 伪代码 1/4（v2，矩阵元素级）：SCH 实验 E1——随机 27 球 $\times$ classic DDPNM $\times$ frozen}
+\author{Project: \texttt{affine\_ddpnm\_sch\_twophase}（公式 (S1)--(S23) 见 math 文档；
+本 v2 与 \texttt{sch\_core/} 已实现代码逐条对齐）}
+\date{2026-08-22}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{12 个实验总表}：E1（随机 27 球, DDPNM, frozen），E2（随机 27 球, DDPNM, SFI），
+E3（随机 27 球, Affine, frozen），E4（随机 27 球, Affine, SFI），E5--E8 同序换反转 Bentheimer，
+E9--E12 同序换单体 FEM。本文件为 E1。
+\textbf{模态设定}：流动层 $W_{0n}$（每内部界面 $q_{\mathrm{flow}}=1$，全局 Schur 规模 $m=114$）；
+CH 层 $W^{\mathrm{ch}}_0$（每界面 $q_{\mathrm{ch}}=1$，CH-Schur 规模 $m=114$）。
+\textbf{实现基架}：dolfinx 组装（P2--P1 Taylor--Hood、P1 相场），scipy \code{splu}/\code{spsolve}，
+\code{csr} 稀疏存储；几何来自参考项目 \code{random\_porous.py}（27 孔 / 114 界面 / 15249 tets）。
+\textbf{参数默认}（HANDOFF\_SCH §5）：$\mu_w=1,\ \mu_o=5,\ \epsilon=0.592\ (5h_{\mathrm{avg}}),\
+\lambda=0.2\ (\mathrm{Ca}\approx0.1),\ M_c=2\times10^{-3}\ (\mathrm{Pe}\approx10),\
+p_{\mathrm{in}}=1,\ p_{\mathrm{out}}=0$，Newton/$\eta$/Picard 容差 $10^{-8}$，
+阻尼 $\omega=0.65$，$t_{\mathrm{final}}=30$。
+
+\begin{pseudo}{算法 A：GEOMETRY-AND-PARTITION（几何、网格、孔/端口结构；随机 27 球）}
+\item 采样 27 个互不重叠随机球；$\Omega=[0,1]^3\setminus\bigcup_sB(\bm c_s,r_s)$；
+$\Gamma_{\mathrm{in}}=\{x=0\}$，$\Gamma_{\mathrm{out}}=\{x=1\}$，其余固壁
+\item 共形四面体网格 $\mathcal T_h$（\code{mesh\_size}=0.13，得 15249 tets / 3483 verts）
+\item 距离场分水岭 $\to$ $N=27$ 孔 $\{\Omega_i\}$（孔体积 $V_i$ 逐四面体
+$|\det[x_1{-}x_0\ x_2{-}x_0\ x_3{-}x_0]|/6$ 聚合）
+\item 相邻孔对共享面 $\to$ 平面端口 $\{\iface_k\}_{k=1}^{m=114}$；每端口标架
+$\{\bm n_k,\bm t_{k,1},\bm t_{k,2}\}$、中心 $\bm c_k$、半跨 $(a_k,b_k)$、面内坐标
+$s_k=(\bm x-\bm c_k)\!\cdot\!\bm t_{k,1}/a_k$，$t_k=(\bm x-\bm c_k)\!\cdot\!\bm t_{k,2}/b_k$
+\item 端口分类：内部口 $\mathcal U_i$ / 入口口 / 出口口（已知牵引 $p_b$：入口 1、出口 0）
+\item DOF 映射：全局 P2 速度 / P1 压力 / P1 $(\varphi,w)$ $\to$ 孔内局部编号
+（\code{PoreRestrictor}）；端口三角形 $\to$ P2/P1 迹 DOF 表
+\end{pseudo}
+
+\begin{pseudo}{算法 B：OFFLINE-FLOW-LIBRARY（离线流动库，$\mu_{\mathrm{ref}}=1$；classic：每口 1 列）}
+\item 计时 $t_{\mathrm{off,flow}}$ 开始；峰值内存探针开始
+\item \kwd{for} $i=1$ \kwd{to} $N=27$（可并行）\kwd{do}
+\item \ind \textbf{装配 $A_i$（元素级）}：对孔 $i$ 每个四面体 $e$、每对 P2 基 $(\bm\phi_j,\bm\phi_l)$：
+\item[] \ind $(A_i)_{(j,c),(l,d)}\ {+}{=}\ 2\mu_{\mathrm{ref}}\int_e
+D(\bm\phi_j\bm e_c):D(\bm\phi_l\bm e_d)\,\dd$，
+$D(\bm v)=\tfrac12(\nabla\bm v+\nabla\bm v^{\!\top})$
+\item[] \ind \cmt{应变率形式（$=\int(\nabla$:$\nabla+\nabla$:$\nabla^{\!\top})$）；P2$\times$P2 度 4 求积；无压力稳定化}
+\item \ind \textbf{装配 $B_i$（元素级）}：
+$(B_i)_{m,(j,c)}\ {+}{=}\ -\int_e\psi_m\,\partial_{x_c}\bm\phi_j\,\dd$
+\item \ind \textbf{鞍点矩阵与分解}：
+$K_i=\begin{bmatrix}A_i&B_i^{\!\top}\\B_i&0\end{bmatrix}\in\mathbb R^{n_{\mathrm{dof}}\times n_{\mathrm{dof}}}$
+（壁面速度齐次 Dirichlet 行已替换），\code{splu} 分解一次存储
+\item \ind \textbf{消压响应算子（隐式）}：
+$H_i=A_i^{-1}-A_i^{-1}B_i^{\!\top}M_i^{-1}B_iA_i^{-1}$，
+$M_i=B_iA_i^{-1}B_i^{\!\top}$ \cmt{不显式组装；一切 $H_i$ 作用 $=K_i$ 分解回代}
+\item \ind \kwd{for} $r=1$ \kwd{to} $m_i$（每端口：内部 $+$ 入口 $+$ 出口）\kwd{do}
+\item \indd \textbf{荷载列（元素级）}：对 $\iface_{i,r}$ 每个三角形：
+$[f_i^{(r)}]_{(j,c)}\ {+}{=}\ -\int_{\iface_{i,r}}\bm\phi_j\cdot\bm e_c\,(\bm n_{i,r}\!\cdot\!\bm e_c)\,dS$
+\item[] \indd \cmt{组装后 apply\_lifting（齐次壁面）$+$set\_bc；
+列数 $n_i=m_i^u+m_i^k$（classic 每口 1 列）}
+\item \indd 回代 $[\iu^{(r)};\hat x^{(r)}]=K_i^{-1}[f_i^{(r)};\bm 0]$
+$\to$ 存速度响应 $\iu^{(r)}$、压力响应 $\hat x^{(r)}$
+\item \ind \kwd{end for}
+\item \ind \textbf{荷载/响应矩阵与柔度（元素级）}：
+$B^{(i)}=[f^{(1)},\dots,f^{(n_i)}]$（$n_{\mathrm{dof}}\times n_i$），
+$R^{(i)}=K_i^{-1}B^{(i)}$；
+\item[] \ind $G_i=(B^{(i)})^{\!\top}R^{(i)}\in\mathbb R^{n_i\times n_i}$：
+$g_{\mu\nu}=\big(f^{(\mu)}\big)^{\!\top}\iu^{(\nu)}=\big(f^{(\mu)}\big)^{\!\top}H_if^{(\nu)}$
+\item[] \ind \cmt{荷载列自带负号 $\Rightarrow$ $G_i$ 行 $=$ 负矩约定：
+$[G_i\bm\lambda]_\mu=-W_\mu(U_i)$（\code{flow\_library.py:~G = B.T @ R}）}
+\item \ind \textbf{核诊断}：$\mathrm{svd}(R^{(i)})$（$=H_iL_i$）最小奇异值恰 $1$ 个数值零
+（容差 $10^{-9}\sigma_{\max}$），右奇异向量与 $\bm 1_{i,0n}$（各口 $(0,n)$ 槽 $=1$）的
+余弦 $\approx1$；报告 $\sigma_{\min}/\sigma_{\max}$
+\item \kwd{end for}
+\item 存储响应库、$\{G_i\}$、$\{K_i$ 分解$\}$；计时结束
+\end{pseudo}
+
+\begin{pseudo}{算法 C：OFFLINE-CH-PARTS（离线 CH 静态部件；classic：$q_{\mathrm{ch}}=1$）}
+\item \kwd{for} $i=1$ \kwd{to} $N$（可并行）\kwd{do}
+\item \ind \textbf{P1 矩阵（元素级）}：$(M^{\varphi}_i)_{ab}\ {+}{=}\ \int_e\psi_a\psi_b\,\dd$；
+$(K^{\varphi}_i)_{ab}\ {+}{=}\ \int_e\nabla\psi_a\!\cdot\!\nabla\psi_b\,\dd$
+\item \ind 质量行和 $\bm w^{\mathrm{mass}}=M^{\varphi}_i\bm 1$ \cmt{孔平均 $\bar\varphi_a$ 的加权}
+\item \ind \textbf{Dirichlet 掩码}：入口口节点 \code{inlet\_dofs}（$\varphi\equiv+1$）；
+每内部口 P1 节点 \code{port\_dofs[j]}（$w$ 强 Dirichlet $=L\bm\eta$）；出口/壁面自然
+\item \ind \textbf{端口形状矩阵}：
+$\mathrm{port\_shape}[j]\in\mathbb R^{n_{\mathrm{port}}\times q_{\mathrm{ch}}}$，
+列 $\alpha$ $=$ $\varphi_\alpha$ 在端口 P1 节点值
+（classic：全 1 列；affine：$[1,\ s,\ t]$，$s=\frac{(\bm x-\bm c_k)\cdot\bm t_{k,1}}{a_k}$ 等）
+\item \ind \textbf{扩散通量矩向量（元素级）}：每口 $j$、每 $\alpha$：
+$[\bm b_j^{\alpha}]_a=\int_{\iface_j}\varphi_\alpha\,\nabla\psi_a\!\cdot\!\bm n\;dS$
+（编译成向量模板）
+\item \ind \textbf{对流通量形式}：每口 $j$、每 $\alpha$：
+$\mathrm{conv}_j^{\alpha}=\int_{\iface_j}\varphi_\alpha\,(\bm u^{*}\!\cdot\!\bm n)\,\varphi^{\,n}\;dS$
+（编译缓存，场更新后求值）
+\item \ind 边界口（入口/出口）同构：shape$\equiv1$ 的 $\bm b^{\mathrm{bnd}}$ 与
+$\mathrm{conv}^{\mathrm{bnd}}$
+\item \kwd{end for}
+\end{pseudo}
+
+\begin{pseudo}{算法 D：SOLVE-FLOW$(\{\mu_a\},\varphi,w)\ \to\ (\bm\lambda,\{U_i\},\{Q_k\},\{Q^{\mathrm{bnd}}\})$}
+\item[] \cmt{步骤 1：黏度重缩放 (S12)——原位 \code{scale}/\code{unscale}}
+\item \kwd{for} $i$：$R^{(i)}\leftarrow R^{(i)}/\mu_a$（全部速度响应列）；
+$G_i\leftarrow G_i/\mu_a$ \cmt{压力响应 $\hat x$ 不动}
+\item[] \cmt{步骤 2：毛细荷载列 (S11) 与界面毛细矩}
+\item \kwd{for} $i$：
+\item \ind 组装 $\bm b$：$b_{(j,c)}=\int_{\Omega_i}w\,\nabla\varphi\cdot\bm\phi_j\bm e_c\,\dd$
+（P1$\times$P1$\times$P2 求积；apply\_lifting$+$set\_bc）
+\item \ind \kwd{if} $\|\bm b\|=0$：$\iu^{\mathrm{cap}}_i\leftarrow\bm0$（初始均匀 $\varphi$）
+\item \ind \kwd{else}：$[\iu^{\mathrm{cap}}_i;\hat x^{\mathrm{cap}}_i]=K_i^{-1}[\bm b;\bm 0]$；
+若已缩放则 $\iu^{\mathrm{cap}}_i\leftarrow\iu^{\mathrm{cap}}_i/\mu_a$；
+$\bm c_i=(B^{(i)})^{\!\top}\iu^{\mathrm{cap}}_i\in\mathbb R^{n_i}$
+\cmt{界面毛细矩，(S13) 右端项}
+\item[] \cmt{步骤 3：全局 Schur (S13)——COO 三重组装配}
+\item 全局自由度表：key $=$（界面 id, component, polynomial），dof 编号 $0..n_{\mathrm{glob}}-1$
+（classic：$n_{\mathrm{glob}}=m=114$）
+\item \kwd{for} 每孔 $i$：
+\item \ind 激活表 \code{active\_info}：每模态 $\to$\{dof: 全局自由度\}（内部口）
+或 \{known: $p_b$\}（入口 1 / 出口 0）
+\item \ind 划分 unknown/known 索引；取 $G^{uu}=G_i[\text{unknown},\text{unknown}]$、
+$G^{uk}=G_i[\text{unknown},\text{known}]$
+\item \ind \kwd{for} 每对 (ui,di),(uj,dj)：
+\code{val}$=G^{uu}[\mathrm{ui},\mathrm{uj}]$；
+\kwd{if} $|\mathrm{val}|>10^{-30}$：三重组追加 (di, dj, val)
+\item \ind $\bm{rhs}[\mathrm{dofs}]\ {-}{=}\ G^{uk}\,@\,\bm\lambda^{\mathrm{known}}$
+\cmt{已知边界牵引入右端}
+\item \ind $\bm{rhs}[\mathrm{dofs}]\ {-}{=}\ \bm c_i[\text{unknown}]$
+\cmt{毛细矩入右端}
+\item $S=\mathrm{csr}(\text{三重组})$；\code{sum\_Duplicates}；
+$S\leftarrow\tfrac12(S+S^{\!\top})$ \cmt{先装配后对称化，去舍入非对称}
+\item 报告对称缺陷 $\|S-S^{\!\top}\|/\|S\|$；\code{spsolve} 解 $S\bm\lambda=\bm{rhs}$；
+线性残差 $\|S\bm\lambda-\bm{rhs}\|/\|\bm{rhs}\|$
+\item[] \cmt{步骤 4：场重构（纯代数）}
+\item \kwd{for} $i$：$\bm\lambda_i=\bm\lambda(\text{dof})\cup\bm\lambda^{\mathrm{known}}$；
+$U_i^{\mathrm{mix}}=R^{(i)}@\,\bm\lambda_i+\iu^{\mathrm{cap}}_i$
+\cmt{混合解含速度 P2 段与压力 P1 段；压力段 $=$ $\hat x$ 组合不缩放}
+\item[] \cmt{步骤 5：通量提取——G-行代数（2026-08-21 符号协议）}
+\item \kwd{for} 每孔每口：取 $(0,n)$ 模态荷载列 $\bm f^{(0,n)}$；
+$m=\big(\bm f^{(0,n)}\big)^{\!\top}U_i^{\mathrm{mix}}=-\int_{\iface}\bm u\cdot\bm n\,dS$
+\cmt{= \code{loads @ u}，含 $\iu^{\mathrm{cap}}$ 的贡献}
+\item 内界面 $k=(a,b)$：$Q_k=\tfrac12(m_b-m_a)$ \cmt{pair 序 $a\!\to\!b$ 为正}；
+边界口：$Q^{\mathrm{bnd}}=-m$ \cmt{外向为正，入口为负}
+\item[] \cmt{步骤 6：诊断}
+\item $\|B_iU_i\|/\|U_i\|$；每孔 $\sum_rQ_{i,r}$；矩残差报告
+\item 速度函数提取：$U_i^{\mathrm{mix}}$ 速度段 $\to$ P2 \code{Function}（供 CH 对流）
+\end{pseudo}
+
+\begin{pseudo}{算法 E：CH-STEP$(\bm u^{*},\varphi^{\,n};\bm\eta_{\mathrm{init}},\mathrm{mode})\ \to\ (\varphi^{\,n+1},w^{\,n+1},\bm\eta^{\,n+1})$}
+\item $\bm\eta\leftarrow\bm\eta_{\mathrm{init}}$；孔内热启动 $\varphi_{\mathrm{loc}}\leftarrow\varphi^{\,n}$，
+$w_{\mathrm{loc}}\leftarrow w^{\,n}$ \cmt{frozen 传上一步值，mode$=$full}
+\item \kwd{repeat} \cmt{$\eta$-Picard，上限 20}
+\item \ind \kwd{for} $i=1$ \kwd{to} $N$（可并行）\kwd{do}
+\item \indd \cmt{孔内 CH-Newton（(S15)--(S18)）：未知量 $\bm z=[\bm\varphi;\bm w]\in\mathbb R^{2n}$，
+$w$ 端口行强 Dirichlet（$=L\bm\eta$），入口 $\varphi$ 行强 Dirichlet（$=+1$）}
+\item \indd \kwd{repeat}
+\item \inddd \textbf{残差（元素级）}：
+\item[] \inddd $\bm r_1=M^{\varphi}(\bm\varphi_{\mathrm{loc}}-\bm\varphi^{\,n})
++\Delta tM_cK^{\varphi}\bm w_{\mathrm{loc}}+\Delta t\,\bm b_{\mathrm{adv}}$，
+$\quad[\bm b_{\mathrm{adv}}]_a=\int_{\Omega_i}(\bm u^{*}\!\cdot\!\nabla\varphi^{\,n})\,\psi_a\dd$
+\item[] \inddd $\bm r_2=M^{\varphi}\bm w_{\mathrm{loc}}
+-\lambda\big[\epsilon^{-1}\big(\bm N(\bm\varphi_{\mathrm{loc}})-M^{\varphi}\bm\varphi^{\,n}\big)
++\epsilon K^{\varphi}\bm\varphi_{\mathrm{loc}}\big]$，
+$\quad[\bm N(\bm\varphi)]_a=\int_{\Omega_i}\varphi_{\mathrm{loc}}^3\psi_a\dd$
+\item[] \inddd \cmt{块消去等价形式（P1 DOF 分内部 $0$ / 端口 $\Gamma$）：
+$\mathrm{Eq1}$：$M^{\varphi}\bm\varphi^{n+1}+\Delta tM_cK^{\varphi}(\bm w_0{+}L\bm\eta)
+=M^{\varphi}\bm\varphi^{\,n}-\Delta t\bm b_{\mathrm{adv}}$；
+$\mathrm{Eq2}$：$M^{00}\bm w_0=\lambda\big[\epsilon^{-1}(\bm N(\bm\varphi^{n+1})-M^{\varphi}\bm\varphi^{\,n})
++\epsilon K^{\varphi}\bm\varphi^{n+1}\big]_{0}-M^{0\Gamma}(L\bm\eta)$；
+代码用行替换实现同一强 Dirichlet：$r_1[\mathrm{inlet}]=\varphi{-}1$，
+$r_2[\mathrm{port}\Gamma]=\bm w_{\mathrm{loc}}[\mathrm{port}]-\mathrm{port\_shape}@\,\bm\eta_j$}
+\item \inddd \textbf{Jac（元素级）}：$J_{11}=M^{\varphi}$，$J_{12}=\Delta tM_cK^{\varphi}$，
+$J_{21}=-\lambda\big(\epsilon^{-1}\mathrm{diag}(3\bm\varphi_{\mathrm{loc}}^2)M^{\varphi}
++\epsilon K^{\varphi}\big)$，$J_{22}=M^{\varphi}$；
+\item[] \inddd Dirichlet 行替换单位行；$\code{splu}$ 分解；
+$\Delta\bm z=-J^{-1}\bm r$
+\item \inddd \textbf{阻尼线搜索}：$\alpha\leftarrow1$；
+\kwd{while} $\|\bm r(\bm z+\alpha\Delta\bm z)\|_\infty\ge\|\bm r\|_\infty$ \kwd{and} $\alpha>10^{-3}$：
+$\alpha\leftarrow\alpha/2$（至多 10 次）；$\bm z\leftarrow\bm z+\alpha\Delta\bm z$
+\item \indd \kwd{until} $\|\bm r\|_\infty\le10^{-8}$
+\item[] \indd \cmt{首迭代即收敛时仍装配最后一次 Jac 分解——切线列需要}
+\item \indd \textbf{反应通量 (S19)}：每口 $j$、每 $\alpha$：
+$J_{j}^{\alpha}=\mathrm{conv}_j^{\alpha}-M_c\,\big(\bm b_j^{\alpha}\!\cdot\!\bm w_{\mathrm{loc}}\big)$
+\cmt{对流 $-$ 扩散，全由预装模板求值}
+\item \indd \textbf{切线列}：每口 $j$、每模态 $\beta$：
+$\bm{rhs}=\bm e_{n+\mathrm{port\_dofs}[j]}\ @$ port\_shape$[j][ :,\beta]$；
+$[\delta\bm\varphi^{(j\beta)};\delta\bm w^{(j\beta)}]=\mathrm{lu.solve}(\bm{rhs})$
+\item \indd \textbf{局部 CH-DtN（元素级）}：
+$G_i^{\mathrm{ch}}[(i,\alpha),(j,\beta)]=-M_c\,\big(\bm b_i^{\alpha}\!\cdot\!\delta\bm w^{(j\beta)}\big)$
+\cmt{负定 $\Rightarrow$ CH-Schur SPD（\code{ch\_step.py}）}
+\item \ind \kwd{end for}
+\item \ind \textbf{CH-Schur (S21)——COO 三重组}：
+$S^{\mathrm{ch}}[(i,\alpha),(j,\beta)]=-G_i^{\mathrm{ch}}$（逐孔块叠加，
+$|{\cdot}|>10^{-30}$ 才追加）；右端
+$\bm{rhs}^{\mathrm{ch}}[\mathrm{dof}]+{=}\ J_j^{\alpha}$（求和 $\sum_i(R_i^{\mathrm{ch}})^{\!\top}J_i$）；
+\item[] \ind \cmt{方程 $S^{\mathrm{ch}}\,\delta\bm\eta=\bm{rhs}^{\mathrm{ch}}$；
+classic 规模 $114\times114$}
+\item \ind $S^{\mathrm{ch}}\leftarrow\tfrac12(S^{\mathrm{ch}}+S^{\mathrm{ch}\!\top})$；
+\code{spsolve} 得 $\delta\bm\eta$；报告 Schur 线性残差
+\item \ind $\bm\eta\leftarrow\bm\eta+\delta\bm\eta$；
+\textbf{切线场更新}：$[\delta\bm\varphi;\delta\bm w]=\mathrm{tangents}@\,\delta\bm\eta_{\mathrm{local}}$
+（每孔一次矩阵乘，无重构求解）
+\item \kwd{until} $\|\delta\bm\eta\|_\infty\le10^{-8}$（full）\kwd{or} mode$=$single
+\item $\varphi^{\,n+1}\leftarrow\varphi_{\mathrm{loc}}$；$w^{\,n+1}\leftarrow w_{\mathrm{loc}}$
+\item \textbf{边界通量与账本}：出口物理通量 $J_{\mathrm{out}}=\mathrm{conv}_{\mathrm{out}}
+-M_c\bm b^{\mathrm{bnd}}_{\mathrm{out}}\!\cdot\!\bm w$；
+入口\textbf{反应通量} $J_{\mathrm{in}}=\mathrm{conv}_{\mathrm{in}}
+-\tfrac{1}{\Delta t}\sum_{\mathrm{inlet}}\bm r_1$
+\cmt{入口 $\varphi$ Dirichlet 行替换了质量方程，账本 (S22) 靠反应通量闭合}
+\item 水切 $\mathrm{wc}=\tfrac12(\mathrm{conv}_{\mathrm{out}}/Q_{\mathrm{out}}+1)$
+\cmt{对流通量口径（扩散项不是水流量）}；能量 $E$ (S23)；$\max|\varphi|$ 界检查
+\end{pseudo}
+
+\begin{pseudo}{算法 F：MAIN-FROZEN（E1 主循环：frozen-SCH，Algorithm S1）}
+\item 运行算法 A、B、C
+\item 初始化：全局 $\varphi^0\equiv-1$，入口 DOF 置 $+1$，经 \code{PoreRestrictor} 投到孔内；
+$w^0\equiv\bm 0$；$\bm\eta^0=\bm 0$
+\item $\bar\varphi_a=(\bm w^{\mathrm{mass}}_a\!\cdot\!\bm\varphi_a)/V_a$；
+$\mu_a=\mu(\bar\varphi_a)=\tfrac{1+\bar\varphi_a}{2}\mu_w+\tfrac{1-\bar\varphi_a}{2}\mu_o$
+（初始全油 $\mu_a=\mu_o=5$）
+\item \textbf{dt 调度（一次）}：
+$\Delta t=\min\big(\mathrm{cfl}\cdot\min_aV_a\big/\textstyle\sum_{k\ni a}\max(\pm Q_k,0),\ \ 0.9\,h_{\min}/|\bm u|_{\max}^{\mathrm{ref}}\big)$
+\cmt{参考场 $|\bm u|_{\max}^{\mathrm{ref}}$ 用 $\mu_w=1$ 均匀黏度解——$\mu_o$ 场慢 5 倍会高估 $\Delta t$；
+smoke 得 $\Delta t=1.2$，$n_{\mathrm{step}}=t_{\mathrm{final}}/\Delta t$}
+\item SOLVE-FLOW$\big(\{\mu_a\},\varphi^0,w^0\big)$ 一次
+$\to$ $\bm\lambda^0,\{U_i\},\{Q_k\},\{Q^{\mathrm{bnd}}\}$，速度函数填入 CH 部件
+（\code{fill\_u\_star}）\cmt{流动冻结}
+\item \kwd{for} $n=0$ \kwd{to} $n_{\mathrm{step}}-1$ \kwd{do}
+\item \ind CH-STEP$(\bm u^{*},\varphi^{\,n};\ \bm\eta^{\,n},\ \mathrm{full})$
+$\to(\varphi^{\,n+1},w^{\,n+1},\bm\eta^{\,n+1})$；累计 $t_{\mathrm{ch}}$
+\item \ind 指标：回收率 $R=\tfrac12(1+\sum_aV_a\bar\varphi_a/\sum_aV_a)$；
+水切；能量；\textbf{账本}
+$\bm 1^{\!\top}M_{\mathrm{glob}}(\bm\varphi^{n+1}-\bm\varphi^{n})+\Delta t(J_{\mathrm{in}}+J_{\mathrm{out}})$；
+$\max|\varphi|$；$\eta$/Newton 迭代数
+\item \ind 快照（npz/内存表）
+\item \kwd{end for}
+\item 输出：轨迹、$\{t_{\mathrm{off,flow}},t_{\mathrm{off,ch}},t_{\mathrm{flow}}(1),t_{\mathrm{ch}}/\text{步}\}$、
+峰值内存、误差口径（相对 FEM 臂：broken $L^2$ 的 $\varphi$、$\bm u$、$Q_{\mathrm{out}}$、突破曲线）
+\end{pseudo}
+
+\end{document}

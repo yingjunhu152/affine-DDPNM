@@ -1,0 +1,17 @@
+# Generated caches and local settings
+__pycache__/
+*.py[cod]
+.claude/
+
+# Numerical runs are reproducible but too bulky/noisy for the source snapshot.
+outputs/**
+
+# Keep the validated campaign's compact report, summaries, and publication figures.
+!outputs/baseline_campaign_20260822/
+!outputs/baseline_campaign_20260822/CAMPAIGN_REPORT.md
+!outputs/baseline_campaign_20260822/time_step_summary.csv
+!outputs/baseline_campaign_20260822/pod_summary.csv
+!outputs/baseline_campaign_20260822/production_summary.csv
+!outputs/baseline_campaign_20260822/time_refinement.json
+!outputs/baseline_campaign_20260822/figures/
+!outputs/baseline_campaign_20260822/figures/*.png

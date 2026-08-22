@@ -1,0 +1,424 @@
+% !TEX program = xelatex
+% Stokes–Cahn–Hilliard 两相流的 DDPNM / Affine-DDPNM：连续模型、离散与守恒
+% 公式编号 (S1)–(S23) 与 2026-08-22 对话框输出一致
+\documentclass[11pt]{article}
+\usepackage[a4paper, top=2.3cm, bottom=2.3cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true, linkcolor=RoyalBlue, urlcolor=RoyalBlue]{hyperref}
+\usepackage[UTF8]{ctex}
+
+\setlength{\parskip}{0.4em}
+\setlist{topsep=2pt, itemsep=2pt, parsep=0pt}
+
+% theorem-like environments share ONE global counter (project style)
+\theoremstyle{definition}
+\newtheorem{assumption}{Assumption}
+\theoremstyle{plain}
+\newtheorem{proposition}[assumption]{Proposition}
+\theoremstyle{remark}
+\newtheorem{remarkx}[assumption]{Remark}
+
+\newcommand{\vel}{\bm{u}}
+\newcommand{\pres}{p}
+\newcommand{\normal}{\bm{n}}
+\newcommand{\stress}{\bm{\sigma}}
+\newcommand{\iface}{\gamma}
+\newcommand{\Schur}{\mathbf{S}}
+\newcommand{\Rm}{\mathbb{R}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\dd}{\,dx}
+
+\title{\bfseries Stokes--Cahn--Hilliard 两相流的 DDPNM / Affine-DDPNM：\\
+连续模型、离散与守恒（数学文档 v1）}
+\author{Project: \texttt{affine\_ddpnm\_sch\_twophase}}
+\date{2026-08-22}
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+\noindent 本文档为 2026-08-22 对话框输出的排版版本，公式编号 (S1)--(S23) 与对话框一致。
+前驱：单相 $1/3/9$ 模态层级见 \texttt{20260810report/docs/affine\_ddpnm\_\{math,method\}\_extension}；
+BL/Corey 两相版见 \texttt{20260824/docs/affine\_ddpnm\_twophase\_method}（本方法继承其流动层机制，
+输运层由 Buckley--Leverett 替换为 Cahn--Hilliard）。
+
+\section{连续模型：标准 Stokes--Cahn--Hilliard 两相流（Model H，匹配密度，无重力）}
+
+\subsection{未知量与自由能}
+
+$\vel$（总速度）、$\pres$（压力）、$\varphi$（相场，$\varphi=+1$ 水/润湿相、$\varphi=-1$
+油/非润湿相）、$w$（化学势）。混合自由能（Ginzburg--Landau）：
+\begin{equation}
+E(\varphi)=\int_\Omega \lambda\Big(\frac{\epsilon}{2}|\nabla\varphi|^2
++\frac{1}{\epsilon}F(\varphi)\Big)\dd,\qquad
+F(\varphi)=\tfrac14(\varphi^2-1)^2,\quad f=F'=\varphi^3-\varphi.
+\tag{S1}\label{eq:S1}
+\end{equation}
+
+\subsection{强形式（四方程）}
+\begin{equation}
+-\nabla\cdot\big(2\mu(\varphi)D(\vel)\big)+\nabla p \;=\; w\,\nabla\varphi,
+\qquad \nabla\cdot\vel=0 \qquad\text{in }\Omega,
+\tag{S2}\label{eq:S2}
+\end{equation}
+\begin{equation}
+\partial_t\varphi+\nabla\cdot\big(\vel\,\varphi-M_c\nabla w\big)=0
+\qquad\text{in }\Omega,
+\tag{S3}\label{eq:S3}
+\end{equation}
+\begin{equation}
+w=\lambda\Big(\epsilon^{-1}f(\varphi)-\epsilon\,\Delta\varphi\Big)
+\qquad\text{in }\Omega.
+\tag{S4}\label{eq:S4}
+\end{equation}
+其中 $D(\vel)=\tfrac12(\nabla\vel+\nabla\vel^{\!\top})$；混合黏度
+$\mu(\varphi)=\tfrac{1+\varphi}{2}\mu_w+\tfrac{1-\varphi}{2}\mu_o$（或对数混合）；
+$M_c>0$ 为迁移率。
+
+\begin{remarkx}[毛细力的形式与符号]\label{rem:korteweg}
+$w\nabla\varphi=-\nabla\cdot\mathbb K$，Korteweg 应力
+$\mathbb K=\lambda\big(\epsilon\nabla\varphi\otimes\nabla\varphi
+-\big(\tfrac{\epsilon}{2}|\nabla\varphi|^2+\epsilon^{-1}F(\varphi)\big)I\big)$，
+二者差一个可吸入压力的梯度项。本方法取\textbf{体积力形式}——入口/出口仍为
+``水动伪牵引'' $\stress_h\normal=-p_b\normal$（$\stress_h=-pI+2\mu D$，切向为零），
+与前驱单相/BL 版边界机制完全一致；两种形式只在 $\partial_n\varphi\neq0$ 的边界上差一个
+切向重整，而入口取 $\varphi\equiv+1$（$\nabla\varphi=0$），差异可忽略。
+动量右端符号必须取 $+w\nabla\varphi$（热力学一致性要求，见式 \eqref{eq:S7} 的推导）。
+\end{remarkx}
+
+\subsection{边界条件}
+\begin{equation}
+\vel=0,\qquad \partial_n\varphi=0,\qquad \partial_n w=0
+\qquad \text{on }\Gamma_{\mathrm{wall}},
+\tag{S5}\label{eq:S5}
+\end{equation}
+\begin{equation}
+\stress_h\normal=-p_{\mathrm{in}}\normal,\quad \varphi=+1 \ \ \text{on }\Gamma_{\mathrm{in}};
+\qquad
+\stress_h\normal=-p_{\mathrm{out}}\normal,\quad \partial_n\varphi=0\ \text{（对流外流）}\ \ \text{on }\Gamma_{\mathrm{out}}.
+\tag{S6}\label{eq:S6}
+\end{equation}
+壁面 $\partial_n\varphi=0$ 即中性润湿（$90^\circ$ 接触角）；$\partial_n w=0$ 为壁面零相质量通量。
+初始 $\varphi^0\equiv-1$（油充满），入口注入水，即水驱油驱替问题。
+
+\subsection{守恒律与能量律（连续层面）}
+\begin{itemize}
+\item \textbf{总质量}：$\nabla\cdot\vel=0\Rightarrow\int_{\partial\Omega}\vel\cdot\normal=0$；
+\item \textbf{相质量}：$\dfrac{d}{dt}\int_\Omega\varphi\,\dd
+=-\int_{\Gamma_{\mathrm{in}}\cup\Gamma_{\mathrm{out}}}
+(\vel\varphi-M_c\,\partial_n w)\cdot\normal$（壁面零通量，只有进出口交换）；
+\item \textbf{能量耗散律（热力学一致性）}：
+\begin{equation}
+\frac{dE}{dt}=-\int_\Omega 2\mu\,|D(\vel)|^2\dd
+-M_c\int_\Omega|\nabla w|^2\dd\;\le\;0.
+\tag{S7}\label{eq:S7}
+\end{equation}
+证明两行：$\tfrac{dE}{dt}=\int w\,\partial_t\varphi\,\dd$（用 \eqref{eq:S4} 分部）；
+代入 \eqref{eq:S3} 得 $\tfrac{dE}{dt}=-\int w\,\vel\cdot\nabla\varphi\,\dd-M_c\|\nabla w\|^2$；
+式 \eqref{eq:S2} 用 $\vel$ 检验并 $\nabla\cdot\vel=0$ 给出
+$\int w\,\vel\cdot\nabla\varphi\,\dd=2\mu\|D\|^2$；两式相消即 \eqref{eq:S7}。
+\end{itemize}
+
+\subsection{锐界面极限与无量纲参数}
+平衡剖面 $\varphi=\tanh\big(z/(\sqrt2\,\epsilon)\big)$；界面张力与 Young--Laplace：
+\begin{equation}
+\sigma_s=\frac{2\sqrt2}{3}\lambda\,\epsilon,
+\qquad [p]=\sigma_s\,\kappa.
+\tag{S8}\label{eq:S8}
+\end{equation}
+无量纲组（$L$ 特征长度、$U$ 特征速度）：Cahn 数 $\mathrm{Cn}=\epsilon/L$、
+毛细数 $\mathrm{Ca}=\mu_uU/\sigma_s$、迁移 P\'eclet 数 $\mathrm{Pe}=UL/(M_c\lambda/\epsilon)$。
+
+\begin{remarkx}[与 BL 版的本质区别]
+BL 输运是一阶双曲（upwind 分数流）、毛细胞关闭、每孔一个 P0 饱和度；CH 输运是四阶
+扩散型守恒律、毛细由 $\lambda,\epsilon$ 内生、每孔 $P_1$ 场 $(\varphi,w)$，且多一条
+能量律 \eqref{eq:S7} 作为解的质量诊断。
+\end{remarkx}
+
+\section{孔级闭合假设（对齐 BL 版 Assumption 2）}
+
+\begin{assumption}[孔内常物性闭合]\label{ass:S2}
+每孔一个相自由度用于黏度取值：
+$\bar\varphi_a=\int_{\Omega_a}\varphi\,\dd/V_a$，且
+\begin{equation}
+\mu_a=\mu(\bar\varphi_a)\quad\text{在 }\Omega_a\text{ 内为常数}.
+\tag{S9}\label{eq:S9}
+\end{equation}
+作用：(i) 使重缩放命题（Proposition~\ref{prop:rescale}）精确成立；(ii) FEM 主协议采用
+同一闭合，使 DDPNM-vs-FEM 差异只隔离``界面耦合建模''。声明：这是\textbf{建模近似}
+（数值尺度由实验标定），不是定理；逐点 $\mu(\varphi)$ 的 FEM 作绝对参考另行报告。
+\end{assumption}
+
+\section{流动层离散：DDPNM / Affine-DDPNM $+$ 毛细强迫}
+
+界面模态机制（标架、$d_{i,k,\beta}$ 两侧反对称、九模态
+$\mathcal M=\{0,s,t\}\times\{n,t_1,t_2\}$、四空间
+$W_{0n}/W_{0v}/W_{1n}/W_{1v}$、代码列序置换 $p=(0,3,6,1,4,7,2,5,8)$）与单相版
+\textbf{逐字相同}。本实验取两端：\textbf{classic DDPNM} $=W_{0n}$（每界面 1 标量）、
+\textbf{affine DDPNM} $=W_{1v}$（每界面 9 模态）。
+
+\paragraph{(a) 牵引 Ansatz 与 primitive 荷载（对水动应力 $\stress_h$）。}
+\begin{equation}
+-\sigma_h(\vel_i,p_i)\,\normal_{i,k}
+=\sum_{(\alpha,\beta)\in\mathcal M_X}\lambda_{k,\alpha,\beta}\,
+\varphi_\alpha\,d_{i,k,\beta},
+\qquad
+\big[f_{i,k}^{(\alpha,\beta)}\big]_j
+=-\int_{\iface_k}\varphi_\alpha\,d_{i,k,\beta}\cdot\phi_j^{(i)}\,dS.
+\tag{S10}\label{eq:S10}
+\end{equation}
+荷载不含 $\mu$（重缩放前提，同 BL）。
+
+\paragraph{(b) 新增毛细荷载列。}动量右端体积力项在孔 $i$ 上的离散
+（滞后显式或 Picard 当前迭代值 $\varphi^\ast,w^\ast$）：
+\begin{equation}
+\big[f_i^{\mathrm{cap}}\big]_j=\int_{\Omega_i} w^\ast\,\nabla\varphi^\ast
+\cdot\phi_j^{(i)}\dd.
+\tag{S11}\label{eq:S11}
+\end{equation}
+
+\begin{proposition}[重缩放，推广到任意荷载]\label{prop:rescale}
+设 Assumption~\ref{ass:S2}（$A_i(\mu_a)=\mu_aA_i(1)$）。对\textbf{任意}速度荷载 $f$
+（界面牵引模态 \eqref{eq:S10} 或体积力 \eqref{eq:S11}），
+\begin{equation}
+P(\mu_a)=P(1),\qquad U(\mu_a)=\tfrac{1}{\mu_a}U(1),\qquad
+G_i(\mu_a)=\tfrac{1}{\mu_a}G_i(1).
+\tag{S12}\label{eq:S12}
+\end{equation}
+证明与 BL 命题 4.1 逐字相同——只用到鞍点结构与 $A\propto\mu$ 的齐次性，与荷载形式无关。
+故离线库仍在参考黏度 $\mu_{\mathrm{ref}}=1$ 建一次；毛细列每步只需一次局部回代
+（复用存储分解）再乘 $1/\mu_a$；无新 Stokes 分解。
+\end{proposition}
+
+\paragraph{(c) 全局 Schur（含毛细强迫）。}局部解
+$\vel_i=H_i\big(L_i\bm\lambda_i+f_i^{\mathrm{cap}}\big)$；界面矩
+$W(U_i)=-G_i\bm\lambda_i-\bm c_i$，其中 $\bm c_i:=L_i^{\!T}H_if_i^{\mathrm{cap}}$
+为界面毛细矩；矩连续 $W_i+W_j=0$ 装配：
+\begin{equation}
+\Schur(\bm\mu)\,\bm\lambda=\mathbf F(\bm\mu)-\sum_i (R_i^u)^{\!\top}\bm c_i.
+\tag{S13}\label{eq:S13}
+\end{equation}
+\textbf{矩阵与 BL 完全相同，毛细只进右端}——SPD 三条件（局部稳定、局部一维核
+$\mathrm{span}\{\bm 1_{0n}\}$、图锚定）与 $\mu_i>0$ 无关的结论全部继承。
+
+\paragraph{(d) 流动层守恒（继承，不变）。}
+每孔 $\sum_\iface W_{i,\iface}^{(0,n)}=0$（$B_iU_i=0$ 加常压测试；毛细体积力不进入
+不可压约束）；界面净通量单值 $Q_\iface=\tfrac12(m_b-m_a)$（含 2026-08-21 修正的符号协议）、
+边界外向通量 $Q_a^{\mathrm{bnd}}=-m_a^{\mathrm{bnd}}$；
+全局 $\int_{\partial\Omega}\vel\cdot\normal=0$。所有层级精确。
+
+\begin{remarkx}[与 BL 的速率控制差别]\label{rem:rate}
+BL 的线性重标 $\bm\lambda\mapsto\alpha\bm\lambda$ 在含毛细体积力时不再物理（除非同时缩放
+$f^{\mathrm{cap}}$，但那会篡改毛细物理）。协议改为\textbf{压力驱动}：固定
+$\Delta p=p_{\mathrm{in}}-p_{\mathrm{out}}$，报告 $Q(t)$；恒速驱替需 $\alpha$-Picard 外环。
+\end{remarkx}
+
+\section{输运层离散：Cahn--Hilliard 的 DDPNM 式耦合（全新部分）}
+
+\subsection{对偶结构——完全镜像流动层}
+
+$\varphi,w\in P_1(\Omega_i)$（孔网格是整体共形网格的逐胞分解，界面节点匹配）。
+\textbf{界面未知量 $=$ 端口化学势迹的模态系数}（标量层级，CH 是标量场所以为 $1/3$，
+对照流动层的 $1/9$）：
+\begin{equation}
+W^{\mathrm{ch}}_0(\iface_k)=\mathrm{span}\{1\}\ \ (\text{classic DDPNM 层级}),\qquad
+W^{\mathrm{ch}}_1(\iface_k)=\mathbb P_1(\iface_k)=\mathrm{span}\{1,s,t\}\ \ (\text{affine 层级}).
+\tag{S14}\label{eq:S14}
+\end{equation}
+镜像关系：流动层未知量 $=$ 界面\textbf{牵引}（Neumann 数据）$\to$ 响应 $=$ 速度矩
+$\to$ 方程 $=$ 矩连续；CH 层未知量 $=$ 界面\textbf{化学势迹}（Dirichlet 数据）
+$\to$ 响应 $=$ \textbf{相通量矩} $\to$ 方程 $=$ 通量矩连续。
+
+\subsection{时间离散（孔内）：凸分裂 $+$ 显式对流 $+$ 隐式扩散}
+\begin{equation}
+w^{\,n+1}=\lambda\Big(\epsilon^{-1}\big[(\varphi^{\,n+1})^3-\varphi^{\,n}\big]
+-\epsilon\,\Delta\varphi^{\,n+1}\Big),
+\tag{S15}\label{eq:S15}
+\end{equation}
+\begin{equation}
+\frac{\varphi^{\,n+1}-\varphi^{\,n}}{\Delta t}
++\vel^{\,\ast}\cdot\nabla\varphi^{\,n}
+=\nabla\cdot\big(M_c\nabla w^{\,n+1}\big).
+\tag{S16}\label{eq:S16}
+\end{equation}
+凸分裂 $f_c'=\varphi^3$、$f_e'=\varphi$（$F_c=\varphi^4/4$，$F_e=\varphi^2/2$），
+孔内无条件能量稳定；对流显式（$\vel^{\,\ast}$ 为上一步或 Picard 当前的 DDPNM 重构
+速度场——流动层级 $1$ vs $9$ 直接影响对流精度，这是模态富集改善 CH 的新通道）；
+扩散隐性（$M_c,\epsilon$ 无时间步约束）。入口 $\varphi^{n+1}=+1$ 强约束。
+
+\subsection{局部 CH 步（端口 $w$-Dirichlet）}
+
+记 $w=L\bm\eta+w_0$（$L\bm\eta$ 端口迹提升，$w_0$ 端口零迹）。求
+$(\varphi_i^{\,n+1},w_{0,i}^{\,n+1})\in P_1\times P_{1,0}$：
+\begin{equation}
+\big(\varphi^{\,n+1},v\big)+\Delta t\,M_c\big(\nabla w^{\,n+1},\nabla v\big)_{\Omega_i}
+=\big(\varphi^{\,n},v\big)-\Delta t\big(\vel^{\,\ast}\cdot\nabla\varphi^{\,n},v\big)_{\Omega_i}
+\quad\forall v\in P_1(\Omega_i),
+\tag{S17}\label{eq:S17}
+\end{equation}
+\begin{equation}
+\big(w^{\,n+1},q\big)_{\Omega_i}
+=\lambda\Big[\epsilon^{-1}\big((\varphi^{\,n+1})^3,q\big)
+-\epsilon^{-1}\big(\varphi^{\,n},q\big)
++\epsilon\big(\nabla\varphi^{\,n+1},\nabla q\big)_{\Omega_i}\Big]
+\quad\forall q\in P_{1,0}(\Omega_i).
+\tag{S18}\label{eq:S18}
+\end{equation}
+$\varphi^3$ 项使 \eqref{eq:S17}--\eqref{eq:S18} 非线性 $\to$ 每孔小规模 Newton。
+\textbf{局部适定}：$\varphi$ 的质量项消除纯 Neumann 核——比流动层更干净（无浮动孔问题）。
+
+\subsection{响应泛函：端口总相通量矩}
+
+局部解出后，对每端口 $k$、每保留迹模态 $\alpha$ 计算（精确求积，两侧共享同一平面界面）：
+\begin{equation}
+J_{i,k}^{(\alpha)}=\int_{\iface_k}\varphi_\alpha\,
+\big(\vel_i^{\,\ast}\varphi^{\,n}-M_c\nabla w^{\,n+1}\big)\cdot\normal_{i,k}\;dS,
+\tag{S19}\label{eq:S19}
+\end{equation}
+（等价于式 \eqref{eq:S17} 对端口支集检验函数的反应通量残差；$\alpha=0$ 为界面相质量流量。）
+
+\subsection{全局 CH-Schur：通量矩连续}
+
+界面方程（每内部界面 $k$、每 $\alpha$）：
+\begin{equation}
+J_{i_k,k}^{(\alpha)}+J_{j_k,k}^{(\alpha)}=0.
+\tag{S20}\label{eq:S20}
+\end{equation}
+对 $\bm\eta$ Picard 线性化：$J_i\approx J_i(\bm\eta^{\mathrm p})
++G_i^{\mathrm{ch}}\big(\bm\eta-\bm\eta^{\mathrm p}\big)$，其中 $G_i^{\mathrm{ch}}$ 为
+\textbf{局部 CH-DtN}（端口迹单位扰动 $\to$ 通量矩响应；切线问题对称：质量 $+$ 刚度
+$+$ $3(\varphi^{\mathrm p})^2$ 乘子均为自伴）。装配：
+\begin{equation}
+\Schur^{\mathrm{ch}}\,\bm\eta=\mathbf F^{\mathrm{ch}},
+\qquad
+\Schur^{\mathrm{ch}}=\sum_i (R_i^{\mathrm{ch}})^{\!\top}G_i^{\mathrm{ch}}R_i^{\mathrm{ch}}.
+\tag{S21}\label{eq:S21}
+\end{equation}
+
+\begin{proposition}[局部负定 / 全局 SPD，条件性]\label{prop:ch-spd}
+沿 \eqref{eq:S17}--\eqref{eq:S18} 切线的能量恒等式给出
+$\bm\eta_i^{\,\top}G_i^{\mathrm{ch}}\bm\eta_i
+=-\Delta t^{-1}\|\delta\varphi\|^2_{\Omega_i}
+-M_c\|\nabla\delta w\|^2_{\Omega_i}\le0$ 型二次型；且 $\varphi$ 的质量项使常数迹扰动
+产生非零响应（不同于纯 Laplace DtN 的一维核），故 $G_i^{\mathrm{ch}}$ 负定、
+$\Schur^{\mathrm{ch}}$ SPD，\textbf{无需图锚定}。实现以最小特征值与对称缺陷作数值诊断。
+\end{proposition}
+
+\subsection{相质量守恒账本（精确，两级层级共享）}
+
+式 \eqref{eq:S17} 取 $v\equiv1$：
+$\big(\varphi^{n+1}-\varphi^{n},1\big)_{\Omega_i}=-\Delta t\sum_kJ_{i,k}^{(0)}$；
+式 \eqref{eq:S20} 的 $\alpha=0$ 行使内界面相流量单值成对抵消，全局求和：
+\begin{equation}
+r^{\,n}=\sum_a\big(\varphi^{\,n+1}-\varphi^{\,n},1\big)_{\Omega_a}
++\Delta t\sum_aJ_a^{\mathrm{bnd}}=0
+\qquad(\text{未截断时逐位恒零}).
+\tag{S22}\label{eq:S22}
+\end{equation}
+CH 隐式扩散\textbf{不需要 BL 的 clip}（凸分裂控制 $|\varphi|\lesssim1$）；
+两级层级都保留 $\alpha=0$ 行 $\Rightarrow$ 相质量守恒不因迹模态富集而破坏
+（镜像流动层定理）。
+
+\subsection{能量诊断（非定理，报告项）}
+\begin{equation}
+E^{\,n}=\sum_i\int_{\Omega_i}\lambda\Big(
+\tfrac{\epsilon}{2}|\nabla\varphi^{\,n}|^2+\epsilon^{-1}F(\varphi^{\,n})\Big)\dd
+\ \ \text{应单调下降（孔内无条件稳定；界面耦合与显式毛细引入 }O(\Delta t)\text{ 耦合误差）}.
+\tag{S23}\label{eq:S23}
+\end{equation}
+
+\section{耦合算法（镜像 BL 的 frozen/SFI 双算法）}
+
+\paragraph{Algorithm S1（frozen-SCH，单向）。}初始 $\mu_a(\bar\varphi^0)$ 下解一次流动
+\eqref{eq:S13}（含初始毛细列）$\to$ 冻结 $\vel^{\,\ast},\{Q_\iface\}$ $\to$ 每步只推进 CH
+（局部步 \eqref{eq:S17}--\eqref{eq:S18} $+$ CH-Schur \eqref{eq:S21}）。
+每步 $0$ 次流动求解。
+
+\paragraph{Algorithm S2（SFI-SCH，双向阻尼 Picard，$\omega=0.65$）。}每步迭代：
+(i) $\mu_a\leftarrow\mu(\bar\varphi_a^{(k)})$；(ii) 重缩放 \eqref{eq:S12}、装配 \eqref{eq:S13}
+（含 $\bm c_i(\varphi^{(k)},w^{(k)})$）解 $\bm\lambda$；(iii) 提取 $Q_\iface$；
+(iv) CH 局部步 $+$ \eqref{eq:S21} 解 $\bm\eta$、阻尼更新 $\varphi$；
+(v) $\delta=\|\Phi-\varphi^{(k)}\|_\infty\le10^{-8}$ 收敛。
+每迭代 $=$ 代数重缩放 $+$ $1$ 次流动 Schur $+$ 局部 CH 回代 $+$ $1$ 次 CH-Schur，
+\textbf{无新 Stokes 分解}。
+
+\paragraph{时间步约束。}对流 CFL
+$\Delta t\le\mathrm{cfl}\cdot\min_aV_a/\sum_{i\ni a}\max(\pm Q_i,0)$
+（同 BL \code{cfl\_time\_step}）；扩散隐性无 $M_c$ 约束；
+显式毛细耦合的稳定性由阻尼 Picard 吸收。
+
+\paragraph{指标。}能量衰减 \eqref{eq:S23}、相质量账本 \eqref{eq:S22}、
+$\int\varphi$ 回收曲线、出口突破曲线、界面位置、与 FEM 的差。
+
+\section{经典 FEM 在这个问题上是否生效？——生效，且是标准做法}
+
+\begin{enumerate}
+\item \textbf{离散对稳定}：Taylor--Hood $[\mathbb P_2]^3\times\mathbb P_1$（$\vel,p$）
+满足 inf-sup；CH 四阶算子用两场分裂（$\varphi,w$ 均 $\mathbb P_1$）后弱形式对称，
+\textbf{P1--P1 不需要稳定化}（CH 混合格式的标准结论，不是直接离散双调和）。
+\item \textbf{时间格式成熟}：凸分裂（\eqref{eq:S15} 同款）无条件能量稳定
+（Shen--Yang 一类标准结果）；显式对流受 CFL 约束——与 DDPNM 臂相同。
+\item \textbf{网格要求}：须解析扩散界面，$h\lesssim\epsilon$（tanh 剖面约 $\sqrt2\epsilon$ 宽）。
+这是 3D 成本的主要来源，也是 DDPNM 离线库同样要付的代价（同一套孔网格），对比公平。
+\item \textbf{非线性求解}：凸分裂的 $\varphi^3$ 项 $\to$ 每步单体 Newton/一阶线性化；
+单体规模 $=$ 全局 DOF（速度 P2 $+$ 压力/相场 P1），每步一次全局解——这正是 DDPNM
+要省掉的成本，且已在单相 3D benchmark 管线中验证可行。
+\item \textbf{公平协议（关键）}：FEM 臂与 DDPNM 臂用\textbf{同一共形网格、同一
+$\Delta t$/CFL、同一凸分裂格式}，且主协议 FEM 采用\textbf{同一孔内常黏度闭合}
+（Assumption~\ref{ass:S2}）——两臂差异只来自：\textcircled{1} 流动层界面牵引模态
+限制（$1$ vs $9$）；\textcircled{2} CH 层端口迹模态限制（$1$ vs $3$）；
+\textcircled{3}（若跑逐点 $\mu(\varphi)$ 的全标准 FEM 作绝对参考）孔内常黏度闭合本身。
+\end{enumerate}
+
+\noindent\textbf{结论}：FEM benchmark 完全生效。输出协议照旧——误差表
+（$\|\varphi-\varphi_{\mathrm{FEM}}\|_{L^2}$、$\|\vel-\vel_{\mathrm{FEM}}\|_{L^2}$、
+$p$、出口通量/突破曲线）$+$ 成本表（墙钟、峰值内存、每步求解次数、离线/在线分解）
+$+$ 场图与误差云图（风格仿 \code{01\_slice\_error\_fields.png}）。
+
+\section{定理级 / 假设级 / 经验级的划分（防止过度声明）}
+
+\begin{itemize}
+\item \textbf{定理级（有限维代数）}：流动层 SPD、唯一解、精确质量守恒
+（继承单相理论；毛细列不触及矩阵）；CH 层局部负定、CH-Schur SPD
+（条件性 $+$ 数值诊断，Proposition~\ref{prop:ch-spd}）、相质量账本 \eqref{eq:S22} 逐位为零。
+\item \textbf{假设级}：孔内常黏度 Assumption~\ref{ass:S2}（数值尺度待标定）；
+显式毛细耦合 $O(\Delta t)$。
+\item \textbf{经验级}：相对单体 FEM 的 $L^2$ 误差沿层级不必单调
+（BL 版实测同款现象）；$\epsilon$-网格分辨敏感性。
+\end{itemize}
+
+\section{开工前待确认的 5 个决策点}
+
+\begin{enumerate}
+\item \textbf{参数集}：$\epsilon$（建议 $4$--$6\,h_{\mathrm{avg}}$）、
+$\lambda$（由目标 $\mathrm{Ca}$ 定）、$M_c$（$\mathrm{Pe}\sim10$--$10^2$）、
+$\mu_w/\mu_o$（沿用 $1/5$？）、$\Delta p$、步数/PVI。
+\item \textbf{方法配对}：classic $=$（流动 $W_{0n}$ $+$ CH $W^{\mathrm{ch}}_0$）、
+affine $=$（流动 $W_{1v}$ $+$ CH $W^{\mathrm{ch}}_1$）——两层同时升降级（建议），
+或固定一层只动另一层（消融）。
+\item \textbf{主报告算法}：frozen 与 SFI 都跑、主表用 SFI（建议）。
+\item CH 对流 P1 $+$ 显式若有振荡是否加 SUPG/限制器（先不加，出问题再加）。
+\item \textbf{几何}：随机 27 球 $+$ 反转 Bentheimer（复用现有管线）。
+\end{enumerate}
+
+\section*{参考文献}
+\begin{enumerate}[label={[\arabic*]}, leftmargin=2em]
+\item S.~Sun, Z.~Wang, L.~Zhang, J.~Zhao. A domain decomposition approach to
+pore-network modeling of porous media flow. \emph{arXiv:2510.13429v2}, 2026.（经典 DDPNM）
+\item \texttt{20260810report/docs/affine\_ddpnm\_\{math,method\}\_extension.\{md,tex,pdf\}}：
+单相 $1/3/9$ 模态公式链与定理。
+\item \texttt{20260824/docs/affine\_ddpnm\_twophase\_\{math,method\}.md}：
+BL/Corey 两相版（本方法流动层机制来源）。
+\item J.~Shen, X.~Yang. Energy stable schemes for Cahn--Hilliard phase-field model
+of two-phase incompressible flows. \emph{J. Comput. Phys.} 228 (2009) 6420--6441.（凸分裂时间格式）
+\item H.~Abels, H.~Garcke, G.~Gr\"un. Thermodynamically consistent, frame
+indifferent diffuse interface models for incompressible two-phase flows with
+different densities. \emph{Math. Models Methods Appl. Sci.} 22 (2012) 1150013.（Model H）
+\end{enumerate}
+
+\end{document}

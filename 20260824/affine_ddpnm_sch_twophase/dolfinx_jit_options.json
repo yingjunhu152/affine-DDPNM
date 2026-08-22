@@ -1,0 +1,4 @@
+{
+  "timeout": 900,
+  "cffi_extra_compile_args": ["-O2"]
+}

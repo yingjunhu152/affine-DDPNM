@@ -1,0 +1,72 @@
+% !TEX program = xelatex
+% 实验伪代码 4/4（v2）：随机27球 × Affine-DDPNM（W1v 流动 9 模态 + W1ch 3 模态）× SFI-SCH
+% 算法 A、B'、C'、D'、E' 的矩阵元素级版本见 pseudo_3（v2）——对 E4 逐字适用；
+% 主循环结构与 pseudo_2（v2）的 MAIN-SFI 相同，规模换 9m/3m。
+\documentclass[11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage[a4paper, top=2.2cm, bottom=2.2cm, left=2.3cm, right=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage[colorlinks=true, linkcolor=RoyalBlue]{hyperref}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\definecolor{cmtclr}{rgb}{0.0,0.42,0.42}
+\newcommand{\kwd}[1]{\textbf{#1}}
+\newcommand{\cmt}[1]{{\color{cmtclr}$\langle$#1$\rangle$}}
+\newcommand{\ind}{\hspace*{1.5em}}
+\newcommand{\indd}{\hspace*{3.0em}}
+
+\newtcolorbox{algobox}[1]{breakable, enhanced, colback=gray!4, colframe=gray!55,
+  title={#1}, fonttitle=\bfseries, left=2mm, right=2mm, top=1.5mm, bottom=1.5mm}
+\newenvironment{pseudo}[1]{\begin{algobox}{#1}%
+  \begin{enumerate}[label={\ttfamily\arabic*}, leftmargin=3.4em, itemsep=1.5pt, topsep=1pt, parsep=0pt]}%
+  {\end{enumerate}\end{algobox}}
+
+\title{\bfseries 伪代码 4/4（v2）：SCH 实验 E4——随机 27 球 $\times$ Affine-DDPNM $\times$ SFI}
+\author{Project: \texttt{affine\_ddpnm\_sch\_twophase}}
+\date{2026-08-22}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{12 个实验总表}：E4 $=$（随机 27 球, Affine, SFI）；E8 同序换 Bentheimer。
+\textbf{模态设定}：与 E3 相同（流动 $W_{1v}$，Schur $9m=1026$；CH $W^{\mathrm{ch}}_1$，CH-Schur $3m=342$）。
+\textbf{与 E3 的唯一区别}：主循环由 frozen 换成每步阻尼 Picard；与 E2 的唯一区别：模态层级。
+\textbf{算法 A、B$'$、C$'$、D$'$、E$'$（v2 矩阵元素级）见 \texttt{pseudo\_3\_affine\_ddpnm\_frozen.pdf}，
+对 E4 逐字适用}；唯一调用差异：算法 E$'$ 传 $\bm\eta^{(k-1)}$ 且
+$\mathrm{mode}=$\textbf{单次线性化}。主循环结构与 \texttt{pseudo\_2}（v2）的 MAIN-SFI 逐字相同。
+
+\begin{pseudo}{算法 F：MAIN-SFI（E4 主循环——4 个 DDPNM 臂中每步最贵）}
+\item 运行算法 A、B$'$、C$'$（见 E3 v2）；初始化与 dt 调度同 E2 v2
+（$\varphi^0\equiv-1$ 入口$+1$；$w^0\equiv\bm 0$；$\bm\eta^0=\bm 0$；$\mu_w$ 参考场 dt）
+\item 预热：SOLVE-FLOW$\big(\{\mu_a\},\varphi^0,w^0\big)\to\{Q_k^{(0)}\}$
+\item \kwd{for} $n=0$ \kwd{to} $n_{\mathrm{step}}-1$ \kwd{do}
+\item \ind $\varphi^{(0)}\leftarrow\varphi^{\,n}$；$w^{(0)}\leftarrow w^{\,n}$；$\bm\eta^{(0)}\leftarrow\bm\eta^{\,n}$
+\item \ind \kwd{for} $k=1$ \kwd{to} $20$ \kwd{do} \cmt{外层阻尼 Picard}
+\item \indd $\mu_a^{(k)}\leftarrow\tfrac{1+\bar\varphi_a^{(k-1)}}{2}\mu_w
++\tfrac{1-\bar\varphi_a^{(k-1)}}{2}\mu_o$
+\item \indd SOLVE-FLOW$\big(\{\mu_a^{(k)}\},\varphi^{(k-1)},w^{(k-1)}\big)$
+（\textbf{E3 v2 算法 D$'$ 全步骤}：重缩放 9 列/口 $\to$ 毛细列 $\bm c_i$（每口 9 项）
+$\to$ COO 三重组 $S\in\mathbb R^{1026\times1026}$ $\to$ $\tfrac12(S{+}S^{\!\top})$ $\to$
+\code{spsolve} $\to$ 重构 $\to$ G-行通量 $\{Q^{(k)}\}$（$(0,n)$ 列））
+\item[] \indd \cmt{每迭代重解 1026-Schur（无新 Stokes 分解）；分项计时；速度填 CH 部件}
+\item \indd CH-STEP$\big(\bm u^{*(k)},\varphi^{\,n};\ \bm\eta^{(k-1)},\ \mathrm{mode}=$单次线性化$\big)$
+（E3 v2 算法 E$'$：孔内 Newton $+$ 反应通量 3 模态/口 $+$ 切线列 $3m_i$ 列/孔 $+$
+$G^{\mathrm{ch}}=-M_c\bm b^{\alpha}\!\cdot\!\delta\bm w^{(\beta)}$ $+$
+CH-Schur $342\times342$（对称化$+$\code{spsolve}）$+$ 切线场更新）
+\item \indd 阻尼：$\varphi^{(k)}\leftarrow0.65\,\varphi_{\mathrm{cand}}+0.35\,\varphi^{(k-1)}$；
+$w^{(k)}\leftarrow0.65\,w_{\mathrm{cand}}+0.35\,w^{(k-1)}$
+\item \indd $\delta_k\leftarrow\|\varphi_{\mathrm{cand}}-\varphi^{(k-1)}\|_\infty$；
+\kwd{if} $\delta_k\le10^{-8}$ \kwd{then break}
+\item \ind \kwd{end for}；记录 $k_n$；末次收敛态重解一次流动（账本一致性）
+\item \ind 指标：$R$、水切、$E^{\,n+1}$、账本（入口反应通量 $+$ 出口物理通量，同 E2 v2）、
+$\max|\varphi|$、$\{k_n\}$；快照
+\item \kwd{end for}
+\item 输出：轨迹；分项计时/步（每 Picard 迭代 $=$ 1026-Schur 重解 $+$ 局部 CH 回代 $+$
+342-CH-Schur）与总墙钟；$\{k_n\}$；峰值内存；误差口径（相对 FEM-SFI 臂）
+\end{pseudo}
+
+\end{document}

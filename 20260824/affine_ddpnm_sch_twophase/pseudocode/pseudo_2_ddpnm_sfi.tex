@@ -1,0 +1,95 @@
+% !TEX program = xelatex
+% 实验伪代码 2/4（v2）：随机27球 × classic DDPNM（W0n/W0ch）× SFI-SCH
+% 算法 A–E 的矩阵元素级版本见 pseudo_1（v2）——对 E2 逐字适用（classic 模态数不变），
+% 其中算法 E 的调用模式在本实验取 mode=单次线性化（非线性由外层 Picard 吸收）。
+\documentclass[11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage[a4paper, top=2.2cm, bottom=2.2cm, left=2.3cm, right=2.3cm]{geometry}
+\usepackage{amsmath,amssymb,bm}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage[colorlinks=true, linkcolor=RoyalBlue]{hyperref}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\iface}{\gamma}
+\newcommand{\dd}{\,dx}
+\newcommand{\iu}{\hat{\bm u}}
+\definecolor{cmtclr}{rgb}{0.0,0.42,0.42}
+\newcommand{\kwd}[1]{\textbf{#1}}
+\newcommand{\cmt}[1]{{\color{cmtclr}$\langle$#1$\rangle$}}
+\newcommand{\ind}{\hspace*{1.5em}}
+\newcommand{\indd}{\hspace*{3.0em}}
+
+\newtcolorbox{algobox}[1]{breakable, enhanced, colback=gray!4, colframe=gray!55,
+  title={#1}, fonttitle=\bfseries, left=2mm, right=2mm, top=1.5mm, bottom=1.5mm}
+\newenvironment{pseudo}[1]{\begin{algobox}{#1}%
+  \begin{enumerate}[label={\ttfamily\arabic*}, leftmargin=3.4em, itemsep=1.5pt, topsep=1pt, parsep=0pt]}%
+  {\end{enumerate}\end{algobox}}
+
+\title{\bfseries 伪代码 2/4（v2）：SCH 实验 E2——随机 27 球 $\times$ classic DDPNM $\times$ SFI}
+\author{Project: \texttt{affine\_ddpnm\_sch\_twophase}}
+\date{2026-08-22}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{12 个实验总表}：E2 $=$（随机 27 球, DDPNM, SFI）；E6 同序换 Bentheimer。
+\textbf{模态设定}：与 E1 相同（流动 $W_{0n}$，Schur $m=114$；CH $W^{\mathrm{ch}}_0$，CH-Schur $114$）。
+\textbf{与 E1 的唯一区别}：主循环由 frozen 换成每步阻尼 Picard（Algorithm S2）。
+\textbf{算法 A--E（v2 矩阵元素级）见 \texttt{pseudo\_1\_ddpnm\_frozen.pdf}，对 E2 逐字适用}；
+唯一调用差异：算法 E 传 $\bm\eta_{\mathrm{init}}=\bm\eta^{(k-1)}$（外层迭代值）且
+$\mathrm{mode}=$\textbf{单次线性化}（$\eta$ 非线性由外层 Picard 吸收，避免双层迭代）。
+参数与 dt 调度同 E1 v2（$\mu_w$ 参考场口径）。
+
+\begin{pseudo}{算法 F：MAIN-SFI（E2 主循环：每步阻尼 Picard 双向耦合，Algorithm S2）}
+\item 运行算法 A、B、C（见 E1 v2）
+\item 初始化：$\varphi^0\equiv-1$（入口 DOF $+1$，\code{PoreRestrictor} 投孔内）；
+$w^0\equiv\bm 0$；$\bm\eta^0=\bm 0$；
+$\bar\varphi_a=(\bm w^{\mathrm{mass}}_a\!\cdot\!\bm\varphi_a)/V_a$；
+$\mu_a=\tfrac{1+\bar\varphi_a}{2}\mu_w+\tfrac{1-\bar\varphi_a}{2}\mu_o$（初始 $=\mu_o$）
+\item dt 调度（一次，同 E1 v2）：
+$\Delta t=\min\big(\mathrm{cfl}\cdot\min_aV_a/\sum_{k\ni a}\max(\pm Q_k,0),\ 0.9h_{\min}/|\bm u|_{\max}^{\mathrm{ref}}\big)$
+\cmt{$\mu_w=1$ 均匀黏度参考场}
+\item 预热：SOLVE-FLOW$\big(\{\mu_a\},\varphi^0,w^0\big)\to\{Q_k^{(0)}\}$
+（含初始毛细列 $=$ 零）$\to$ 冻结为第 1 步 CFL/Picard 初值
+\item \kwd{for} $n=0$ \kwd{to} $n_{\mathrm{step}}-1$ \kwd{do}
+\item \ind $\varphi^{(0)}\leftarrow\varphi^{\,n}$；$w^{(0)}\leftarrow w^{\,n}$；$\bm\eta^{(0)}\leftarrow\bm\eta^{\,n}$
+\item \ind \kwd{for} $k=1$ \kwd{to} $20$ \kwd{do} \cmt{外层阻尼 Picard：流度反馈 $+$ 毛细反馈 $+$ 通量更新}
+\item \indd $\mu_a^{(k)}\leftarrow\tfrac{1+\bar\varphi_a^{(k-1)}}{2}\mu_w
++\tfrac{1-\bar\varphi_a^{(k-1)}}{2}\mu_o\ \forall a$
+\item \indd SOLVE-FLOW$\big(\{\mu_a^{(k)}\},\varphi^{(k-1)},w^{(k-1)}\big)$
+（\textbf{E1 v2 算法 D 全步骤}：原位重缩放 $\to$ 毛细列 $\bm b$、$\iu^{\mathrm{cap}}$、$\bm c_i$
+$\to$ COO 三重组装配 $S\in\mathbb R^{114\times114}$ $\to$ $\tfrac12(S{+}S^{\!\top})$ $\to$
+\code{spsolve} $\to$ 重构 $\to$ G-行通量 $\{Q_k^{(k)}\}$）
+\item[] \indd \cmt{无新 Stokes 分解（全部经 $K_i$ 回代）；分项计时
+$t_{\mathrm{rescale}},t_{\mathrm{cap}},t_{\mathrm{asm}},t_{\mathrm{solve}}$；
+速度函数填 CH 部件（\code{fill\_u\_star}）}
+\item \indd CH-STEP$\big(\bm u^{*(k)},\varphi^{\,n};\ \bm\eta^{(k-1)},\ \mathrm{mode}=$单次线性化$\big)$
+$\to(\varphi_{\mathrm{cand}},w_{\mathrm{cand}},\bm\eta^{(k)})$
+\item[] \indd \cmt{每孔 CH-Newton（凸分裂 Jac $+$ 阻尼线搜索）$+$ 反应通量 $J^{\alpha}$ $+$
+切线列 $+$ $G^{\mathrm{ch}}=-M_c\bm b^{\alpha}\!\cdot\!\delta\bm w^{(\beta)}$ $+$
+CH-Schur $114\times114$（对称化 $+$ \code{spsolve}）$+$ 切线场更新——全部同 E1 v2 算法 E}
+\item \indd 阻尼更新：$\varphi^{(k)}\leftarrow0.65\,\varphi_{\mathrm{cand}}+0.35\,\varphi^{(k-1)}$；
+$w^{(k)}\leftarrow0.65\,w_{\mathrm{cand}}+0.35\,w^{(k-1)}$
+\item \indd $\delta_k\leftarrow\|\varphi_{\mathrm{cand}}-\varphi^{(k-1)}\|_\infty$；
+\kwd{if} $\delta_k\le10^{-8}$ \kwd{then break}；记录 $k_n$
+\item \ind \kwd{end for}
+\item \ind $(\varphi^{\,n+1},w^{\,n+1},\bm\eta^{\,n+1})\leftarrow(\varphi^{(k)},w^{(k)},\bm\eta^{(k)})$
+\item \ind \textbf{末次收敛态重解一次流动}（账本一致性）：
+SOLVE-FLOW$\big(\mu(\varphi^{\,n+1}),\varphi^{\,n+1},w^{\,n+1}\big)\to\{Q^{\mathrm{final}}\}$
+\item \ind 指标：$R=\tfrac12(1+\sum_aV_a\bar\varphi_a/\sum_aV_a)$；水切
+$\tfrac12(\mathrm{conv}_{\mathrm{out}}/Q_{\mathrm{out}}{+}1)$；能量 $E^{\,n+1}$ (S23)；
+\textbf{账本} $\bm 1^{\!\top}M_{\mathrm{glob}}(\bm\varphi^{n+1}{-}\bm\varphi^{n})
++\Delta t(J_{\mathrm{in}}{+}J_{\mathrm{out}})$
+（入口\textbf{反应通量} $J_{\mathrm{in}}=\mathrm{conv}_{\mathrm{in}}-\Delta t^{-1}\sum_{\mathrm{inlet}}\bm r_1$，
+出口物理通量）；$\max|\varphi|$；$\{k_n\}$
+\item \ind 快照（npz/内存表）
+\item \kwd{end for}
+\item 输出：轨迹；分项计时/步 $\{t_{\mathrm{rescale}},t_{\mathrm{cap}},t_{\mathrm{asm}},t_{\mathrm{solve}},
+t_{\mathrm{ch,local}},t_{\mathrm{ch,schur}}\}$ 与总墙钟；$\{k_n\}$；峰值内存；
+误差口径（相对 FEM-SFI 臂：broken $L^2$ 的 $\varphi,\bm u$、$Q_{\mathrm{out}}$、突破曲线）
+\end{pseudo}
+
+\end{document}

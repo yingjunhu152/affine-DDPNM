@@ -1,0 +1,54 @@
+{
+  "random27": {
+    "FEM-frozen": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.00385449400117238,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0
+    },
+    "FEM-SFI": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.003857346664102845,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.00010813743265351697
+    },
+    "Classic-frozen": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.004488775617180947,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0
+    },
+    "Classic-SFI": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.004499907877143715,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.00010460733024820725
+    },
+    "Affine-frozen": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.0038803838584955744,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0
+    },
+    "Affine-SFI": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.003883391749483834,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.00010832784305835388
+    }
+  },
+  "bentheimer": {
+    "FEM-frozen": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.0035911582763874976,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0
+    },
+    "FEM-SFI": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.0035939129996293076,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.00016500600695185054
+    },
+    "Classic-frozen": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.0036808275191120704,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0
+    },
+    "Classic-SFI": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.003683961666598691,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0001783376700900755
+    },
+    "Affine-frozen": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.0036075792312959968,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.0
+    },
+    "Affine-SFI": {
+      "phi_relative_difference_dt1_vs_dt0p5": 0.003610427225795246,
+      "velocity_relative_difference_dt1_vs_dt0p5": 0.00016624186171180683
+    }
+  }
+}
